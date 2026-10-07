@@ -76,7 +76,7 @@ defmodule Xaas.Accounts.Org do
     domain: Xaas.Accounts,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
-    extensions: [AshJsonApi.Resource, AshGraphql.Resource, AshIam, AshTypescript.Resource]
+    extensions: [AshJsonApi.Resource, AshIam, AshTypescript.Resource]
 
   typescript do
     type_name("AccountsOrg")
@@ -166,19 +166,6 @@ defmodule Xaas.Accounts.Org do
     # approval -- honestly disclosed as follow-up work, not fabricated.
     policy always() do
       forbid_if(always())
-    end
-  end
-
-  graphql do
-    type(:org)
-
-    # SPEC-31 (W819/W802-GAP-2; lane W973c design-wave 8): expose the
-    # Accounts domain on Xaas.GraphqlSchema. Read-only; each caller still
-    # passes this resource's real Ash policies (deny-by-default floor
-    # unchanged).
-    queries do
-      get(:org, :read)
-      list(:orgs, :read)
     end
   end
 

@@ -7,10 +7,24 @@ defmodule Xaas.Security.Finding do
   use Xaas.Resource,
     otp_app: :xaas,
     domain: Xaas.Security,
-    data_layer: Ash.DataLayer.Ets
+    data_layer: Ash.DataLayer.Ets,
+    authorizers: [Ash.Policy.Authorizer],
+    extensions: []
 
   ets do
     private?(true)
+  end
+
+  # SPEC-31 deepening (lane W982a): read carve-out via bypass; the floor
+  # stays deny-by-default for every other action type.
+  policies do
+    bypass action_type(:read) do
+      authorize_if(always())
+    end
+
+    policy always() do
+      forbid_if(always())
+    end
   end
 
   attributes do

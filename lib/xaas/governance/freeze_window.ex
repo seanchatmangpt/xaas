@@ -43,7 +43,7 @@ defmodule Xaas.Governance.FreezeWindow do
     domain: Xaas.Governance,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
-    extensions: [AshJsonApi.Resource, AshGraphql.Resource, AshPaperTrail.Resource, AshIam]
+    extensions: [AshJsonApi.Resource, AshPaperTrail.Resource, AshIam]
 
   paper_trail do
     change_tracking_mode(:full_diff)
@@ -82,20 +82,6 @@ defmodule Xaas.Governance.FreezeWindow do
 
     policy always() do
       forbid_if(always())
-    end
-  end
-
-  graphql do
-    type(:freeze_window)
-
-    # SPEC-31 (W819/W802-GAP-2; lane W973c design-wave 8): expose the
-    # Governance domain on Xaas.GraphqlSchema via FreezeWindow (the other
-    # governance resources are either lane-collided this wave or are
-    # approval records deliberately left unwired). Read-only; the
-    # resource's real Ash policies still gate every resolution.
-    queries do
-      get(:freeze_window, :read)
-      list(:freeze_windows, :read)
     end
   end
 

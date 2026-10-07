@@ -72,7 +72,7 @@ defmodule Xaas.Billing.ApprovalTierDowngrade do
     domain: Xaas.Billing,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
-    extensions: [AshJsonApi.Resource, AshGraphql.Resource]
+    extensions: [AshJsonApi.Resource]
 
   policies do
     # ash-migration Phase 5 (deny-by-default floor).
@@ -106,10 +106,6 @@ defmodule Xaas.Billing.ApprovalTierDowngrade do
     policy always() do
       forbid_if(always())
     end
-  end
-
-  graphql do
-    type(:approval_tier_downgrade)
   end
 
   json_api do

@@ -43,7 +43,7 @@ defmodule Xaas.Marketplace.ApprovalProviderStatusChange do
     domain: Xaas.Marketplace,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
-    extensions: [AshJsonApi.Resource, AshGraphql.Resource]
+    extensions: [AshJsonApi.Resource]
 
   policies do
     bypass action_type(:read) do
@@ -66,10 +66,6 @@ defmodule Xaas.Marketplace.ApprovalProviderStatusChange do
     policy always() do
       forbid_if(always())
     end
-  end
-
-  graphql do
-    type(:approval_provider_status_change)
   end
 
   json_api do

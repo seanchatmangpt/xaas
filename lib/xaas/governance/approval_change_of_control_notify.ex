@@ -4,7 +4,7 @@ defmodule Xaas.Governance.ApprovalChangeOfControlNotify do
     domain: Xaas.Governance,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
-    extensions: [AshJsonApi.Resource, AshGraphql.Resource]
+    extensions: [AshJsonApi.Resource]
 
   policies do
     # ash-migration Phase 5 (deny-by-default floor): real, confirmed gap --
@@ -44,10 +44,6 @@ defmodule Xaas.Governance.ApprovalChangeOfControlNotify do
     policy always() do
       forbid_if(always())
     end
-  end
-
-  graphql do
-    type(:approval_change_of_control_notify)
   end
 
   json_api do

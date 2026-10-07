@@ -6,14 +6,10 @@ defmodule Xaas.Conference.Sponsor do
     otp_app: :xaas,
     domain: Xaas.Conference,
     data_layer: Ash.DataLayer.Ets,
-    extensions: [AshGraphql.Resource, AshJsonApi.Resource]
+    extensions: [AshJsonApi.Resource]
 
   ets do
     private?(true)
-  end
-
-  graphql do
-    type(:conference_sponsor)
   end
 
   json_api do

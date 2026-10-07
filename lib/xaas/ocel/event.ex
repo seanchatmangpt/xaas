@@ -22,7 +22,8 @@ defmodule Xaas.Ocel.Event do
     otp_app: :xaas,
     domain: Xaas.Ocel,
     data_layer: AshPostgres.DataLayer,
-    authorizers: [Ash.Policy.Authorizer]
+    authorizers: [Ash.Policy.Authorizer],
+    extensions: []
 
   postgres do
     table("ocel_events")
@@ -40,7 +41,10 @@ defmodule Xaas.Ocel.Event do
   end
 
   actions do
-    defaults([:read, :destroy])
+    # Append-only audit surface (W983e finding 1): no :destroy default. The
+    # event log must not be deletable via a generated destroy action; the
+    # policy floor below already denies everything except scoped reads.
+    defaults([:read])
 
     create :record do
       description(

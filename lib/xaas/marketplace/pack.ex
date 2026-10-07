@@ -22,7 +22,7 @@ defmodule Xaas.Marketplace.Pack do
     otp_app: :xaas,
     domain: Xaas.Marketplace,
     data_layer: Ash.DataLayer.Ets,
-    extensions: [AshJsonApi.Resource, AshGraphql.Resource]
+    extensions: [AshJsonApi.Resource]
 
   ets do
     private?(true)
@@ -64,18 +64,6 @@ defmodule Xaas.Marketplace.Pack do
 
     create_timestamp(:inserted_at)
     update_timestamp(:updated_at)
-  end
-
-  graphql do
-    type(:marketplace_pack)
-
-    # SPEC-31 (W819/W802-GAP-2; lane W973c design-wave 8): the Marketplace
-    # domain was already wired; this adds its Pack resource's real read
-    # surface. Read-only; real Ash policies still gate every resolution.
-    queries do
-      get(:marketplace_pack, :read)
-      list(:marketplace_packs, :read)
-    end
   end
 
   json_api do

@@ -33,7 +33,7 @@ defmodule Xaas.Library.Book do
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
     notifiers: [Ash.Notifier.PubSub],
-    extensions: [AshJsonApi.Resource, AshGraphql.Resource, AshAdmin.Resource, AshAi]
+    extensions: [AshJsonApi.Resource, AshAdmin.Resource, AshAi]
 
   # Brings the real `prompt/2` macro (AshAi.Actions.prompt/2) into scope for
   # the `generate_recommendation_explanation` generic action's `run` clause
@@ -99,15 +99,6 @@ defmodule Xaas.Library.Book do
       base("/library/books")
       get(:read)
       index(:read)
-    end
-  end
-
-  graphql do
-    type(:library_book)
-
-    queries do
-      get(:library_book, :read)
-      list(:library_books, :read)
     end
   end
 
@@ -338,11 +329,10 @@ defmodule Xaas.Library.Book do
     attribute :embedding, :vector do
       constraints(dimensions: 384)
       allow_nil?(true)
-      # Not public: AshGraphql/AshJsonApi cannot map Ash.Type.Vector to a
-      # field type without a custom graphql_type/1 on the type (see the
-      # compile error this avoided). The vector remains a normal,
-      # readable/writable-via-code attribute; it is simply not exposed
-      # over the GraphQL/JSON:API surfaces.
+      # Not public: AshJsonApi cannot map Ash.Type.Vector to a field type
+      # without a custom type mapping (see the compile error this avoided).
+      # The vector remains a normal, readable/writable-via-code attribute;
+      # it is simply not exposed over the JSON:API surface.
       public?(false)
     end
 

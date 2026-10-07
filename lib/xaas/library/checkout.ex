@@ -21,7 +21,7 @@ defmodule Xaas.Library.Checkout do
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
     notifiers: [Ash.Notifier.PubSub],
-    extensions: [AshJsonApi.Resource, AshGraphql.Resource]
+    extensions: [AshJsonApi.Resource]
 
   postgres do
     table("library_checkouts")
@@ -53,10 +53,6 @@ defmodule Xaas.Library.Checkout do
       get(:read)
       index(:read)
     end
-  end
-
-  graphql do
-    type(:library_checkout)
   end
 
   actions do

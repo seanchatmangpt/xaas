@@ -9,7 +9,7 @@ defmodule Xaas.Library.Curation do
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
     notifiers: [Ash.Notifier.PubSub],
-    extensions: [AshJsonApi.Resource, AshGraphql.Resource]
+    extensions: [AshJsonApi.Resource]
 
   postgres do
     table("library_curations")
@@ -37,10 +37,6 @@ defmodule Xaas.Library.Curation do
       get(:read)
       index(:read)
     end
-  end
-
-  graphql do
-    type(:library_curation)
   end
 
   actions do

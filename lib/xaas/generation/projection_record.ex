@@ -14,7 +14,11 @@ defmodule Xaas.Generation.ProjectionRecord do
   use Xaas.Resource,
     otp_app: :xaas,
     domain: Xaas.Generation,
-    data_layer: Ash.DataLayer.Ets
+    data_layer: Ash.DataLayer.Ets,
+    authorizers: [Ash.Policy.Authorizer],
+    # W982a/W982u-precedent deny-by-default policies floor (previously this
+    # resource had NO policies block).
+    extensions: []
 
   ets do
     private?(true)
@@ -35,6 +39,27 @@ defmodule Xaas.Generation.ProjectionRecord do
     create :admit do
       accept([:source_path, :projection_path, :generator_id, :recorded_hash])
       validate(Xaas.Generation.Validations.NoManualPatch)
+    end
+  end
+
+  # SPEC-31 deepening (lane W983h): get+list read queries + deny-by-default
+  # policies floor (read bypass, everything else forbidden) — W982a/W982u
+  # precedent for resources that previously had no policies block.
+
+  policies do
+    bypass action_type(:read) do
+      authorize_if(always())
+    end
+
+    # Existing tests/DSL consumers create via `:admit`; carve it out
+    # explicitly (Witness.CertifiedReceipt's `bypass action(:ingest)`
+    # precedent) so the floor only closes non-read, non-admit actions.
+    bypass action(:admit) do
+      authorize_if(always())
+    end
+
+    policy always() do
+      forbid_if(always())
     end
   end
 end

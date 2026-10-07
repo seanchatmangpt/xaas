@@ -24,7 +24,7 @@ defmodule Xaas.Operations.CapabilityLivenessReceipt do
     domain: Xaas.Operations,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
-    extensions: [AshJsonApi.Resource, AshGraphql.Resource, AshOban]
+    extensions: [AshJsonApi.Resource, AshOban]
 
   # Real first use of `ash_oban`/`oban` (both real deps, real Oban config
   # in config.exs, but zero resources actually used the AshOban extension
@@ -109,10 +109,6 @@ defmodule Xaas.Operations.CapabilityLivenessReceipt do
     policy always() do
       forbid_if(always())
     end
-  end
-
-  graphql do
-    type(:capability_liveness_receipt)
   end
 
   json_api do

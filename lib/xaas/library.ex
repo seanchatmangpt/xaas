@@ -5,7 +5,7 @@ defmodule Xaas.Library do
   """
   use Ash.Domain,
     otp_app: :xaas,
-    extensions: [AshJsonApi.Domain, AshGraphql.Domain, AshAdmin.Domain, AshAi]
+    extensions: [AshJsonApi.Domain, AshAdmin.Domain, AshAi]
 
   admin do
     show?(true)

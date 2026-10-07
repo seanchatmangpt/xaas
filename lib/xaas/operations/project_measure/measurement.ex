@@ -18,7 +18,7 @@ defmodule Xaas.Operations.ProjectMeasure.Measurement do
     otp_app: :xaas,
     domain: Xaas.Operations,
     authorizers: [Ash.Policy.Authorizer],
-    extensions: [AshJsonApi.Resource, AshGraphql.Resource, AshTypescript.Resource]
+    extensions: [AshJsonApi.Resource, AshTypescript.Resource]
 
   alias Xaas.Operations.ProjectMeasure.Types.SubjectSha
 
@@ -46,12 +46,6 @@ defmodule Xaas.Operations.ProjectMeasure.Measurement do
     routes do
       base("/project_measurement")
       route(:get, "/measure", :measure)
-    end
-  end
-
-  graphql do
-    queries do
-      action(:project_measure_json, :measure_json)
     end
   end
 

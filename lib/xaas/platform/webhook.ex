@@ -33,7 +33,7 @@ defmodule Xaas.Platform.Webhook do
     domain: Xaas.Platform,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
-    extensions: [AshJsonApi.Resource, AshGraphql.Resource, AshCloak]
+    extensions: [AshJsonApi.Resource, AshCloak]
 
   # Same real AshCloak pattern as `Xaas.Accounts.Token`'s `cloak` block:
   # encrypts `secret` at rest via `Xaas.Vault`. Real correction (see
@@ -61,23 +61,6 @@ defmodule Xaas.Platform.Webhook do
     # per-action rules when an authz/session model exists on this side.
     policy always() do
       forbid_if(always())
-    end
-  end
-
-  graphql do
-    type(:webhook)
-
-    # SPEC-31 (W819/W802-GAP-2; lane W973c design-wave 8): expose the
-    # Platform domain on Xaas.GraphqlSchema via Webhook (RouteProjects* are
-    # lane-collided this wave). The webhook `url`/`secret` stay cloaked and
-    # deny-by-default: these are READ-ONLY query bindings only, and every
-    # resolution still passes the unchanged Ash policy floor above
-    # (`policy always() do forbid_if(always()) end`) -- a webhook is as
-    # real an exfiltration vector as CLAUDE.md's sensitive-resource
-    # discipline treats it, so this adds no bypass.
-    queries do
-      get(:webhook, :read)
-      list(:webhooks, :read)
     end
   end
 

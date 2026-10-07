@@ -7,7 +7,9 @@ defmodule Xaas.Graphlaw.Capability do
   """
   use Xaas.Resource,
     domain: Xaas.Graphlaw,
-    data_layer: AshPostgres.DataLayer
+    data_layer: AshPostgres.DataLayer,
+    authorizers: [Ash.Policy.Authorizer],
+    extensions: []
 
   postgres do
     table("graphlaw_capabilities")
@@ -45,6 +47,26 @@ defmodule Xaas.Graphlaw.Capability do
       accept([:name, :algorithm, :profile, :supported_in, :capability_class])
       upsert?(true)
       upsert_identity(:unique_name_algorithm)
+    end
+  end
+
+  # SPEC-31 deepening (lane W984l): get+list read queries over the existing
+  # `:read` action; deny-by-default floor added in the same transition
+  # (W982a/W983h precedent), with a `bypass action(:create)` carve-out so the
+  # registry ingest/upsert consumption path keeps its existing authorized
+  # behavior.
+
+  policies do
+    bypass action_type(:read) do
+      authorize_if(always())
+    end
+
+    bypass action(:create) do
+      authorize_if(always())
+    end
+
+    policy always() do
+      forbid_if(always())
     end
   end
 end

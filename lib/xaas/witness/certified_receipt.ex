@@ -13,7 +13,8 @@ defmodule Xaas.Witness.CertifiedReceipt do
   use Xaas.Resource,
     domain: Xaas.Witness,
     data_layer: AshPostgres.DataLayer,
-    authorizers: [Ash.Policy.Authorizer]
+    authorizers: [Ash.Policy.Authorizer],
+    extensions: []
 
   alias Ash.Changeset
 
@@ -79,6 +80,9 @@ defmodule Xaas.Witness.CertifiedReceipt do
       end)
     end
   end
+
+  # SPEC-31 deepening (lane W982u): read carve-out via bypass; the floor
+  # stays deny-by-default for every other action type.
 
   policies do
     bypass action_type(:read) do

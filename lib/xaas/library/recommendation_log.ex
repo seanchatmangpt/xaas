@@ -7,7 +7,7 @@ defmodule Xaas.Library.RecommendationLog do
     domain: Xaas.Library,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
-    extensions: [AshJsonApi.Resource, AshGraphql.Resource]
+    extensions: [AshJsonApi.Resource]
 
   postgres do
     table("library_recommendation_logs")
@@ -22,10 +22,6 @@ defmodule Xaas.Library.RecommendationLog do
       get(:read)
       index(:read)
     end
-  end
-
-  graphql do
-    type(:library_recommendation_log)
   end
 
   actions do

@@ -11,7 +11,9 @@ defmodule Xaas.Igniter.RefusalCode do
   use Xaas.Resource,
     otp_app: :xaas,
     domain: Xaas.Igniter,
-    data_layer: Ash.DataLayer.Ets
+    data_layer: Ash.DataLayer.Ets,
+    authorizers: [Ash.Policy.Authorizer],
+    extensions: []
 
   ets do
     private?(true)
@@ -37,6 +39,19 @@ defmodule Xaas.Igniter.RefusalCode do
 
   identities do
     identity(:unique_code, [:code], pre_check_with: Ash.DataLayer.Ets)
+  end
+
+  # SPEC-31 deepening (lane W982u): NEW deny-by-default policy floor (the
+  # resource previously had none — W982a precedent on security/finding.ex),
+  # read carve-out via bypass.
+  policies do
+    bypass action_type(:read) do
+      authorize_if(always())
+    end
+
+    policy always() do
+      forbid_if(always())
+    end
   end
 
   actions do

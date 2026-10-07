@@ -107,7 +107,7 @@ defmodule Xaas.Billing.Subscription do
     domain: Xaas.Billing,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
-    extensions: [AshJsonApi.Resource, AshGraphql.Resource, AshIam, AshTypescript.Resource]
+    extensions: [AshJsonApi.Resource, AshIam, AshTypescript.Resource]
 
   typescript do
     type_name("BillingSubscription")
@@ -141,15 +141,6 @@ defmodule Xaas.Billing.Subscription do
     policy always() do
       forbid_if(always())
     end
-  end
-
-  graphql do
-    # Plain `:subscription` is a reserved GraphQL root type name (conflicts
-    # with the GraphQL Subscription root operation type) -- real error
-    # caught by `mix compile --force`
-    # (AshGraphql.Resource.Verifiers.VerifyReservedTypeName), not a
-    # stylistic choice.
-    type(:billing_subscription)
   end
 
   json_api do

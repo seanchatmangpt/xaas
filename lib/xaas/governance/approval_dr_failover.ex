@@ -4,7 +4,7 @@ defmodule Xaas.Governance.ApprovalDrFailover do
     domain: Xaas.Governance,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
-    extensions: [AshJsonApi.Resource, AshGraphql.Resource, AshPaperTrail.Resource]
+    extensions: [AshJsonApi.Resource, AshPaperTrail.Resource]
 
   paper_trail do
     change_tracking_mode(:full_diff)
@@ -46,10 +46,6 @@ defmodule Xaas.Governance.ApprovalDrFailover do
     policy always() do
       forbid_if(always())
     end
-  end
-
-  graphql do
-    type(:approval_dr_failover)
   end
 
   json_api do

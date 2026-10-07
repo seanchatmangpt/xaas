@@ -1,7 +1,7 @@
 defmodule Xaas.Ledger do
   use Ash.Domain,
     otp_app: :xaas,
-    extensions: [AshJsonApi.Domain, AshGraphql.Domain, AshAdmin.Domain]
+    extensions: [AshJsonApi.Domain, AshAdmin.Domain]
 
   admin do
     show?(true)

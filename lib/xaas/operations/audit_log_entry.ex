@@ -30,7 +30,7 @@ defmodule Xaas.Operations.AuditLogEntry do
     domain: Xaas.Operations,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
-    extensions: [AshJsonApi.Resource, AshGraphql.Resource]
+    extensions: [AshJsonApi.Resource]
 
   policies do
     bypass action_type(:read) do
@@ -46,10 +46,6 @@ defmodule Xaas.Operations.AuditLogEntry do
     policy always() do
       forbid_if(always())
     end
-  end
-
-  graphql do
-    type(:audit_log_entry)
   end
 
   json_api do

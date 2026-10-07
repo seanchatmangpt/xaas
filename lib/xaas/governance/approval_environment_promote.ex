@@ -4,7 +4,7 @@ defmodule Xaas.Governance.ApprovalEnvironmentPromote do
     domain: Xaas.Governance,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
-    extensions: [AshJsonApi.Resource, AshGraphql.Resource, AshStateMachine]
+    extensions: [AshJsonApi.Resource, AshStateMachine]
 
   policies do
     # ash-migration Phase 5 (deny-by-default floor): real, confirmed gap --
@@ -51,10 +51,6 @@ defmodule Xaas.Governance.ApprovalEnvironmentPromote do
     policy always() do
       forbid_if(always())
     end
-  end
-
-  graphql do
-    type(:approval_environment_promote)
   end
 
   json_api do

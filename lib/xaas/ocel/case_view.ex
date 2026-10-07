@@ -40,6 +40,7 @@ defmodule Xaas.Ocel.CaseView do
 
     EventObject
     |> Ash.Query.filter(object_id in ^object_ids)
+    |> Ash.Query.sort(id: :asc)
     |> Ash.Query.load(:event)
     |> Ash.read(authorize?: false)
     |> case do
@@ -48,7 +49,9 @@ defmodule Xaas.Ocel.CaseView do
           event_objects
           |> Enum.map(& &1.event)
           |> Enum.uniq_by(& &1.id)
-          |> Enum.sort_by(& &1.occurred_at, DateTime)
+          |> Enum.sort_by(
+            &{DateTime.to_unix(&1.occurred_at, :microsecond), &1.id}
+          )
 
         {:ok, events}
 

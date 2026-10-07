@@ -17,7 +17,7 @@ defmodule Xaas.Operations.ApprovalCastleVerbSchedule do
     domain: Xaas.Operations,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
-    extensions: [AshJsonApi.Resource, AshGraphql.Resource]
+    extensions: [AshJsonApi.Resource]
 
   policies do
     # ash-migration Phase 5 (deny-by-default floor).
@@ -53,10 +53,6 @@ defmodule Xaas.Operations.ApprovalCastleVerbSchedule do
     policy always() do
       forbid_if(always())
     end
-  end
-
-  graphql do
-    type(:approval_castle_verb_schedule)
   end
 
   json_api do

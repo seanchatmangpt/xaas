@@ -3,7 +3,6 @@ defmodule Xaas.Operations do
     otp_app: :xaas,
     extensions: [
       AshJsonApi.Domain,
-      AshGraphql.Domain,
       AshAdmin.Domain,
       AshTypescript.Rpc,
       Xaas.Operations.ProjectMeasure.Extension

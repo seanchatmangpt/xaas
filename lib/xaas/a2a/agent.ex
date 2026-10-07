@@ -12,7 +12,9 @@ defmodule Xaas.A2a.Agent do
   use Xaas.Resource,
     otp_app: :xaas,
     domain: Xaas.A2a,
-    data_layer: Ash.DataLayer.Ets
+    data_layer: Ash.DataLayer.Ets,
+    authorizers: [Ash.Policy.Authorizer],
+    extensions: []
 
   ets do
     private?(true)
@@ -70,6 +72,22 @@ defmodule Xaas.A2a.Agent do
     update :update do
       accept([:url, :description, :version, :skills, :transport_bindings])
       require_atomic?(false)
+    end
+  end
+
+  # SPEC-31 deepening (lane W984l): get+list read queries over the existing
+  # `:read` action. Deny-by-default floor (W982a/W983h precedent): reads stay
+  # open (the catalog projection surface); create/update/destroy refuse
+  # through any authorized path — all existing internal callers
+  # (`Xaas.A2a.Catalog`) already pass `authorize?: false`.
+
+  policies do
+    bypass action_type(:read) do
+      authorize_if(always())
+    end
+
+    policy always() do
+      forbid_if(always())
     end
   end
 end

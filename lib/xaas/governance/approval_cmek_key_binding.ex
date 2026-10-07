@@ -4,7 +4,7 @@ defmodule Xaas.Governance.ApprovalCmekKeyBinding do
     domain: Xaas.Governance,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
-    extensions: [AshJsonApi.Resource, AshGraphql.Resource]
+    extensions: [AshJsonApi.Resource]
 
   policies do
     # ash-migration Phase 5 (deny-by-default floor): real, confirmed gap --
@@ -39,10 +39,6 @@ defmodule Xaas.Governance.ApprovalCmekKeyBinding do
     policy always() do
       forbid_if(always())
     end
-  end
-
-  graphql do
-    type(:approval_cmek_key_binding)
   end
 
   json_api do

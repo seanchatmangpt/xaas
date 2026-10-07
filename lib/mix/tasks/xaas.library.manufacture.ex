@@ -154,7 +154,7 @@ defmodule Mix.Tasks.Xaas.Library.Manufacture do
       \"\"\"
       use Ash.Domain,
         otp_app: :xaas,
-        extensions: [AshJsonApi.Domain, AshGraphql.Domain, AshAdmin.Domain]
+        extensions: [AshJsonApi.Domain, AshAdmin.Domain]
 
       admin do
         show? true
@@ -297,7 +297,7 @@ defmodule Mix.Tasks.Xaas.Library.Manufacture do
         data_layer: AshPostgres.DataLayer,
         authorizers: [Ash.Policy.Authorizer],
         notifiers: [Ash.Notifier.PubSub],
-        extensions: [AshJsonApi.Resource, AshGraphql.Resource]
+        extensions: [AshJsonApi.Resource]
 
       postgres do
         table "library_books"
@@ -323,10 +323,6 @@ defmodule Mix.Tasks.Xaas.Library.Manufacture do
           get :read
           index :read
         end
-      end
-
-      graphql do
-        type :library_book
       end
 
       actions do
@@ -511,7 +507,7 @@ defmodule Mix.Tasks.Xaas.Library.Manufacture do
         data_layer: AshPostgres.DataLayer,
         authorizers: [Ash.Policy.Authorizer],
         notifiers: [Ash.Notifier.PubSub],
-        extensions: [AshJsonApi.Resource, AshGraphql.Resource]
+        extensions: [AshJsonApi.Resource]
 
       postgres do
         table "library_checkouts"
@@ -538,10 +534,6 @@ defmodule Mix.Tasks.Xaas.Library.Manufacture do
           get :read
           index :read
         end
-      end
-
-      graphql do
-        type :library_checkout
       end
 
       actions do
@@ -652,7 +644,7 @@ defmodule Mix.Tasks.Xaas.Library.Manufacture do
         data_layer: AshPostgres.DataLayer,
         authorizers: [Ash.Policy.Authorizer],
         notifiers: [Ash.Notifier.PubSub],
-        extensions: [AshJsonApi.Resource, AshGraphql.Resource]
+        extensions: [AshJsonApi.Resource]
 
       postgres do
         table "library_holds"
@@ -676,10 +668,6 @@ defmodule Mix.Tasks.Xaas.Library.Manufacture do
           get :read
           index :read
         end
-      end
-
-      graphql do
-        type :library_hold
       end
 
       actions do
@@ -770,7 +758,7 @@ defmodule Mix.Tasks.Xaas.Library.Manufacture do
         data_layer: AshPostgres.DataLayer,
         authorizers: [Ash.Policy.Authorizer],
         notifiers: [Ash.Notifier.PubSub],
-        extensions: [AshJsonApi.Resource, AshGraphql.Resource]
+        extensions: [AshJsonApi.Resource]
 
       postgres do
         table "library_curations"
@@ -796,10 +784,6 @@ defmodule Mix.Tasks.Xaas.Library.Manufacture do
           get :read
           index :read
         end
-      end
-
-      graphql do
-        type :library_curation
       end
 
       actions do
@@ -897,7 +881,7 @@ defmodule Mix.Tasks.Xaas.Library.Manufacture do
         domain: Xaas.Library,
         data_layer: AshPostgres.DataLayer,
         authorizers: [Ash.Policy.Authorizer],
-        extensions: [AshJsonApi.Resource, AshGraphql.Resource]
+        extensions: [AshJsonApi.Resource]
 
       postgres do
         table "library_recommendation_logs"
@@ -912,10 +896,6 @@ defmodule Mix.Tasks.Xaas.Library.Manufacture do
           get :read
           index :read
         end
-      end
-
-      graphql do
-        type :library_recommendation_log
       end
 
       actions do

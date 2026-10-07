@@ -49,7 +49,7 @@ defmodule Xaas.Security do
           court_ref: f["court_ref"],
           discovered_at: parse_dt(f["discovered_at"])
         })
-        |> Ash.create!()
+        |> Ash.create!(authorize?: false)
       end)
 
     counts = Enum.frequencies_by(findings, & &1.severity)
@@ -68,7 +68,7 @@ defmodule Xaas.Security do
         dispositioned_count: Enum.count(findings, &(&1.disposition in @dispositioned)),
         green: Enum.all?(findings, &(&1.disposition in @dispositioned))
       })
-      |> Ash.create!()
+      |> Ash.create!(authorize?: false)
 
     {:ok, posture}
   end

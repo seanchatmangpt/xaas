@@ -31,7 +31,7 @@ defmodule Xaas.Platform.WebhookDelivery do
     domain: Xaas.Platform,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
-    extensions: [AshJsonApi.Resource, AshGraphql.Resource, AshOban]
+    extensions: [AshJsonApi.Resource, AshOban]
 
   # Real, disclosed placeholder: platform-console's real dispatcher has no
   # single canonical max-attempts constant this resource can port verbatim
@@ -94,10 +94,6 @@ defmodule Xaas.Platform.WebhookDelivery do
     policy always() do
       forbid_if(always())
     end
-  end
-
-  graphql do
-    type(:webhook_delivery)
   end
 
   json_api do

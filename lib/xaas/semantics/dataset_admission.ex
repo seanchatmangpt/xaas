@@ -157,14 +157,25 @@ defmodule Xaas.Semantics.DatasetAdmission do
 
         true ->
           dim = max_feature_dim(a0 ++ a1)
-          1..k
-          |> Enum.map(fn i ->
-            dir = random_unit_direction(dim, {seed, i})
-            w1_1d(Enum.map(a0, &project(&1, dir)), Enum.map(a1, &project(&1, dir)))
-          end)
-          |> Enum.map(&to_float/1)
-          |> Enum.sum()
-          |> Kernel./(k)
+
+          if dim == 0 do
+            # W984ai: all-empty-features population (dim-0 vectors) is the same
+            # zero-information class as an unobservable population above — no
+            # transport certificate is decidable, so return :inf to force the
+            # typed bias refusal (fail-closed) instead of raising
+            # FunctionClauseError from random_unit_direction/2's dim > 0 guard.
+            :inf
+          else
+            1..k
+            |> Enum.map(fn i ->
+              dir = random_unit_direction(dim, {seed, i})
+
+              w1_1d(Enum.map(a0, &project(&1, dir)), Enum.map(a1, &project(&1, dir)))
+            end)
+            |> Enum.map(&to_float/1)
+            |> Enum.sum()
+            |> Kernel./(k)
+          end
       end
     rescue
       ArithmeticError -> {:error, :REFUSED_ARITHMETIC_OVERFLOW}

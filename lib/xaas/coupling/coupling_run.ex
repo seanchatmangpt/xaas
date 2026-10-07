@@ -27,7 +27,8 @@ defmodule Xaas.Coupling.CouplingRun do
   use Xaas.Resource,
     domain: Xaas.Coupling,
     data_layer: AshPostgres.DataLayer,
-    authorizers: [Ash.Policy.Authorizer]
+    authorizers: [Ash.Policy.Authorizer],
+    extensions: []
 
   postgres do
     table("coupling_runs")
@@ -164,6 +165,9 @@ defmodule Xaas.Coupling.CouplingRun do
       {to_string(coord), %{"kind" => to_string(kind), "detail" => stringify(detail)}}
     end)
   end
+
+  # SPEC-31 deepening (lane W983h): get+list read queries over the existing
+  # `:read` action; the policies floor below is unchanged.
 
   policies do
     bypass action_type(:read) do

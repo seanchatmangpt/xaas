@@ -55,13 +55,36 @@ defmodule Xaas.Ledger.Changes.ReverseTransfer do
         # before_action runs post-validation, so attribute writes here must
         # be forced (the originals are read from a trusted row, never user
         # input, so forcing is lawful and documented).
-        Ash.Changeset.force_change_attributes(changeset,
+        changeset
+        |> Ash.Changeset.force_change_attributes(
           amount: original.amount,
           timestamp: DateTime.utc_now(),
           from_account_id: original.to_account_id,
           to_account_id: original.from_account_id,
           reverses_transfer_id: original.id
         )
+        |> run_sufficiency(original)
+    end
+  end
+
+  # W983j (W982i attack-1 fix): the declared TransferSourceSufficiency
+  # validation on :reverse is dead code -- it runs before this before_action
+  # hook, when from/to_account_id are still nil, so check_sufficiency/1 takes
+  # the is_nil -> :ok skip and a compensating mint can drain the original
+  # recipient negative. Fix the invariant, not the probe: with the swapped
+  # attributes now forced onto the changeset, invoke the same validation
+  # explicitly so it sees the real compensating source (the original
+  # recipient) and refuses an underfunded reversal with the same typed error
+  # the ordinary :transfer action produces. The W785 exemptions
+  # (skip_balance_updates context, xaas_ledger.allow_overdraft context)
+  # apply unchanged -- no separate overdraft story for :reverse.
+  defp run_sufficiency(changeset, _original) do
+    case Xaas.Ledger.Validations.TransferSourceSufficiency.validate(changeset, [], []) do
+      :ok ->
+        changeset
+
+      {:error, opts} ->
+        Ash.Changeset.add_error(changeset, opts)
     end
   end
 

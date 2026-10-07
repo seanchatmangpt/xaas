@@ -4,7 +4,7 @@ defmodule Xaas.Governance.ApprovalDeniedPartyOverride do
     domain: Xaas.Governance,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
-    extensions: [AshJsonApi.Resource, AshGraphql.Resource]
+    extensions: [AshJsonApi.Resource]
 
   policies do
     # ash-migration Phase 5 (deny-by-default floor): real, confirmed gap --
@@ -45,10 +45,6 @@ defmodule Xaas.Governance.ApprovalDeniedPartyOverride do
     policy always() do
       forbid_if(always())
     end
-  end
-
-  graphql do
-    type(:approval_denied_party_override)
   end
 
   json_api do

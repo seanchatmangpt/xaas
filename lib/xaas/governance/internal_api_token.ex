@@ -27,8 +27,8 @@ defmodule Xaas.Governance.InternalApiToken do
 
   ## Real, deliberate scope boundary: no HTTP routes on this resource
 
-  Unlike `AuditExportToken`, this resource declares no `AshJsonApi.Resource`/
-  `AshGraphql.Resource` extensions and is never mounted under the `/api` or
+  Unlike `AuditExportToken`, this resource declares no `AshJsonApi.Resource`
+  extension and is never mounted under the `/api` or
   `/internal-api` catch-all forwards. This is not an oversight -- it is the
   direct, disclosed lesson from `AuditExportToken`'s own twentieth-pass ERRC
   finding (`docs/claude/diataxis/explanation/errc-innovation-grid.md`): an

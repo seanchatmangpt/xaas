@@ -19,7 +19,7 @@ defmodule Xaas.Marketplace.Provider do
     domain: Xaas.Marketplace,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
-    extensions: [AshJsonApi.Resource, AshGraphql.Resource, AshTypescript.Resource]
+    extensions: [AshJsonApi.Resource, AshTypescript.Resource]
 
   typescript do
     type_name("MarketplaceProvider")
@@ -41,10 +41,6 @@ defmodule Xaas.Marketplace.Provider do
     policy always() do
       forbid_if(always())
     end
-  end
-
-  graphql do
-    type(:marketplace_provider)
   end
 
   json_api do

@@ -36,16 +36,35 @@ defmodule Xaas.TemporalMemory.Observation do
     otp_app: :xaas,
     domain: Xaas.TemporalMemory,
     data_layer: AshPostgres.DataLayer,
-    authorizers: [Ash.Policy.Authorizer]
+    authorizers: [Ash.Policy.Authorizer],
+    extensions: []
 
   postgres do
     table("temporal_memory_observations")
     repo(Xaas.Repo)
   end
 
+  # SPEC-31 deepening (lane W984l): the allow-all floor W983h deferred on is
+  # replaced with the W982a/W983h-precedent deny-by-default floor FIRST, then
+  # All internal read/write paths (`Xaas.TemporalMemory.Query`, `Replay`,
+  # `Changes.MarkPriorSuperseded`, and the existing test corpus) already call
+  # with `authorize?: false`, so behavior is unchanged for them; the floor
+  # now refuses update/destroy through any authorized path.
   policies do
-    policy always() do
+    bypass action_type(:read) do
       authorize_if(always())
+    end
+
+    bypass action(:observe) do
+      authorize_if(always())
+    end
+
+    bypass action(:supersede) do
+      authorize_if(always())
+    end
+
+    policy always() do
+      forbid_if(always())
     end
   end
 
@@ -151,4 +170,5 @@ defmodule Xaas.TemporalMemory.Observation do
   identities do
     identity(:unique_receipt_hash, [:receipt_hash])
   end
+
 end
