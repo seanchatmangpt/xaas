@@ -655,16 +655,31 @@ defmodule Xaas.Ultracode.RunValidation do
   defp court_type_decl(%{"type" => type}) when is_binary(type), do: %{"name" => type}
   defp court_type_decl(other), do: other
 
-  defp court_event(event) when is_map(event) do
+  # W606 dual-safe: public @doc false so the otp29 Map.update court can
+  # exercise the real function directly (Chicago-style, no mock), same
+  # pattern as XaasWeb.OcelSummaryController.summarize/1 (W659).
+  @doc false
+  def court_event(event) when is_map(event) do
     event
     |> Map.put_new("attributes", %{})
-    |> Map.update("relationships", [], fn
-      rels when is_list(rels) -> Enum.map(rels, &court_relationship/1)
-      other -> other
-    end)
+    |> court_event_relationships()
   end
 
-  defp court_event(other), do: other
+  def court_event(other), do: other
+
+  # W606 dual-safe: replaces Map.update/4 at this site with explicit
+  # case Map.fetch arms so the absent-key seed of [] does not depend on
+  # Map.update/4 default-seeding semantics (otp-28 probe verified: absent
+  # key seeds the default without calling the fun; present key applies it).
+  defp court_event_relationships(event) do
+    case Map.fetch(event, "relationships") do
+      {:ok, rels} -> Map.put(event, "relationships", court_relationships(rels))
+      :error -> Map.put(event, "relationships", [])
+    end
+  end
+
+  defp court_relationships(rels) when is_list(rels), do: Enum.map(rels, &court_relationship/1)
+  defp court_relationships(other), do: other
 
   defp court_object(object) when is_map(object) do
     Map.put_new(object, "attributes", %{})
