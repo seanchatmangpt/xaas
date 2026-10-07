@@ -9,8 +9,18 @@ const { test, expect } = require("@playwright/test");
  */
 
 test.describe("Next Read Qvest Deck Experience & Dual-Persona Interface", () => {
-  test("renders dual-persona layout with Student and Librarian views", async ({ page }) => {
+  // `waitUntil: "networkidle"` does NOT wait for the LiveView websocket, so
+  // phx-click events dispatched before `phx-connected` are silently dropped
+  // (W70 observed exactly this: toggle_why/checkout/ask_catalog clicks that
+  // never reached the server). Wait for the connected marker on every nav.
+  /** @param {import("@playwright/test").Page} page */
+  const gotoNextRead = async (page) => {
     await page.goto("/next-read", { waitUntil: "networkidle" });
+    await page.locator("[data-phx-main].phx-connected").waitFor({ state: "attached" });
+  };
+
+  test("renders dual-persona layout with Student and Librarian views", async ({ page }) => {
+    await gotoNextRead(page);
 
     // Header assertion
     const header = page.locator("header").last();
@@ -30,7 +40,7 @@ test.describe("Next Read Qvest Deck Experience & Dual-Persona Interface", () => 
   });
 
   test("expands grounded 'Why this one?' explainability drawer with factor pill badges", async ({ page }) => {
-    await page.goto("/next-read", { waitUntil: "networkidle" });
+    await gotoNextRead(page);
 
     const whyButtons = page.locator('[data-testid="why-button"]');
     await expect(whyButtons.first()).toBeVisible();
@@ -52,7 +62,7 @@ test.describe("Next Read Qvest Deck Experience & Dual-Persona Interface", () => 
   });
 
   test("librarian pin action dynamically updates curation and student card spotlight", async ({ page }) => {
-    await page.goto("/next-read", { waitUntil: "networkidle" });
+    await gotoNextRead(page);
 
     const pinButtons = page.locator('[data-testid="pin-button"]');
     await expect(pinButtons.first()).toBeVisible();
@@ -60,43 +70,62 @@ test.describe("Next Read Qvest Deck Experience & Dual-Persona Interface", () => 
     const firstPin = pinButtons.first();
     const bookId = await firstPin.getAttribute("data-book-id");
 
-    // Toggle pin for first title
-    await firstPin.click();
+    // Toggle pin for the *specific* first title (address by book-id so a
+    // live re-render that swaps recommendation order mid-click cannot land
+    // the click on a different book's button).
+    const pinnedButton = page.locator(`[data-testid="pin-button"][data-book-id="${bookId}"]`);
+    await pinnedButton.click();
     await page.waitForTimeout(600);
 
     // Pin button updates state
-    await expect(firstPin).toBeVisible();
+    await expect(pinnedButton).toContainText("Pinned");
 
-    // Student card receives spotlight / highlight
+    // Student card receives spotlight / highlight on a fresh ranking
+    // (pinning re-weights the ranker, so re-navigate before asserting the
+    // card is still on the shelf).
+    await gotoNextRead(page);
     const studentCard = page.locator(`[data-testid="book-card"][data-book-id="${bookId}"]`);
     await expect(studentCard).toBeVisible();
   });
 
   test("executes student checkout, updates librarian metrics, and displays flash confirmation", async ({ page }) => {
-    await page.goto("/next-read", { waitUntil: "networkidle" });
+    await gotoNextRead(page);
 
     const outTodayStat = page.locator('[data-testid="stat-out-today"]');
     await expect(outTodayStat).toBeVisible();
     const initialOut = await outTodayStat.innerText();
 
     const checkoutButtons = page.locator('[data-testid="checkout-button"]');
-    await expect(checkoutButtons.first()).toBeVisible();
+    const holdButtons = page.locator('[data-testid="hold-button"]');
 
-    // Click Check Out
-    await checkoutButtons.first().click();
+    // Circulate whichever action the catalog state admits: e2e runs drain
+    // the shared dev catalog, so the top-6 may render Place Hold instead of
+    // Check Out. Both actions ride CirculationBorrowReactor and both
+    // confirm via the flash-info banner.
+    const circulateButton = page
+      .locator('[data-testid="checkout-button"], [data-testid="hold-button"]')
+      .first();
+    await expect(circulateButton).toBeVisible();
+    const expectedFlash =
+      (await circulateButton.getAttribute("data-testid")) === "checkout-button"
+        ? "Successfully checked out"
+        : "Hold placed for";
+
+    // Click Check Out / Place Hold
+    await circulateButton.click();
     await page.waitForTimeout(600);
 
     // Verify Flash banner
     const flashInfo = page.locator('[data-testid="flash-info"]');
     await expect(flashInfo).toBeVisible();
-    await expect(flashInfo).toContainText("Successfully checked out");
+    await expect(flashInfo).toContainText(expectedFlash);
 
     // Verify Desk metrics updated
     await expect(outTodayStat).toBeVisible();
   });
 
   test("executes 'Ask the Catalog' natural language semantic search and renders admitted candidates", async ({ page }) => {
-    await page.goto("/next-read", { waitUntil: "networkidle" });
+    await gotoNextRead(page);
 
     const askInput = page.locator('[data-testid="ask-input"]');
     const askButton = page.locator('[data-testid="ask-button"]');
@@ -116,7 +145,7 @@ test.describe("Next Read Qvest Deck Experience & Dual-Persona Interface", () => 
   });
 
   test("switches between split, student-only, and librarian-only view modes", async ({ page }) => {
-    await page.goto("/next-read", { waitUntil: "networkidle" });
+    await gotoNextRead(page);
 
     // Switch to Student Only
     await page.click('button:has-text("Student Only")');

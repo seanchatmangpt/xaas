@@ -27,7 +27,7 @@ test.describe("WD Case Study 2 deterministic reference surface", () => {
     await expect(page.locator('[data-testid="work-authority"]')).toHaveText("SELECT_CONSTRUCT_ONLY");
     const contextHref = await page.locator('[data-testid="context-link"]').getAttribute("href");
     expect(contextHref).toContain("/case-studies/wd-fa/context/known_firmware.json");
-    const contextResponse = await page.request.get(contextHref);
+    const contextResponse = await page.request.get(/** @type {string} */ (contextHref));
     expect(contextResponse.ok()).toBeTruthy();
     const context = await contextResponse.json();
     expect(context.canonical_subject).toBe("urn:xaas:wd-cs2:case:known_firmware");
@@ -59,15 +59,15 @@ test.describe("WD Case Study 2 deterministic reference surface", () => {
     expect(architecture.ingestion_fixture.artifacts).toHaveLength(3);
     expect(architecture.offline_evaluation.controls_passed).toBe(7);
     expect(architecture.offline_evaluation.production_metrics.mttr).toBe("UNMEASURED");
-    expect(architecture.ingestion_fixture.artifacts.map((artifact) => artifact.modality).sort()).toEqual(["plot", "structured", "text"]);
+    expect(architecture.ingestion_fixture.artifacts.map((/** @type {any} */ artifact) => artifact.modality).sort()).toEqual(["plot", "structured", "text"]);
     expect(architecture.architecture.target_conformance).toBe("ST-6 AUTONOMIC");
     expect(architecture.requirements).toHaveLength(16);
-    expect(architecture.capabilities.some((capability) => capability.plane === "DO")).toBeFalsy();
+    expect(architecture.capabilities.some((/** @type {any} */ capability) => capability.plane === "DO")).toBeFalsy();
     expect(architecture.excluded_production_do.plane).toBe("DO");
     expect(architecture.autonomic_planner.next.id).toBe("SJ-011");
     expect(architecture.autonomic_planner.next.runtime_intelligence).toBe("NONE");
     expect(architecture.demo_work.partial_firmware.standing).toBe("BLOCKED_ON_EVIDENCE");
-    expect(architecture.demo_capabilities.novel_x.some((capability) => capability.plane === "DO")).toBeFalsy();
+    expect(architecture.demo_capabilities.novel_x.some((/** @type {any} */ capability) => capability.plane === "DO")).toBeFalsy();
 
     await page.locator('[data-testid="scenario-partial_firmware"]').click();
     await expect(page.locator('[data-testid="classification"]')).toHaveText("PARTIAL");
