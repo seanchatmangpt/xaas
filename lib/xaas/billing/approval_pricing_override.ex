@@ -98,7 +98,6 @@ defmodule Xaas.Billing.ApprovalPricingOverride do
     # `approved_by` must be present and must differ from `requested_by`.
     update :approve do
       accept([:approved_by])
-      require_atomic?(false)
 
       # Real, DB-level idempotency guard (W984k, gap 1b from
       # docs/sjira/v26.10.6/plans/w982s-approval-deepening.md): only a row

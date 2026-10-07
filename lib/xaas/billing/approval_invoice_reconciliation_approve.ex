@@ -104,7 +104,6 @@ defmodule Xaas.Billing.ApprovalInvoiceReconciliationApprove do
     # (a second, distinct approver).
     update :approve do
       accept([:approved_by])
-      require_atomic?(false)
 
       # Real, DB-level idempotency guard (W984k, gap 1b from
       # docs/sjira/v26.10.6/plans/w982s-approval-deepening.md): only a row

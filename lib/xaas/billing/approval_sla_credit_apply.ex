@@ -84,7 +84,18 @@ defmodule Xaas.Billing.ApprovalSlaCreditApply do
       get(:read)
       index(:read)
       post(:create)
-      patch(:approve)
+
+      # WP-1 (OS-15, Art. 14(4)(b)): read-only causal-anatomy enrichment of
+      # the operator approve response — the top-level `meta` member carries
+      # the W505 Shapley attribution + W506 counterfactual trace + W984p
+      # briefing for the decision being approved. Zero new authority: the
+      # mutation path (policies, validations, Ledger change) is untouched.
+      # See Xaas.Operations.ApprovalCausalAnatomy for the full rationale.
+      patch(:approve,
+        metadata: fn _subject, result, _request ->
+          Xaas.Operations.ApprovalCausalAnatomy.metadata(result)
+        end
+      )
     end
   end
 

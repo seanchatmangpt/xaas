@@ -85,6 +85,18 @@ defmodule Xaas.Billing.Changes.SubscriptionProrateTierChange do
   being one of its two silent exceptions. `after_action/2` only fires on
   a real successful write (real failed `:change_tier` updates skip
   proration entirely, matching the prior behavior).
+  ## Atomicity disclosure (SPEC-08 / W729-GAP-4, lane W984cc)
+
+  `Ash.Changeset.after_action/2` is retained (NOT converted to
+  `atomic/3`): this body is non-atomicizable -- it reads pre-change
+  state (`changeset.data`), opens-or-gets real `Xaas.Ledger.Account`
+  rows (read-or-create), and creates a nested real `Xaas.Ledger.Transfer`
+  / subscription update. Because `after_action/2` already runs INSIDE the
+  parent `:approve` transaction, an `{:error, _}` return rolls the whole
+  approval write back -- the approved-not-credited isolation SPEC-08
+  targeted is already guaranteed, witnessed by
+  `test/xaas/billing/atomic_retrofit_court_test.exs`.
+
   """
   use Ash.Resource.Change
 

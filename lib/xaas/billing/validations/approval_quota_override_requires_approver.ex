@@ -8,8 +8,32 @@ defmodule Xaas.Billing.Validations.ApprovalQuotaOverrideRequiresApprover do
   """
   use Ash.Resource.Validation
 
+  alias Ash.Error.Changes.InvalidAttribute
+
   @impl true
   def init(opts), do: {:ok, opts}
+
+
+  # SPEC-08 / W729-GAP-4 (lane W984cc): atomic/3 so the :approve action can
+  # run atomically after require_atomic?(false) was dropped. Same rule as
+  # validate/3, re-derived server-side in SQL: refuse when the new
+  # approved_by is absent or equals the persisted requested_by
+  # (requested_by never changes on :approve).
+  @impl true
+  def atomic(_changeset, _opts, _context) do
+    {:atomic, [:approved_by],
+     expr(
+       is_nil(^atomic_ref(:approved_by)) or ^atomic_ref(:approved_by) == "" or
+         ^atomic_ref(:approved_by) == requested_by
+     ),
+     expr(
+       error(^InvalidAttribute, %{
+         field: :approved_by,
+         value: ^atomic_ref(:approved_by),
+         message: "is required and must differ from requested_by"
+       })
+     )}
+  end
 
   @impl true
   def validate(changeset, _opts, _context) do
