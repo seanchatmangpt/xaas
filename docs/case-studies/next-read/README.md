@@ -145,10 +145,18 @@ score = w.collab*collab + w.semantic*semantic + w.gradeFit*gradeFit + w.availabl
   status read fresh from the database in an `Ash.Changeset.before_action`
   (`lib/xaas/library/checkout.ex:89-122`), closing the double-return /
   return-of-never-borrowed inventory-inflation channel W796 proved open
-  (`docs/sjira/v26.10.6/plans/w809-return-guard.md`). Disclosed remaining gap:
-  there is still no per-student concurrent-checkout limit — one student can
-  borrow every copy of a book and any number of books
-  (`docs/sjira/v26.10.6/plans/w796-checkout-policy-deepening.md`, finding (a)).
+  (`docs/sjira/v26.10.6/plans/w809-return-guard.md`).
+- Per-student borrow cap is real and enforced: `:borrow` refuses typed
+  (`Ash.Error.Changes.InvalidArgument` on `:user_id`) once the student would hold 3 or
+  more open (`:borrowed`/`:overdue`) checkouts. The open count is aggregated across all
+  books and read fresh from the database in an `Ash.Changeset.before_action` guard
+  (`Ash.count!` over `Checkout`, `lib/xaas/library/checkout.ex:90-112`, cap constant
+  `@max_open_checkouts_per_student 3` at `lib/xaas/library/checkout.ex:12`), firing
+  before `DecrementBookInventory`; a return frees capacity, other students are
+  unaffected, and an overdue loan still counts as open. This closes the gap W796 pinned
+  (`docs/sjira/v26.10.6/plans/w796-checkout-policy-deepening.md`, finding (a)); repair
+  and mutation-killed cap courts in
+  `docs/sjira/v26.10.6/plans/w902-batch3-repairs.md` (W796-G1).
 
 ## Interfaces Exposed
 
@@ -210,6 +218,7 @@ actions, zero mocks), with pass counts from the named lane receipts:
 | --- | --- | --- |
 | Atomic borrow/return concurrency, DecrementBookInventory exactly-once, 6-factor RecommendationLog capture, Curation scoping | 9/9 | `docs/sjira/v26.10.6/plans/w742-nextread-deepening.md` |
 | Checkout circulation policy deepening (per-student limit absence pinned, hold auto-fulfillment, permissive-return bug-pinning) | 11/11 | `docs/sjira/v26.10.6/plans/w796-checkout-policy-deepening.md` |
+| Per-student borrow-cap courts (4th-borrow refusal with inventory unchanged, aggregate-not-per-book, other-student unaffected, return-frees-capacity) — the two absence-pinning "no cap" tests from w796 flipped into cap courts | included in w902's 13-suite run, 101/102 (the 1 failure a disclosed pre-existing `next_read_test.exs:144` flake) | `docs/sjira/v26.10.6/plans/w902-batch3-repairs.md` |
 | `:return` open-checkout guard refusal courts (double return, never-borrowed, hold-queued, overdue-open) | 12/12 | `docs/sjira/v26.10.6/plans/w809-return-guard.md` |
 | PubSub publish-side topic-taxonomy courts (Book/Checkout/Curation documented topics, payload shapes, student-topic isolation) | 8 tests landed in `test/xaas/library/pubsub_publish_court_test.exs`; lane receipt not yet filed — counts pending W838's own receipt | `test/xaas/library/pubsub_publish_court_test.exs` (in-flight, lane W838) |
 

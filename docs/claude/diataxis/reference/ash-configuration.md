@@ -125,7 +125,14 @@ What the six domains added on `feat/playwright-surface` (v26.10.x convergence) o
   `Xaas.A2a.Agent` and `Xaas.A2a.Task` (`lib/xaas/a2a.ex`, commit `bab0f861`).
 - `Xaas.Conference` — AGNTCon+MCPCon 2026 domain (XA1r): `Event`, `Track`, `Session`,
   `Speaker`, `Sponsor`, `Attendee`, `Registration`, all Ets-backed private tables
-  (`lib/xaas/conference.ex`, commit `9fb8f020`).
+  (`lib/xaas/conference.ex`, commit `9fb8f020`). `Registration :create` enforces
+  `EnforceSessionCapacity` (`lib/xaas/conference/registration.ex:60,170-215`): when
+  `Session.capacity` is set (nil = unlimited), the count includes only ACTIVE statuses
+  `:registered`/`:attended` — a `:cancelled` registration frees its slot, so
+  re-registering after cancel succeeds (`:cancelled` is terminal in W795's forward-only
+  transition set, re-openable only to `:attended`). Receipt
+  `docs/sjira/v26.10.6/plans/w925-slot-release.md` (closes W893's
+  `GAP(CancelDoesNotReleaseSlot)`).
 - `Xaas.Graphlaw` — graphlaw engine-registry surface as Ash resources (PW6):
   `Xaas.Graphlaw.EngineLimit` and `Xaas.Graphlaw.Capability` (`lib/xaas/graphlaw.ex`,
   commit `cb65ce7b`).
@@ -141,7 +148,7 @@ What the six domains added on `feat/playwright-surface` (v26.10.x convergence) o
 
 ### Resources
 1. **`Book`** (`lib/xaas/library/book.ex`): Catalog items with atomic updates (`:borrow_copy`, `:return_copy`), calculations (`:is_available`, `:has_multiple_copies`), and PubSub notifications (`library:books:events`, `library:books:inventory:<id>`).
-2. **`Checkout`** (`lib/xaas/library/checkout.ex`): Circulation transactions with atomic triggers (`Xaas.Library.Changes.DecrementBookInventory`) and student-scoped PubSub notifications (`circulation:events`, `circulation:student:<user_id>`).
+2. **`Checkout`** (`lib/xaas/library/checkout.ex`): Circulation transactions with atomic triggers (`Xaas.Library.Changes.DecrementBookInventory`) and student-scoped PubSub notifications (`circulation:events`, `circulation:student:<user_id>`). `:borrow` enforces a per-student concurrent cap of 3 open (`:borrowed`/`:overdue`) checkouts — aggregate across books, counted fresh from the DB in an `Ash.Changeset.before_action` guard, refused typed (`InvalidArgument` on `:user_id`) before inventory fires (`lib/xaas/library/checkout.ex:12,90-112`; receipt `docs/sjira/v26.10.6/plans/w902-batch3-repairs.md`, W796-G1).
 3. **`HoldRequest`** (`lib/xaas/library/hold_request.ex`): Reservation queues for unavailable titles.
 4. **`Curation`** (`lib/xaas/library/curation.ex`): Librarian spotlight recommendations (`recommendations:curation_events`, `recommendations:grade:<grade_band>`).
 5. **`RecommendationLog`** (`lib/xaas/library/recommendation_log.ex`): Audit trail of 6-factor weight vectors and rank outputs.

@@ -233,6 +233,20 @@ routes below):
 | `/route_castle_schedule` | `Xaas.Operations.RouteCastleSchedule` |
 | `/route_castle_sunset` | `Xaas.Operations.RouteCastleSunset` |
 
+Note — `/route_castle_run` (`Xaas.Operations.RouteCastleRun`,
+`lib/xaas/operations/route_castle_run.ex`): read-only JSON:API routes only
+(`get(:read)`/`index(:read)`, `route_castle_run.ex:42-46`), and the wire
+projection has an **empty attributes object** — `requested_by`/`approved_by`
+are Ash-3-private (`public?` defaults to `false`; no `public?(true)` is
+declared at `route_castle_run.ex:72-76`), so runs are wire-identifiable by
+`id` + `type: "route_castle_run"` only. This empty projection is the current
+contract. If a non-empty public projection is ever wanted, the lawful fix is
+`public?(true)` on the attributes plus `mix ash.codegen` against
+`lib/xaas/operations/route_castle_run.ex` — not a hand edit (W858,
+`docs/sjira/v26.10.6/plans/w858-route-castle-surface.md`, finding F1). The
+`:execute` action stays private and unrouted
+(`route_castle_run.ex:57-66`).
+
 Platform (`lib/xaas/platform/`):
 
 | Base path | Resource module |
