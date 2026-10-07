@@ -143,4 +143,28 @@ defmodule Xaas.Semantics.DatasetAdmissionTest do
     assert {:ok, :ADMITTED, meas} = DatasetAdmission.admit(data, seed: 667, epsilon_bias: 0.5)
     assert meas.w1_proxy <= 0.5
   end
+
+  # W984ai dim-0 court leg: an all-empty-features population (every sample
+  # carries `%{}` features, both sensitive groups non-empty) has zero feature
+  # dimensions. Before the fix this crashed with FunctionClauseError from
+  # random_unit_direction/2's `dim > 0` guard; now it is the same
+  # zero-information class as an unobservable population and fails closed to
+  # the typed bias refusal — never a raw raise.
+  test "all-empty-features population (dim 0) refuses typed, not FunctionClauseError" do
+    data = [
+      %{features: %{}, label: 0, sensitive: 0},
+      %{features: %{}, label: 0, sensitive: 0},
+      %{features: %{}, label: 1, sensitive: 1},
+      %{features: %{}, label: 1, sensitive: 1}
+    ]
+
+    # The direct helper surface: numeric :inf, not a raise.
+    assert :inf = DatasetAdmission.sliced_w1(data, 42, 8)
+
+    # The gate surface: typed refusal through the existing closed atom set.
+    assert {:error, {:REFUSED_BIAS_THRESHOLD, %{w1_proxy: :inf, epsilon_bias: eps}}} =
+             DatasetAdmission.admit(data, seed: 42, epsilon_bias: 0.1)
+
+    assert eps == 0.1
+  end
 end
