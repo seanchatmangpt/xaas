@@ -15,6 +15,14 @@ defmodule Xaas.Conference.Event do
 
   graphql do
     type(:conference_event)
+
+    # SPEC-31 (W819/W802-GAP-2; lane W973c design-wave 8): expose the
+    # Conference domain on Xaas.GraphqlSchema. Read-only; the resource's
+    # real Ash policies still gate every resolution.
+    queries do
+      get(:conference_event, :read)
+      list(:conference_events, :read)
+    end
   end
 
   json_api do

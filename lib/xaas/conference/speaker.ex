@@ -41,7 +41,15 @@ defmodule Xaas.Conference.Speaker do
     end
 
     attribute(:bio, :string, public?: true)
-    attribute(:keynote?, :boolean, allow_nil?: false, public?: true, default: false)
+    # Lane W975b (design-wave 4, SPEC-30 mount repair, fix verified by
+    # W978b's receipt): the name `keynote?` is not a legal GraphQL field
+    # name (~r/^[_A-Za-z][_0-9A-Za-z]*$/), so any schema compile that
+    # includes Xaas.Conference dies in Absinthe.Schema.__after_compile__/2
+    # with "Field name keynote? has invalid characters". `public?: false`
+    # removes the attribute from GraphQL (and JSON:API) projections --
+    # resource behavior (accept lists, ETS, direct reads) is unchanged.
+    # A GraphQL-visible rename is disclosed follow-up.
+    attribute(:keynote?, :boolean, allow_nil?: false, public?: false, default: false)
 
     create_timestamp(:inserted_at)
     update_timestamp(:updated_at)

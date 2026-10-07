@@ -66,6 +66,19 @@ defmodule Xaas.Platform.Webhook do
 
   graphql do
     type(:webhook)
+
+    # SPEC-31 (W819/W802-GAP-2; lane W973c design-wave 8): expose the
+    # Platform domain on Xaas.GraphqlSchema via Webhook (RouteProjects* are
+    # lane-collided this wave). The webhook `url`/`secret` stay cloaked and
+    # deny-by-default: these are READ-ONLY query bindings only, and every
+    # resolution still passes the unchanged Ash policy floor above
+    # (`policy always() do forbid_if(always()) end`) -- a webhook is as
+    # real an exfiltration vector as CLAUDE.md's sensitive-resource
+    # discipline treats it, so this adds no bypass.
+    queries do
+      get(:webhook, :read)
+      list(:webhooks, :read)
+    end
   end
 
   json_api do

@@ -68,6 +68,14 @@ defmodule Xaas.Marketplace.Pack do
 
   graphql do
     type(:marketplace_pack)
+
+    # SPEC-31 (W819/W802-GAP-2; lane W973c design-wave 8): the Marketplace
+    # domain was already wired; this adds its Pack resource's real read
+    # surface. Read-only; real Ash policies still gate every resolution.
+    queries do
+      get(:marketplace_pack, :read)
+      list(:marketplace_packs, :read)
+    end
   end
 
   json_api do
