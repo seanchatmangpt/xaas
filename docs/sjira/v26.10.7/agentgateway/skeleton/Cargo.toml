@@ -1,0 +1,18 @@
+[package]
+name = "pep_eyerun_skeleton"
+version = "0.1.0"
+edition = "2021"
+description = "W625 skeleton: pep-eyerun filter daemon-side PEP loop (W613 spec, phase-0). std-only, skeleton-grade."
+
+[dependencies]
+# Intentionally empty: std-only so `cargo check` needs no network/vendor.
+# The real agentgateway filter lane (W616+) replaces this with tokio + the
+# real AGD Filter trait (spec §4.1 re-derivation gate).
+
+[[bin]]
+name = "pep_eyerun_skeleton"
+path = "src/main.rs"
+
+[profile.release]
+# Skeleton builds fast; no LTO/opts needed for check-ability.
+opt-level = 0
