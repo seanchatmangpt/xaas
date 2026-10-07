@@ -71,6 +71,9 @@ defmodule Xaas.Checks.SystemActor do
 
   @internal_api_actions [
     {Xaas.Platform.RouteSecrets, :create},
+    {Xaas.Platform.RouteSecrets, :approve},
+    {Xaas.Platform.RouteProjects, :approve},
+    {Xaas.Platform.RouteFeatureFlags, :approve},
     {Xaas.Platform.RouteSecrets, :destroy},
     {Xaas.Platform.RouteFeatureFlags, :create},
     {Xaas.Platform.RouteFeatureFlags, :update},

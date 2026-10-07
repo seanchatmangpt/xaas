@@ -42,6 +42,14 @@ defmodule Xaas.Platform.RouteFeatureFlags do
       authorize_if({Xaas.Checks.SystemActor, []})
     end
 
+    # W792: real maker-checker approve surface -- the same internal_api
+    # system-authority gate as the other mutations, plus the
+    # RouteFeatureFlagsRequiresApprover validation on the action itself
+    # (approved_by present and distinct from requested_by).
+    bypass action(:approve) do
+      authorize_if({Xaas.Checks.SystemActor, []})
+    end
+
     policy always() do
       forbid_if(always())
     end
@@ -60,6 +68,16 @@ defmodule Xaas.Platform.RouteFeatureFlags do
       index(:read)
       post(:create)
       patch(:update)
+      # W808 (docs/sjira/v26.10.6/plans/w808-approve-route.md), closing W785's
+      # cross-lane unblock: a bare second `patch(:approve)` collides with
+      # `patch(:update)` on `/:id` (ValidateNoOverlappingRoutes groups by
+      # {method, route}), but the overlap check is exact-path, not
+      # same-method: a ROUTE-QUALIFIED patch on a distinct path segment is
+      # lawful. So `:approve` is exposed as PATCH .../:id/approve -- the
+      # standard JSON:API idiom for a non-default update action -- distinct
+      # from `patch(:update)`'s `/:id`, no collision, real HTTP surface for
+      # the maker-checker approval.
+      patch(:approve, route: ":id/approve")
     end
   end
 
@@ -99,6 +117,17 @@ defmodule Xaas.Platform.RouteFeatureFlags do
     update :update do
       accept([:enabled])
       require_atomic?(false)
+    end
+
+    # W792: real maker-checker approve action -- a second, distinct actor
+    # (named by `approved_by`, refused when equal to `requested_by` by the
+    # validation) signs the flag. Previously the *RequiresApprover
+    # validation / *Approve change shims were wired to no action anywhere.
+    update :approve do
+      accept([:approved_by])
+      require_atomic?(false)
+      validate(Xaas.Platform.Validations.RouteFeatureFlagsRequiresApprover)
+      change(Xaas.Platform.Changes.RouteFeatureFlagsApprove)
     end
   end
 

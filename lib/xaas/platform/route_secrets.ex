@@ -40,6 +40,14 @@ defmodule Xaas.Platform.RouteSecrets do
       authorize_if({Xaas.Checks.SystemActor, []})
     end
 
+    # W792: real maker-checker approve surface -- the same internal_api
+    # system-authority gate as the other mutations, plus the
+    # RouteSecretsRequiresApprover validation on the action itself
+    # (approved_by present and distinct from requested_by).
+    bypass action(:approve) do
+      authorize_if({Xaas.Checks.SystemActor, []})
+    end
+
     policy always() do
       forbid_if(always())
     end
@@ -57,6 +65,7 @@ defmodule Xaas.Platform.RouteSecrets do
       get(:read)
       index(:read)
       post(:create)
+      patch(:approve)
       delete(:destroy)
     end
   end
@@ -90,6 +99,18 @@ defmodule Xaas.Platform.RouteSecrets do
     # caveat as :create applies here.
     destroy :destroy do
       primary?(true)
+    end
+
+    # W792: real maker-checker approve action -- a second, distinct actor
+    # (named by `approved_by`, refused when equal to `requested_by` by the
+    # validation) signs the secret's creation. Previously the
+    # *RequiresApprover validation / *Approve change shims were wired to no
+    # action anywhere.
+    update :approve do
+      accept([:approved_by])
+      require_atomic?(false)
+      validate(Xaas.Platform.Validations.RouteSecretsRequiresApprover)
+      change(Xaas.Platform.Changes.RouteSecretsApprove)
     end
   end
 
