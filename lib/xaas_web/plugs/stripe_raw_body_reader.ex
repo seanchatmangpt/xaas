@@ -14,7 +14,20 @@ defmodule XaasWeb.Plugs.StripeRawBodyReader do
   before they're handed off to the JSON decoder, so
   `XaasWeb.StripeWebhookController` can verify the real signature
   against the real bytes Stripe actually sent.
+
+  W794: the same cache now also covers `/internal-api/sparql` -- the
+  `XaasWeb.OntopProxyPlug` reverse proxy is a router route that runs AFTER
+  this endpoint `Plug.Parsers` entry, so for `urlencoded`/`multipart`/`json`
+  POSTs (e.g. SPARQL 1.1 Protocol form POSTs) the raw body was consumed
+  before the proxy ran and the proxy forwarded an empty body upstream
+  (W776 gap `UNSUPPORTED(raw_body_preservation_after_parsers)`). Caching
+  the exact raw bytes in `conn.assigns[:raw_body]` here lets the proxy
+  forward them byte-exact.
   """
+
+  # Path prefixes (as `conn.path_info` lists) whose exact raw request body
+  # is cached into `conn.assigns[:raw_body]`.
+  @raw_body_paths [["webhooks", "stripe"], ["internal-api", "sparql"]]
 
   def read_body(conn, opts) do
     case Plug.Conn.read_body(conn, opts) do
@@ -26,7 +39,7 @@ defmodule XaasWeb.Plugs.StripeRawBodyReader do
   end
 
   defp assign_raw_body(conn, body) do
-    if conn.path_info == ["webhooks", "stripe"] do
+    if conn.path_info in @raw_body_paths do
       existing = Map.get(conn.assigns, :raw_body, "")
       Plug.Conn.assign(conn, :raw_body, existing <> body)
     else

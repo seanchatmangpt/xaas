@@ -51,7 +51,7 @@ defmodule XaasWeb.OntopProxyPlug do
   def init(opts), do: opts
 
   def call(conn, _opts) do
-    {:ok, body, conn} = read_body(conn)
+    {body, conn} = forwarded_body(conn)
 
     upstream_path =
       case conn.path_info do
@@ -93,6 +93,25 @@ defmodule XaasWeb.OntopProxyPlug do
           detail: inspect(reason)
         })
         |> halt()
+    end
+  end
+
+  # W794: when the endpoint's Plug.Parsers consumed the raw body (any
+  # urlencoded/multipart/json POST), the exact raw bytes were cached into
+  # `conn.assigns[:raw_body]` by the endpoint's `:body_reader`
+  # (XaasWeb.Plugs.StripeRawBodyReader, covering this path since W794).
+  # Prefer those cached bytes so upstream receives the body byte-exact;
+  # otherwise (content types Plug.Parsers passed through, e.g.
+  # application/sparql-query) read the body off the conn as before.
+  defp forwarded_body(%Plug.Conn{assigns: %{raw_body: raw}} = conn)
+       when is_binary(raw) do
+    {raw, conn}
+  end
+
+  defp forwarded_body(conn, acc \\ "") do
+    case read_body(conn) do
+      {:ok, body, conn} -> {acc <> body, conn}
+      {:more, body, conn} -> forwarded_body(conn, acc <> body)
     end
   end
 

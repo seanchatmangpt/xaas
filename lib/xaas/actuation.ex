@@ -493,10 +493,16 @@ defmodule Xaas.Actuation.Kernel do
     # A typed `Xaas.Actuation.Refusal` raised by the action's own admission court is a
     # policy REFUSED, recorded with the `:refused` status both ledger resources declare;
     # any other error stays an execution `:failed`.
+    # W773: execution errors shaped as tuples/atoms (e.g. `{:unknown_action,
+    # resource, action}` from `execute_action/8`) are json_safe'd to LISTS,
+    # which the `ActuationReceipt :error` `:map` attribute rejects — the
+    # `:seal` step failed and rolled back instead of sealing `:failed`.
+    # Normalize to the W707 gymact-seal-fix map idiom (`%{class: ..., detail:
+    # ...}`) before persistence; the envelope's `:error` stays the raw `reason`.
     {status, error} =
       case Xaas.Actuation.Refusal.find(reason) do
         nil ->
-          {:failed, json_safe(reason)}
+          {:failed, sealed_error(reason)}
 
         %{code: code, detail: detail} ->
           {:refused, %{"refused" => Atom.to_string(code), "detail" => json_safe(detail)}}
@@ -522,6 +528,23 @@ defmodule Xaas.Actuation.Kernel do
          intent: intent,
          receipt: receipt
        }}
+    end
+  end
+
+  # W773 seal-boundary error normalization. Maps pass through json_safe;
+  # tuples/atoms (whose json_safe rendering is a list/scalar, rejected by the
+  # `ActuationReceipt :error` `:map` attribute) become the W707-class typed
+  # map `%{"class" => ..., "detail" => ...}`.
+  defp sealed_error(reason) do
+    case json_safe(reason) do
+      %{} = map ->
+        map
+
+      [class | detail] when is_binary(class) ->
+        %{"class" => class, "detail" => detail}
+
+      other ->
+        %{"class" => "execution_error", "detail" => other}
     end
   end
 
@@ -573,8 +596,26 @@ defmodule Xaas.Actuation.Kernel do
     end
   end
 
-  defp admit_authority(false, authority) when is_map(authority) and map_size(authority) > 0,
-    do: :ok
+  # W780 (gap XAAS-W763-G1): the authority channel used to accept ANY nonempty
+  # map -- including a %Xaas.Semantics.ComputationClaim{} -- so a CANDIDATE
+  # computation claim could authorize actuation, contradicting the SA2A
+  # computation-boundary doctrine (claim construction enforces
+  # `authorizes_actuation: false`, but the `authority:` channel of run/4 did
+  # not). Survey of every call site (ultracode lease `ultracode_lease_actuation`,
+  # sa2a executor `machine_policy`, maker-checker `maker_checker_approval`,
+  # stripe webhook, liveview, revenue, gymact, quiescent stop, and all courts)
+  # shows lawful authority evidence is ALWAYS a plain map (never a struct).
+  # Guard: a struct-shaped authority map is refused with the closed-set atom
+  # `:claim_shaped_authority_refused` (new atom; the closest existing family
+  # `:delegated_actuation_requires_authority_evidence` names MISSING evidence,
+  # not POWERLESS evidence, so it would misclassify this refusal).
+  defp admit_authority(false, authority) when is_map(authority) and map_size(authority) > 0 do
+    if Map.has_key?(authority, :__struct__) do
+      {:error, :claim_shaped_authority_refused}
+    else
+      :ok
+    end
+  end
 
   defp admit_authority(false, _authority),
     do: {:error, :delegated_actuation_requires_authority_evidence}

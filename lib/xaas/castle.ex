@@ -432,7 +432,15 @@ defmodule Xaas.Castle.Admission do
     contract = Xaas.Castle.Contract.identity()
 
     cond do
-      checkpoint["protocol"] != contract.protocol ->
+      # W828/W863: Xaas.Actuation.json_safe/1 stringifies atom values before the
+      # jsonb write, so a reloaded durable checkpoint carries the protocol as the
+      # string "CASTLE_PAAS_XAAS_BRIDGE_V2" while
+      # Xaas.Castle.Contract.identity().protocol is the GGEN override atom
+      # :CASTLE_PAAS_XAAS_BRIDGE_V2 (lib/xaas/castle.ex, GGEN:XAAS_CASTLE_CONTRACT
+      # block). Compare both sides on their stringified form; the contract block
+      # is generated-adjacent and json_safe is actuation-owned, so the fix lives
+      # here at the compare.
+      to_string(checkpoint["protocol"]) != to_string(contract.protocol) ->
         {:error, :REFUSED_CASTLE_CHECKPOINT_PROTOCOL_MISMATCH}
 
       checkpoint["castle_paas_source_sha"] != contract.castle_paas_source_sha ->
@@ -869,7 +877,11 @@ defmodule Xaas.Castle.Kernel.CLI do
     contract = Xaas.Castle.Contract.identity()
 
     cond do
-      checkpoint["protocol"] != contract.protocol ->
+      # W828/W863: same atom/string normalization as
+      # Xaas.Castle.Admission.verify_checkpoint/2 — the persisted checkpoint's
+      # protocol arrives stringified from the jsonb round trip while the GGEN
+      # contract override carries the atom; compare stringified on both sides.
+      to_string(checkpoint["protocol"]) != to_string(contract.protocol) ->
         {:error, :REFUSED_CASTLE_CHECKPOINT_PROTOCOL_MISMATCH}
 
       checkpoint["castle_paas_source_sha"] != contract.castle_paas_source_sha ->

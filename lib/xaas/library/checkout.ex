@@ -3,6 +3,18 @@ defmodule Xaas.Library.Checkout do
   Ash resource for Book Checkouts, grounded in Schema.org (schema:BorrowAction) and PROV (prov:Activity).
   Tracks circulation transactions of books borrowed by readers.
   """
+
+  # W902 batch 3 (W796-G1 close): the per-student concurrent borrow cap.
+  # Counts open (:borrowed/:overdue) checkouts across all books. Chosen at
+  # 3: enough for real multi-book coursework, small enough that one student
+  # can no longer drain a shelf (the W796-proven 3-copies-one-book case now
+  # hits the cap on the 4th attempt).
+  @max_open_checkouts_per_student 3
+
+  # W900-batch2 blocker fix: the W902 borrow-cap guard's Ash.Query.filter
+  # uses ^pins, which requires the Ash.Query macros in this module.
+  require Ash.Query
+
   use Xaas.Resource,
     otp_app: :xaas,
     domain: Xaas.Library,
@@ -67,6 +79,39 @@ defmodule Xaas.Library.Checkout do
     create :borrow do
       description("Borrows a book for a student, automatically decrementing available copies")
       accept([:book_id, :user_id, :school_id])
+
+      # W902 batch 3 (W796-G1 close): per-student concurrent borrow cap.
+      # W796 observed live that a student could borrow every copy of a book
+      # and across books with no aggregate limit. The open-checkout count is
+      # read fresh from the database (mirroring W809's persisted-state read,
+      # not changeset.data) and a borrow that would take the student past
+      # the cap is refused typed before DecrementBookInventory fires.
+      # :overdue counts as open -- an overdue loan is still unreturned.
+      change(fn changeset, _context ->
+        Ash.Changeset.before_action(changeset, fn changeset ->
+          user_id = Ash.Changeset.get_argument_or_attribute(changeset, :user_id)
+
+          open_count =
+            __MODULE__
+            |> Ash.Query.filter(user_id == ^user_id and status in [:borrowed, :overdue])
+            |> Ash.count!(authorize?: false)
+
+          if open_count >= @max_open_checkouts_per_student do
+            Ash.Changeset.add_error(
+              changeset,
+              Ash.Error.Changes.InvalidArgument.exception(
+                field: :user_id,
+                message:
+                  "per-student borrow cap exceeded: #{open_count} open checkouts " <>
+                    "(limit #{@max_open_checkouts_per_student}); return one before borrowing again"
+              )
+            )
+          else
+            changeset
+          end
+        end)
+      end)
+
       change(Xaas.Library.Changes.DecrementBookInventory)
     end
 
@@ -85,6 +130,41 @@ defmodule Xaas.Library.Checkout do
       # real compile/test failure ("must be performed atomically") before
       # this was added.
       require_atomic?(false)
+      # W809 (W796 finding (c) close): a checkout may only be returned while
+      # it is OPEN -- status :borrowed or :overdue. :returned is terminal, so
+      # a double return (or a return of a row minted :returned from birth,
+      # never actually borrowed) is refused typed; without this guard each
+      # spurious return fires IncrementBookInventory and inflates
+      # available_copies past total_copies (proven 1 -> 2 on a 1-copy book).
+      # The status is read fresh from the database, NOT from
+      # changeset.data: a caller re-invoking :return on an in-memory struct
+      # that still says :borrowed (stale after its first :return) must be
+      # refused too.
+      change(fn changeset, _context ->
+        Ash.Changeset.before_action(changeset, fn changeset ->
+          persisted_status =
+            case Ash.get(__MODULE__, changeset.data.id, authorize?: false) do
+              {:ok, current} -> current.status
+              {:error, _} -> nil
+            end
+
+          case persisted_status do
+            status when status in [:borrowed, :overdue] ->
+              changeset
+
+            status ->
+              Ash.Changeset.add_error(
+                changeset,
+                Ash.Error.Changes.InvalidArgument.exception(
+                  field: :status,
+                  message:
+                    "cannot return a checkout that is not open (status: #{inspect(status)}); " <>
+                      "only :borrowed or :overdue checkouts may be returned"
+                )
+              )
+          end
+        end)
+      end)
       change(set_attribute(:status, :returned))
       change(set_attribute(:returned_at, &DateTime.utc_now/0))
       change(Xaas.Library.Changes.IncrementBookInventory)

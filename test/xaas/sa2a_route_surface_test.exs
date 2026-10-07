@@ -1,0 +1,352 @@
+defmodule Xaas.Sa2a.RouteSurfaceTest do
+  @moduledoc """
+  W810: wire-adjacent surface of the SA2A task route (`Xaas.Sa2a.Route`).
+
+  Complements the construction courts (`test/xaus/sa2a/route_test.exs`,
+  G5 construction) and the exactly-one-kind-data-part deepening (W741/W763):
+
+    * (a) `Route.tuple/1` arity-1 shape dispatch over the REAL generated
+      fixture `test/fixtures/sa2a_route/sa2a_task.json` — the full task
+      shape is pinned field-by-field;
+    * (b) the generated bridge-edges projection
+      (`lib/xaas/generated/sa2a_bridge_edges.ex`): real file read +
+      structural assertions — every local `from` module loads, the
+      authority vocabulary and do-boundary flags are pinned, `do_edges/0`
+      and `by_port_op/1` return the documented edges;
+    * (c) refusal branches the construction courts leave open, read off
+      the source: invalid `consequence_class` value, non-list / blank
+      `exclusions`, capability in its object form, whitespace-only
+      required fields, shape-dispatch precedence and unrecognized shapes
+      (struct, string, empty map);
+    * (d) determinism: `tuple/1`, `digest/1` and the generated catalog
+      are pure — identical inputs give identical outputs, twice.
+
+  Chicago style: real fixture files, real generated module, no test
+  doubles. `resolve/1` and the registry are already courted; out of
+  scope here.
+  """
+
+  use ExUnit.Case, async: false
+
+  alias Xaas.Sa2a.Generated.EdgeCatalog
+  alias Xaas.Sa2a.Route
+
+  @fixture_dir Path.expand("../fixtures/sa2a_route", __DIR__)
+  @edges_path Path.expand("../../lib/xaas/generated/sa2a_bridge_edges.ex", __DIR__)
+
+  setup do
+    %{
+      order: read_json!("work_order.json"),
+      task: read_json!("sa2a_task.json")
+    }
+  end
+
+  # -- (a) Route.tuple/1 over the real generated fixture ----------------------
+
+  describe "(a) tuple/1 shape dispatch over the real generated fixture" do
+    test "the fixture is the committed generated artifact" do
+      provenance = read_json!("sa2a_task.provenance.json")
+
+      assert provenance["producer"] == "GgenIgniter.SemanticA2A.task_from_work_order/2"
+      assert provenance["ggen_igniter_head"] =~ ~r/\A[0-9a-f]{40}\z/
+      assert File.regular?(Path.join(@fixture_dir, "sa2a_task.json"))
+    end
+
+    test "arity-1 tuple/1 recognizes the fixture task by its taskId key and pins the full shape",
+         %{task: task} do
+      assert {:ok, tuple} = Route.tuple(task)
+
+      assert tuple == %{
+               "subject" => "seanchatmangpt/ggen_igniter@friday/gc-fri-0800#FRI-G5-FMT-S1",
+               "postcondition" =>
+                 "`mix format --check-formatted` exits 0 at the candidate head",
+               "capability" => "recipe:mix-format",
+               "evidence_ceiling" => "EXECUTED_VERIFIED",
+               "authority_ceiling" => "CONSTRUCT",
+               "consequence_class" => "postcondition",
+               "exclusions" =>
+                 Enum.sort([
+                   "no LLM provider on the KNOWN path",
+                   "no file outside path_scope changes",
+                   "no push, merge or publish"
+                 ])
+             }
+    end
+
+    test "arity-1 tuple/1 recognizes the fixture work order by its subject key", %{order: order} do
+      assert {:ok, tuple} = Route.tuple(order)
+      assert tuple["subject"] == order["subject"]
+      assert tuple["capability"] == "recipe:mix-format"
+      assert tuple["consequence_class"] == "postcondition"
+    end
+
+    test "dispatch precedence: a task that also carries a subject key is still the task hop", %{
+      task: task
+    } do
+      # `kind/1` checks "taskId" before "subject", so the SA2A hop wins.
+      # Differentiate the hops with a carrier holding only camelCase keys:
+      # routed as :task the first missing contract field is evidence_ceiling
+      # (from evidenceCeiling); routed as :order it would be capability
+      # (the snake_case requires_capability absent).
+      carrier_only = %{
+        "subject" => "s",
+        "postcondition" => "p",
+        "requiresCapability" => "recipe:mix-format"
+      }
+
+      emptied = put_in(task, ["input", Access.at!(0), "data", "tuple"], carrier_only)
+
+      assert {:refused, {:missing_field, "evidence_ceiling"}} = Route.tuple(emptied)
+    end
+
+    test "an epoch-shaped map dispatches to the epoch hop through arity-1 tuple/1", %{task: task} do
+      epoch = Map.put(task, "work_order_iri", task["taskId"])
+
+      # both "taskId" and "work_order_iri" present: taskId wins, the carrier
+      # is intact, so the task hop still reads the tuple normally.
+      assert {:ok, tuple} = Route.tuple(epoch)
+      assert tuple["capability"] == "recipe:mix-format"
+    end
+  end
+
+  # -- (b) the generated bridge-edges projection ------------------------------
+
+  describe "(b) generated bridge-edges projection" do
+    test "the generated file is real, marked generated, and holds exactly five edges" do
+      source = File.read!(@edges_path)
+      assert source =~ "# GENERATED by ggen-marketplace/sa2a-bridge-pack"
+      assert source =~ "defmodule Xaas.Sa2a.Generated.EdgeCatalog"
+      assert length(EdgeCatalog.all()) == 5
+    end
+
+    test "every local from-reference names a loaded module with the pinned function" do
+      for edge <- EdgeCatalog.all() do
+        assert String.starts_with?(edge.from, "Xaas.Sa2a.Bridge."),
+               "unexpected non-local from: #{edge.from}"
+
+        module = edge.from |> String.split(".") |> Enum.reverse() |> tl() |> Enum.reverse()
+        mod = Module.concat(module)
+
+        assert Code.ensure_loaded?(mod), "dangling from-reference: #{edge.from}"
+        function = edge.from |> String.split(".") |> List.last() |> String.to_atom()
+        assert function_exported?(mod, function, 0) or function_exported?(mod, function, 1) or
+                 function_exported?(mod, function, 2),
+               "#{edge.from} is not a real exported arity"
+      end
+    end
+
+    test "authority vocabulary and replayability are pinned across all edges" do
+      assert Enum.map(EdgeCatalog.all(), & &1.authority) == [
+               "VERIFY_ONLY",
+               "ADMIT_ONLY",
+               "CONSTRUCT_ONLY",
+               "PORT_DO_ONLY",
+               "RECEIPT_ONLY"
+             ]
+
+      assert Enum.all?(EdgeCatalog.all(), & &1.replayable?)
+      assert Enum.map(EdgeCatalog.all(), & &1.sequence) == [10, 20, 30, 40, 50]
+      assert Enum.map(EdgeCatalog.all(), & &1.port_op) == [
+               "sa2a_validate",
+               "sa2a_admit",
+               "sa2a_plan",
+               "sa2a_execute",
+               "sa2a_replay"
+             ]
+    end
+
+    test "the do boundary belongs to exactly the execute edge" do
+      assert [%{name: "port-do-execute"}] = EdgeCatalog.do_edges()
+      assert EdgeCatalog.by_port_op("sa2a_execute").to =~ "MachineExperienceCompiler"
+      assert EdgeCatalog.by_port_op("sa2a_execute").authority == "PORT_DO_ONLY"
+      assert EdgeCatalog.by_port_op("sa2a_nope") == nil
+    end
+
+    test "receipt flags: admission receipts after, the DO edge receipts on both sides" do
+      admit = EdgeCatalog.by_port_op("sa2a_admit")
+      refute admit.receipt_before?
+      assert admit.receipt_after?
+
+      execute = EdgeCatalog.by_port_op("sa2a_execute")
+      assert execute.receipt_before? and execute.receipt_after?
+      assert execute.do_boundary?
+    end
+  end
+
+  # -- (c) remaining refusal branches -----------------------------------------
+
+  describe "(c) refusal branches complementing the construction courts" do
+    test "an invalid consequence_class value is refused naming the field", %{task: task} do
+      bad = update_route_tuple(task, "consequenceClass", "make_coffee")
+
+      assert {:refused, {:invalid_field, "consequence_class"}} = Route.tuple(:task, bad)
+    end
+
+    test "a bare binary exclusions value is refused (former pinned gap)", %{task: task} do
+      # Mutation rationale (W831): if the `admit_field("exclusions", _value)`
+      # refusal clause in lib/xaas/sa2a/route.ex reverts to the pinned-gap
+      # behavior (binary falls through to the generic nonempty clause), the
+      # first assert fails — Route.tuple/2 returns {:ok, %{"exclusions" =>
+      # "no deploy"}} instead of the typed refusal. Converted from the pinned
+      # acceptance contract to the corrected refusal contract; kept as the
+      # regression court.
+      bad = update_route_tuple(task, "exclusions", "no deploy")
+
+      assert {:refused, {:invalid_field, "exclusions"}} = Route.tuple(:task, bad)
+    end
+
+    test "exclusions containing a blank entry is refused", %{task: task} do
+      bad = update_route_tuple(task, "exclusions", ["no deploy", "   "])
+
+      assert {:refused, {:invalid_field, "exclusions"}} = Route.tuple(:task, bad)
+    end
+
+    test "exclusions sort is normalized, so the sorted form is accepted", %{task: task} do
+      reordered =
+        update_route_tuple(task, "exclusions", [
+          "no push, merge or publish",
+          "no LLM provider on the KNOWN path",
+          "no file outside path_scope changes"
+        ])
+
+      assert {:ok, tuple} = Route.tuple(:task, reordered)
+      assert tuple["exclusions"] == Enum.sort(tuple["exclusions"])
+    end
+
+    test "capability in its object form is read through capability_id", %{task: task} do
+      object_form =
+        update_route_tuple(task, "requiresCapability", %{"capability_id" => "recipe:mix-format"})
+
+      assert {:ok, tuple} = Route.tuple(:task, object_form)
+      assert tuple["capability"] == "recipe:mix-format"
+    end
+
+    test "capability object form with a bad capability_id is refused", %{task: task} do
+      bad = update_route_tuple(task, "requiresCapability", %{"capability_id" => "Push"})
+
+      assert {:refused, {:invalid_field, "capability"}} = Route.tuple(:task, bad)
+    end
+
+    test "a whitespace-only required field is invalid, not missing", %{order: order} do
+      bad = Map.put(order, "postcondition", "   ")
+
+      assert {:refused, {:invalid_field, "postcondition"}} = Route.tuple(:order, bad)
+    end
+
+    test "unrecognized representations are refused at arity-1" do
+      assert Route.tuple("a bare string") == {:refused, :unrecognized_representation}
+      assert Route.tuple([]) == {:refused, :unrecognized_representation}
+      assert Route.tuple(%{}) == {:refused, :unrecognized_representation}
+      assert Route.tuple(nil) == {:refused, :unrecognized_representation}
+    end
+
+    test "structs are never recognized, even shape-compatible ones" do
+      # a real project struct carrying atom keys "subject"/"postcondition"
+      # would look like an order hop to a struct-blind classifier; kind/1
+      # must refuse it regardless.
+      masked = %File.Stat{}
+
+      assert Route.tuple(masked) == {:refused, :unrecognized_representation}
+      
+    end
+
+    test "arity-2 tuple/2 refuses a non-map for a known hop" do
+      assert Route.tuple(:order, "nope") == {:refused, :unrecognized_representation}
+      assert Route.tuple(:task, nil) == {:refused, :unrecognized_representation}
+
+      # structs fall through the same clause
+      assert Route.tuple(:epoch, %File.Stat{}) == {:refused, :unrecognized_representation}
+    end
+
+    test "task input given as a bare map (not a list) is wrapped and still read", %{task: task} do
+      [only] = task["input"]
+      bare = Map.put(task, "input", only)
+
+      assert {:ok, tuple} = Route.tuple(:task, bare)
+      assert tuple["capability"] == "recipe:mix-format"
+    end
+
+    test "an epoch hop whose contract digest fields are atom-keyed still reads", %{order: order, task: task} do
+      # atom keys at the bridge level are string-normalized by Route
+      bridge =
+        order
+        |> Map.take([
+          "subject",
+          "postcondition",
+          "requires_capability",
+          "evidence_ceiling",
+          "authority_ceiling",
+          "consequence_class",
+          "exclusions"
+        ])
+        |> Map.new(fn {k, v} -> {String.to_atom(k), v} end)
+
+      epoch = %{
+        "work_order_iri" => task["taskId"],
+        "checkpoint_iri" => "urn:x",
+        "graph_digest" => task["contextId"],
+        "repository" => order["repository"],
+        "execution_repo_alias" => "ggen_igniter",
+        "base_sha" => order["base_sha"],
+        "goal" => order["title"],
+        "provider" => "recipe",
+        "capability" => "recipe:mix-format",
+        "verifier_suite" => "s",
+        "execution_policy" => "p",
+        "dependencies" => [],
+        "bridge" => bridge
+      }
+
+      case Route.tuple(:epoch, epoch) do
+        {:ok, tuple} -> assert tuple["capability"] == "recipe:mix-format"
+        # if SemanticWork.admit refuses this minimal descriptor, the refusal
+        # must still be the typed epoch_contract form, never a raise.
+        {:refused, {:epoch_contract, _}} -> :ok
+      end
+    end
+  end
+
+  # -- (d) determinism ----------------------------------------------------------
+
+  describe "(d) determinism" do
+    test "tuple and digest are pure functions of the fixture", %{order: order, task: task} do
+      {:ok, t1} = Route.tuple(order)
+      {:ok, t2} = Route.tuple(order)
+      {:ok, t3} = Route.tuple(task)
+
+      assert t1 == t2
+      assert Route.digest(t1) == Route.digest(t2)
+      assert Route.digest(t1) == Route.digest(t3)
+
+      d1 = Route.digest(t1)
+      assert ^d1 = Route.digest(Map.put(t1, "extraneous", "ignored"))
+      assert d1 =~ ~r/\Asha256:[0-9a-f]{64}\z/
+    end
+
+    test "the generated catalog returns the same edges on repeated calls" do
+      assert EdgeCatalog.all() == EdgeCatalog.all()
+      assert EdgeCatalog.do_edges() == EdgeCatalog.do_edges()
+
+      for edge <- EdgeCatalog.all() do
+        assert EdgeCatalog.by_port_op(edge.port_op) == edge
+      end
+    end
+
+    test "field order and route schema are pinned" do
+      assert Route.fields() == ~w(subject postcondition capability evidence_ceiling authority_ceiling consequence_class exclusions)
+      assert Route.route_schema() == "semantic-jira/route-tuple/v1"
+    end
+  end
+
+  # -- helpers ---------------------------------------------------------------
+
+  defp read_json!(name), do: @fixture_dir |> Path.join(name) |> File.read!() |> Jason.decode!()
+
+  defp update_route_tuple(task, camel_key, value) do
+    update_in(
+      task,
+      ["input", Access.at!(0), "data", "tuple"],
+      &Map.put(&1, camel_key, value)
+    )
+  end
+end

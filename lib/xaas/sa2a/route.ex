@@ -299,7 +299,10 @@ defmodule Xaas.Sa2a.Route do
     end)
   end
 
-  # sj:exclusion is 0..n: an absent list is the empty list.
+  # sj:exclusion is 0..n: an absent list is the empty list; a non-list (bare
+  # binary, integer, ...) is a type violation, refused like any other invalid
+  # field value (W831: previously fell through to the generic nonempty clause
+  # and was carried verbatim into the tuple).
   defp admit_field("exclusions", nil), do: {:ok, []}
 
   defp admit_field("exclusions", list) when is_list(list) do
@@ -307,6 +310,9 @@ defmodule Xaas.Sa2a.Route do
       do: {:ok, Enum.sort(list)},
       else: {:refused, {:invalid_field, "exclusions"}}
   end
+
+  defp admit_field("exclusions", _value),
+    do: {:refused, {:invalid_field, "exclusions"}}
 
   defp admit_field(field, nil), do: {:refused, {:missing_field, field}}
 

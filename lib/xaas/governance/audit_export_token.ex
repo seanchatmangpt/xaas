@@ -33,6 +33,12 @@ defmodule Xaas.Governance.AuditExportToken do
       authorize_if(Xaas.Governance.Checks.AuditExportTokenActorOrgMatches)
     end
 
+    # SPEC-16 (lane W935): consuming a token is as sensitive as minting
+    # or revoking one -- same org-match floor, same bypass idiom.
+    bypass action(:use) do
+      authorize_if(Xaas.Governance.Checks.AuditExportTokenActorOrgMatches)
+    end
+
     policy always() do
       forbid_if(always())
     end
@@ -50,6 +56,7 @@ defmodule Xaas.Governance.AuditExportToken do
       get(:read)
       index(:read)
       post(:issue)
+      patch(:use)
       patch(:revoke)
     end
   end
@@ -67,7 +74,15 @@ defmodule Xaas.Governance.AuditExportToken do
     # never stored, never retrievable again (same discipline as
     # platform-console's audit-export-tokens design doc, "Storage" section).
     create :issue do
-      accept([:org_id, :created_by])
+      # W900-batch2 (W765 GAP-A): mint-time TTL input -- :expires_at is
+      # accepted on the real action surface (previously only reachable via
+      # force_change_attributes). Optional: nil stays non-expiring.
+      accept([:org_id, :created_by, :expires_at])
+
+      # W801: real freeze-window enforcement (closes W765 GAP-D for this
+      # path) -- no new audit-export credential is minted while the org is
+      # inside an active FreezeWindow.
+      validate(Xaas.Governance.Validations.AuditExportTokenNoActiveFreezeWindow)
 
       change(Xaas.Governance.Changes.GenerateAuditExportToken)
     end
@@ -78,6 +93,32 @@ defmodule Xaas.Governance.AuditExportToken do
 
       change(set_attribute(:revoked_at, &DateTime.utc_now/0))
       validate(Xaas.Governance.Validations.AuditExportTokenNotAlreadyRevoked)
+    end
+
+    # SPEC-16 (lane W935, W765 GAP-B): the real consume surface. Stamps
+    # `used_at` once and increments `use_count` atomically; refuses a
+    # second use (AuditExportTokenNotAlreadyUsed, the SPEC-16 court
+    # idiom) and refuses an already-expired token (SPEC-17,
+    # AuditExportTokenExpiredTokenRefused, typed on :expires_at).
+    #
+    # W801 active-window gating where applicable: unlike :revoke (which
+    # mints nothing and stays available during a freeze per W801's
+    # scope discipline), :use is the export path the freeze governs, so
+    # the same active-freeze validation that gates :issue gates it.
+    #
+    # require_atomic?(false): the used_at stamp and counter increment
+    # run as changes on the loaded record, mirroring the :revoke
+    # action's shape.
+    update :use do
+      accept([])
+      require_atomic?(false)
+
+      validate(Xaas.Governance.Validations.AuditExportTokenNoActiveFreezeWindow)
+      validate(Xaas.Governance.Validations.AuditExportTokenExpiredTokenRefused)
+      validate(Xaas.Governance.Validations.AuditExportTokenNotAlreadyUsed)
+
+      change(set_attribute(:used_at, &DateTime.utc_now/0))
+      change(increment(:use_count, 1))
     end
   end
 
@@ -127,6 +168,22 @@ defmodule Xaas.Governance.AuditExportToken do
     end
 
     attribute :revoked_at, :utc_datetime_usec do
+      public?(true)
+      writable?(false)
+    end
+
+    # SPEC-16: first-use tombstone, stamped by the :use action (never
+    # caller-writable), nil until first use.
+    attribute :used_at, :utc_datetime_usec do
+      public?(true)
+      writable?(false)
+    end
+
+    # SPEC-16: atomic use counter, defaults to 0 at mint, incremented by
+    # :use. Together with used_at this is the audit trail of consumption.
+    attribute :use_count, :integer do
+      allow_nil?(false)
+      default(0)
       public?(true)
       writable?(false)
     end
