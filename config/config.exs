@@ -138,7 +138,16 @@ config :xaas, Oban,
     # ready steps in parallel. A tick's dispatch may legitimately run most
     # of an hour, so the slot is what keeps two ticks from overlapping; a
     # surplus fire waits here and still records `busy`.
-    ultracode_wave_loop: wave_loop_concurrency
+    ultracode_wave_loop: wave_loop_concurrency,
+    # ash_onetime maintenance workers (W786, per
+    # deps/ash_onetime/documentation/operations.md): the three workers
+    # (CleanupWorker/ReapWorker/PartitionWorker) require these queues.
+    # `:ash_onetime_partitions` is retention-critical — a missing queue
+    # silently stalls forward payload-partition creation (nothing is
+    # discarded, so the discard alert stays green while retention degrades).
+    ash_onetime_cleanup: 1,
+    ash_onetime_reap: 1,
+    ash_onetime_partitions: 1
   ],
   repo: Xaas.Repo,
   plugins: [

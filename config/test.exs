@@ -70,7 +70,7 @@ config :xaas,
 # We don't run a server during test. If one is required,
 # you can enable the server option below.
 config :xaas, XaasWeb.Endpoint,
-  http: [ip: {127, 0, 0, 1}, port: 4002],
+  http: [ip: {127, 0, 0, 1}, port: String.to_integer(System.get_env("PORT") || System.get_env("PW_PORT") || "4002")],
   secret_key_base: "R0hv8DBm2eLIGQsu63NgN+Na/ZLpvVaZ0lU3P2XHhYL7qwQf4o802taC0lfEF12L",
   server: false
 

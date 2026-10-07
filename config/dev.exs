@@ -498,7 +498,11 @@ config :ash_a2a,
   receipt_store_ekv_opts: [
     name: AshA2A.ReceiptStore.Ekv,
     data_dir: Path.expand("~/.local/share/xaas/ash_a2a/receipt_store_ekv"),
-    cluster_size: 1
+    # Strict profile implies the production rule set (RFC-SA2A-007,
+    # ash_a2a receipt_store.ex boot_check: production? ORs :production env with
+    # compile-time strict?), which refuses EKV cluster_size < 3 — W752 finding
+    # F1, fixed by W803. 3 is the minimum lawful value.
+    cluster_size: 3
   ],
   receipt_outbox_dir: Path.expand("~/.local/share/xaas/ash_a2a/receipt_outbox"),
   # Dev-only literal keys (>= 32 bytes); override with XAAS_A2A_OUTBOX_KEY /
