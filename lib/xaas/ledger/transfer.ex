@@ -44,6 +44,28 @@ defmodule Xaas.Ledger.Transfer do
       # W762: refuse over-balance transfers (W738 UNSUPPORTED(invariant-absent)).
       validate(Xaas.Ledger.Validations.TransferSourceSufficiency)
     end
+
+    # W968c / SPEC-27 (W799-GAP-1): dedicated reversal action. The mechanism
+    # is still the lawful compensating transfer (from/to swapped), but it is
+    # now wrapped so double-reversal is a typed, reversal-aware refusal plus
+    # a DB unique constraint (`reverses_transfer_id`), not an accident of the
+    # org happening to be at zero balance. See
+    # Xaas.Ledger.Changes.ReverseTransfer and
+    # docs/sjira/v26.10.6/plans/w799-reversal-deepening.md.
+    create :reverse do
+      description("Mint the compensating transfer for a prior transfer (from/to swapped).")
+
+      accept([])
+
+      argument :transfer_id, AshDoubleEntry.ULID do
+        allow_nil?(false)
+        public?(true)
+      end
+
+      validate(Xaas.Ledger.Validations.TransferSourceSufficiency)
+
+      change(Xaas.Ledger.Changes.ReverseTransfer)
+    end
   end
 
   attributes do
@@ -55,6 +77,12 @@ defmodule Xaas.Ledger.Transfer do
 
     attribute :amount, :money do
       allow_nil?(false)
+    end
+
+    # W968c / SPEC-27: set only by the `:reverse` action (not in any accept
+    # list); unique index backstops double-reversal at the DB layer.
+    attribute :reverses_transfer_id, AshDoubleEntry.ULID do
+      public?(true)
     end
 
     timestamps()
@@ -70,5 +98,11 @@ defmodule Xaas.Ledger.Transfer do
     end
 
     has_many :balances, Xaas.Ledger.Balance
+  end
+
+  identities do
+    # W968c / SPEC-27: at most one compensating transfer per reversed
+    # transfer; NULLs (ordinary transfers) are distinct in Postgres.
+    identity(:unique_reversal, [:reverses_transfer_id])
   end
 end

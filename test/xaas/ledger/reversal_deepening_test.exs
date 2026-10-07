@@ -277,6 +277,126 @@ defmodule Xaas.Ledger.ReversalDeepeningTest do
     assert Money.equal?(real_balance_for(@platform), Money.new(:USD, "200.00"))
   end
 
+  # -- (e) W968c / SPEC-27: the dedicated :reverse action ------------------
+
+  describe "W968c SPEC-27 :reverse action" do
+    test "mints a real compensating transfer with from/to swapped and marks reverses_transfer_id" do
+      org_id = "org-w968c-rev-#{System.unique_integer([:positive])}"
+
+      seed_platform_funding!(Money.new(:USD, "60.00"))
+      credit_via_approve!(org_id, 20_00)
+      platform_before = real_balance_for(@platform)
+      original = last_transfer_to!(account_id_for(org_id))
+
+      assert {:ok, %Transfer{} = reversal} =
+               Transfer
+               |> Ash.Changeset.for_create(:reverse, %{transfer_id: original.id})
+               |> Ash.create(authorize?: false)
+
+      assert reversal.reverses_transfer_id == original.id
+      assert reversal.from_account_id == original.to_account_id
+      assert reversal.to_account_id == original.from_account_id
+      assert Money.equal?(reversal.amount, original.amount)
+
+      assert Money.equal?(real_balance_for(org_id), Money.new(:USD, "0.00"))
+      assert Money.equal?(real_balance_for(@platform), Money.add!(platform_before, Money.new(:USD, "20.00")))
+    end
+
+    test "double-reverse is refused reversal-aware, even when the org has fresh funds" do
+      org_id = "org-w968c-dbl-#{System.unique_integer([:positive])}"
+
+      seed_platform_funding!(Money.new(:USD, "60.00"))
+      credit_via_approve!(org_id, 20_00)
+      original = last_transfer_to!(account_id_for(org_id))
+
+      assert {:ok, %Transfer{}} =
+               Transfer
+               |> Ash.Changeset.for_create(:reverse, %{transfer_id: original.id})
+               |> Ash.create(authorize?: false)
+
+      # The mutation-kill leg: the org is deliberately re-funded so the old
+      # sufficiency accident would ADMIT this second reversal. Only the
+      # reversal-aware guard (read live from reverses_transfer_id) refuses.
+      seed_platform_funding!(Money.new(:USD, "10.00"))
+
+      # Platform now holds 60 - 20 + 10 = 50; fund the org directly via a
+      # treasury->org transfer so the compensating transfer's sufficiency
+      # check would pass if the guard were absent.
+      Transfer
+      |> Ash.Changeset.for_create(
+        :transfer,
+        %{
+          amount: Money.new(:USD, "10.00"),
+          timestamp: DateTime.utc_now(),
+          from_account_id: account_id_for("w799-treasury"),
+          to_account_id: account_id_for(org_id)
+        },
+        context: %{xaas_ledger: %{allow_overdraft: true}}
+      )
+      |> Ash.create!(authorize?: false)
+
+      assert {:error, %Ash.Error.Invalid{} = error} =
+               Transfer
+               |> Ash.Changeset.for_create(:reverse, %{transfer_id: original.id})
+               |> Ash.create(authorize?: false)
+
+      assert error_text(error) =~ "already reversed",
+             "refusal must be the reversal-aware guard, not sufficiency"
+
+      assert Money.equal?(real_balance_for(@platform), Money.new(:USD, "70.00")),
+             "no second reversal may have moved money"
+    end
+
+    test "unknown transfer_id refuses typed on field :transfer_id" do
+      assert {:error, %Ash.Error.Invalid{} = error} =
+               Transfer
+               |> Ash.Changeset.for_create(:reverse, %{transfer_id: "01ARZ3NDEKTSV4RRFFQ69G5FAV"})
+               |> Ash.create(authorize?: false)
+
+      assert error_text(error) =~ "no such transfer"
+    end
+
+    test "the compensating transfer is itself discoverable by reverses_transfer_id and not re-reversible" do
+      org_id = "org-w968c-disc-#{System.unique_integer([:positive])}"
+
+      seed_platform_funding!(Money.new(:USD, "30.00"))
+      credit_via_approve!(org_id, 10_00)
+      original = last_transfer_to!(account_id_for(org_id))
+
+      reversal =
+        Transfer
+        |> Ash.Changeset.for_create(:reverse, %{transfer_id: original.id})
+        |> Ash.create!(authorize?: false)
+
+      found =
+        Transfer
+        |> Ash.Query.filter(reverses_transfer_id == ^original.id)
+        |> Ash.read_one!(authorize?: false)
+
+      assert found.id == reversal.id
+
+      # The guard is per-original: the reversal row is itself an ordinary
+      # transfer from the guard's perspective, so re-reversing it (restoring
+      # the credit) is lawful and marked against the REVERSAL, not the
+      # original -- one compensating transfer per original, never two.
+      assert {:ok, %Transfer{} = re_reversal} =
+               Transfer
+               |> Ash.Changeset.for_create(:reverse, %{transfer_id: reversal.id})
+               |> Ash.create!(authorize?: false)
+
+      assert re_reversal.reverses_transfer_id == reversal.id
+      assert Money.equal?(real_balance_for(org_id), Money.new(:USD, "10.00"))
+    end
+  end
+
+  defp last_transfer_to!(account_id) do
+    Transfer
+    |> Ash.Query.filter(to_account_id == ^account_id)
+    |> Ash.Query.sort(inserted_at: :desc)
+    |> Ash.read!(authorize?: false)
+    |> hd()
+  end
+
   defp error_text(%Ash.Error.Invalid{errors: errors}) do
     errors
     |> Enum.map(&Map.get(&1, :message, ""))
