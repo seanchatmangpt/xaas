@@ -51,6 +51,18 @@ same content first**:
 - Foreign in-flight delta disclosed: `approval_patch_sla_credit_apply.ex`
   W984k idempotency filter staged in shared index by its owner lane, untouched.
 
+## Lane collisions (disclosed)
+
+1. **Register-file sweep in commit `e1d986e2`**: my pathspec commit of
+   `w859-typed-gap-register.md` also landed concurrent landed-uncommitted
+   annotations by other lanes on the same shared register (W969e row append +
+   W980j confirmation notes, W722/W793 wording touches). Docs-only, content
+   verified legitimate (their own receipts cited on disk); not reverted —
+   revert would rewrite shared docs history. Disclosed here per same-checkout
+   fanout law; coordinator may attribute to owner lanes W982n/W980j.
+2. `approval_patch_sla_credit_apply.ex` W984k delta remains staged/uncommitted
+   in the shared index, owned by its lane — untouched.
+
 ## Falsifier
 
 Delete any multitenancy block or flip `global?(true)` on any of the 8 billing
