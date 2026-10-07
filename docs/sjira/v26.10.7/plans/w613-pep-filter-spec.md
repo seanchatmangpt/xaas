@@ -59,3 +59,17 @@
 - No commit made (lane contract). Next hop: materialize agentgateway checkout →
   write `pep_eyerun.rs` skeleton against the real filter trait → `cargo check`
   → W614 runs the five-case falsifier.
+
+---
+
+## SUPERSEDED (2026-10-07, lane W638b)
+
+This spec's out-of-process UDS/NDJSON sidecar approach is **superseded-by** the
+in-process Wasmex host (`Xaas.Semantics.GraphlawWasm`, lane W638; receipts
+`w638-*`), per the operator's Wasmex unification directive grounded in
+`~/ggen-marketplace` packs `wasi-json-abi-pack` + `beam-wasmex-host-pack`
+(mandating the in-process packed-u64 ABI via Wasmex).
+
+The spec text above is retained as history. Falsifier cases 1-5 (§5: timeout
+shim, SIGKILL, malformed response, lease absent, digest mismatch) are carried
+forward unchanged to the Wasmex court.

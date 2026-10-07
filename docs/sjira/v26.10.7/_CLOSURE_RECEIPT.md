@@ -18,16 +18,23 @@ vs the w981x/w982w settled floor (≥1352/0):
 
 | witness | subject | receipt |
 |---|---|---|
-| cf228da6 (lane W633 window) | `cf228da6632829...` | DRAFT(census-at-cf228da6): attributed by dispatch; `plans/w633-playwright-live.md` witnesses the 371/371 + 6/6 Playwright legs at this window but its on-disk receipt does not itself restate a 1352 census line — needs a confirming citation before seal |
+| cf228da6 (lane W633 window) | `cf228da6632829...` | attribution gap closed: no 1352 line exists at cf228da6 itself; closure now rests on the HEAD witness below, not on this row (W650b) |
+| **HEAD confirming witness (W650b, 2026-10-07)** | `56325fa5` (v26.10.7 seal HEAD) | `plans/w650b-open-items.md` — 1352 passed / 0 failed / 1 excluded, exit 0, fresh lane root `_build-laneW650b` (full from-scratch compile). First run at same subject: 1351/1352 + 1 flake (`counterfactual_test.exs:597` port crash under 32-way async; file passes 26/26 in isolation and full census passes clean on rerun — flake classified, not a regression). Supersedes the never-landed W984dj draft basis |
 | mid-GraphQL-removal tree | 5f7f70d9, 182 dirty files | `~/xaas/docs/sjira/v26.10.6/plans/w984ax-euaia-rewitness.md` — ALIVE-PASS, 1352/0/1, exit 0 |
 | post-removal re-witness | 5f7f70d9 (fresh build root, from-scratch compile) | `~/xaas/docs/sjira/v26.10.6/plans/w984am-census-rewitness.md` — 1352/0/1, "PASS (1352 = floor exactly)" |
 
-**DRAFT(pending-W984dj)** (re-checked at v2, 2026-10-07): the confirming
-census receipt `plans/w984dj-census-verify.md` has **not landed** — the file
-is absent on disk at v2 time. The W633 attribution gap in row 1 above is
-therefore still unresolved: census standing is not final until W984dj's
-receipt lands (head SHA + verdict) and is re-read (per receipt-refresh
-discipline). Blocker: W984dj run incomplete at v2 time.
+**CLOSED (W650b, 2026-10-07)**: W984dj's receipt (`plans/w984dj-census-verify.md`)
+never landed — confirmed absent at W650b re-read — so W650b executed the
+confirming census itself at HEAD `56325fa5` (fresh lane root
+`_build-laneW650b`, from-scratch compile): **1352 passed / 0 failed /
+1 excluded, exit 0**, receipt `plans/w650b-open-items.md`. This closes the
+W633 attribution gap by replacement, not attribution: closure rests on a
+witnessed run at the exact seal HEAD, superseding the W984dj draft basis.
+One flake disclosed: first run at the same subject was 1351/1352
+(`counterfactual_test.exs:597` port crash under 32-way async); the file
+passes 26/26 in isolation and the full census passes clean on rerun —
+classified as environment flake, not a regression. Census standing: **ALIVE
+at HEAD** (final, DRAFT flag cleared).
 
 ## 2. OS-18 kill proof — actuation identity tautology eliminated
 
@@ -146,8 +153,8 @@ replay, not fixed by W633/W641.
 
 | # | item | state | receipt |
 |---|---|---|---|
-| 1 | W984dj census re-witness | DRAFT — `plans/w984dj-census-verify.md` still absent at v2 re-read (2026-10-07); blocker: W984dj run incomplete | (pending) |
-| 1b | W650b closure-table incorporation | DRAFT — `plans/w650b-open-items.md` not landed at v2 re-read; blocker: W650b still running | (pending) |
+| 1 | W984dj census re-witness | **CLOSED (W650b)** — W984dj receipt permanently absent; confirming census executed at HEAD `56325fa5` instead: 1352/0/1, exit 0 | `plans/w650b-open-items.md` |
+| 1b | W650b closure-table incorporation | **LANDED** — `plans/w650b-open-items.md` written; this table updated in place (W650b) | `plans/w650b-open-items.md` |
 | 2 | W638 Wasmex host commit | landed-uncommitted | `plans/w638-wasmex-host.md` |
 | 3 | W640 differential court | no landed receipt | (pending) |
 | 4 | ash_surface version-commit lane + tag | BLOCKED(version-commit-pending) | `w648-version-audit.md` row 22, `w635` |
@@ -160,13 +167,15 @@ replay, not fixed by W633/W641.
 
 ## Standing summary
 
-- Census gate: ALIVE at three witnessed subjects; final standing
-  **DRAFT** pending W984dj.
+- Census gate: **ALIVE at HEAD `56325fa5`** (W650b confirming witness,
+  1352/0/1, exit 0 — item 1 closed; W984dj superseded). Remaining DRAFT
+  blockers: items 2 (W638 commit) and 3 (W640 differential) only.
 - OS-18: ALIVE (`579454be`). Refusal ledger: ALIVE (`d95defa2`,
   digest `203fee7c…`). Playwright: ALIVE (371/371 + 6/6). WASM artifact:
   ALIVE (`1869a16`, digest `b7664a5e…`); Wasmex host + differential:
   PARTIAL/DRAFT. Fleet tags: 8/8 ALIVE, re-verified fresh at v2 (W650c
   ls-remote table above; 2 repos BLOCKED noted). a2a doc fix: ALIVE
   (`13dd1a57`, tag rides at `e0fb769e`, W628b). Shared DB: ALIVE at head.
-- Seal verdict: **DRAFT — not final until items 1–3 of the open-items
-  register close and this receipt is re-read against them.**
+- Seal verdict: **DRAFT — items 1 and 1b closed by W650b; not final until
+  items 2 (W638 host commit) and 3 (W640 differential court) close and
+  this receipt is re-read against them.**
