@@ -109,7 +109,12 @@ defmodule Xaas.Security do
   defp parse_dt(%DateTime{} = dt), do: dt
 
   defp parse_dt(bin) when is_binary(bin) do
-    {:ok, dt, 0} = DateTime.from_iso8601(bin)
-    dt
+    case DateTime.from_iso8601(bin) do
+      {:ok, dt, _offset} -> dt
+      # malformed ISO8601: pass the binary through so Ash's utc_datetime
+      # cast refuses it as a typed validation error (same convention as
+      # atomize/1), never a MatchError crash
+      {:error, _reason} -> bin
+    end
   end
 end
