@@ -1,0 +1,129 @@
+# Full-suite Playwright E2E job (wave-2 lane W28, v26.10.6 convergence, X5).
+#
+# Boots the Phoenix server ITSELF on port 4000 (no reuseExistingServer reliance
+# on a pre-existing dev server): the job starts `mix phx.server` in the
+# background and waits for readiness before `npx playwright test`.
+#
+# Env-dependent specs (disclosed honestly):
+#   - INTERNAL_API_TOKEN secret must be passed for the token-authenticated
+#     specs (internal-api, sparql-proxy, execution-fabric, ggen-workbench,
+#     mcp-a2a, a2a-v1, zcode-cli-fabric, ash-admin-*). Without it those specs
+#     self-skip via `test.skip(!TOKEN, ...)`; the tokenless fail-closed branches
+#     (503/401/403 refusal paths) still run and are asserted.
+#   - STRIPE_WEBHOOK_SECRET secret must be passed for the well-formed-signature
+#     court in stripe-webhook.spec.cjs; the malformed/refusal branches run
+#     without it. Pass both from repo/environment secrets.
+#
+# continue-on-error: false — failures gate.
+name: Playwright full-suite E2E
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - feat/playwright-surface
+
+permissions:
+  contents: read
+
+concurrency:
+  group: playwright-e2e-${{ github.ref_name }}
+  cancel-in-progress: true
+
+env:
+  MIX_ENV: test
+  DEV_DB_USERNAME: postgres
+  DEV_DB_PASSWORD: postgres
+  DEV_DB_HOSTNAME: localhost
+  DEV_DB_PORT: "5432"
+
+jobs:
+  playwright-e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    services:
+      postgres:
+        image: pgvector/pgvector:0.8.0-pg15
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Toolchain, locked deps, dependency cache
+        uses: ./.github/actions/beam
+        with:
+          mix-env: test
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install node dependencies
+        run: npm ci
+
+      - name: Prepare database
+        run: mix ecto.create && mix ecto.migrate
+
+      - name: Compile exact subject
+        run: mix compile --force --warnings-as-errors
+
+      - name: Build LiveView assets (priv/static assets are untracked)
+        run: mix do app.config + assets.setup + assets.build
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Start Phoenix (the job boots the server itself, port 4000)
+        env:
+          PHX_SERVER: "true"
+          # Secrets are optional: unset -> the tokenless fail-closed specs still
+          # run; token-authenticated specs self-skip via `test.skip(!TOKEN, ...)`.
+          INTERNAL_API_TOKEN: ${{ secrets.INTERNAL_API_TOKEN }}
+          STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
+        run: |
+          MIX_ENV=test mix phx.server > /tmp/playwright-e2e-phx.log 2>&1 &
+          for i in $(seq 1 60); do
+            if curl -fsS http://localhost:4000/ >/dev/null; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/playwright-e2e-phx.log
+          exit 1
+
+      - name: Run full Playwright suite
+        env:
+          # localhost (not 127.0.0.1): Phoenix check_origin refuses a 127.0.0.1
+          # origin, so LiveView would never connect (same fix as the wd-cs2
+          # courts).
+          PLAYWRIGHT_BASE_URL: http://localhost:4000
+          INTERNAL_API_TOKEN: ${{ secrets.INTERNAL_API_TOKEN }}
+          STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
+          CI: "true"
+        run: npx playwright test
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report-${{ github.sha }}
+          path: |
+            playwright-report/
+            test-results/
+          if-no-files-found: ignore
+          retention-days: 14
+
+      - name: Print bounded standing
+        if: always()
+        run: |
+          echo "E2E_SUITE=full-playwright"
+          echo "SERVER_BOOT=job-owned-port-4000"
+          echo "SECRETS_REQUIRED=INTERNAL_API_TOKEN,STRIPE_WEBHOOK_SECRET (optional; tokenless fail-closed branches still run)"

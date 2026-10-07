@@ -104,6 +104,138 @@ jobs:
       - name: Check unused dependencies
         run: mix deps.unlock --check-unused
 
+  # ------------------------------------------------------------------
+  # Oracle/differential test lane (vector-3 CI closure, v26.10.6)
+  #
+  # Supplies the environment the conditionally-skipped differential/oracle
+  # suites (docs/sjira/v26.10.6/plans/vector3-ignored-suites.md §2) gate on,
+  # so they stop skipping silently in CI:
+  #   - GGEN_IGNITER_DIR at a real ggen_igniter checkout, _build/test compiled
+  #     (r_projection_consistency, origin_authority, semantic_drive_anchor)
+  #   - python3 rdflib (successor_law / stop_court / v26_9_23_goal ASK oracles)
+  #   - jq (yield_test fleet-matrix salience)
+  #   - ~/ggen-marketplace and ~/ash_atlassian canonical checkouts (ard_court)
+  # Still host-gated on purpose (not supplied here, disclosed):
+  #   - ~/.claude/dfcm/validate_receipt.py — a host-local fleet validator;
+  #     deliberately not committed into this repo, so the validator-gated
+  #     blocks in r_projection_test, xaas_stop_court_test and
+  #     v26_9_23_goal_test keep their named skips in CI.
+  #   - the `autofde` beam-bridge binary (yield_test SA2A allocator oracle)
+  #     and the `ggen` release binary (zcode_plugin projection) — one-build
+  #     gates out of this lane's bounded scope; those tests keep their named
+  #     skips here.
+  # The job runs the affected test files directly (a bounded file list), not
+  # the whole `mix test.full` surface, so :kind/:stress/:castle_kernel etc.
+  # stay out of this lane.
+  # ------------------------------------------------------------------
+  oracle-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    name: Differential oracle court
+    env:
+      MIX_ENV: test
+    services:
+      postgres:
+        image: pgvector/pgvector:0.8.0-pg15
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - name: Checkout exact subject
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ env.SUBJECT_SHA }}
+          persist-credentials: false
+
+      - name: Assert exact subject identity
+        shell: bash
+        run: test "$(git rev-parse HEAD)" = "$SUBJECT_SHA"
+
+      # Canonical sibling checkouts (public repos, same checkout pattern as the
+      # subject). ard_court gates on the literal ~/ash_atlassian and
+      # ~/ggen-marketplace paths, so those two land under $HOME.
+      - name: Checkout ggen_igniter sibling
+        uses: actions/checkout@v7
+        with:
+          repository: seanchatmangpt/ggen_igniter
+          path: sibling-ggen_igniter
+          persist-credentials: false
+
+      - name: Checkout ggen-marketplace sibling
+        uses: actions/checkout@v7
+        with:
+          repository: seanchatmangpt/ggen-marketplace
+          path: home-ggen-marketplace
+          persist-credentials: false
+
+      - name: Checkout ash_atlassian sibling
+        uses: actions/checkout@v7
+        with:
+          repository: seanchatmangpt/ash_atlassian
+          path: home-ash_atlassian
+          persist-credentials: false
+
+      - name: Place marketplace/ARD siblings at their gate paths
+        run: |
+          set -euo pipefail
+          mkdir -p "$HOME"
+          rm -rf "$HOME/ggen-marketplace" "$HOME/ash_atlassian"
+          cp -a "$GITHUB_WORKSPACE/home-ggen-marketplace" "$HOME/ggen-marketplace"
+          cp -a "$GITHUB_WORKSPACE/home-ash_atlassian" "$HOME/ash_atlassian"
+
+      - name: Toolchain, locked deps, dependency cache
+        id: beam
+        uses: ./.github/actions/beam
+        with:
+          mix-env: test
+
+      - name: Install jq and rdflib
+        run: |
+          set -euo pipefail
+          sudo apt-get update -q
+          sudo apt-get install -y -q jq
+          # ubuntu-24.04 marks the system python externally-managed (PEP 668);
+          # the flag is accepted (and a no-op flag-wise) wherever pip supports it.
+          python3 -m pip install --quiet --break-system-packages rdflib
+
+      - name: Compile ggen_igniter sibling (_build/test)
+        working-directory: sibling-ggen_igniter
+        run: |
+          set -euo pipefail
+          mix deps.get
+          mix compile
+
+      - name: Run oracle suites
+        env:
+          GGEN_IGNITER_DIR: ${{ github.workspace }}/sibling-ggen_igniter
+        run: |
+          set -euo pipefail
+          mix test \
+            test/xaas/receipt/r_projection_consistency_test.exs \
+            test/xaas/ultracode/origin_authority_test.exs \
+            test/xaas/ultracode/semantic_drive_anchor_test.exs \
+            test/xaas/sjira/ard_court_test.exs \
+            test/xaas/sjira/yield_test.exs \
+            test/xaas/sjira/successor_test.exs \
+            test/sjira/v26_9_23_goal_test.exs \
+            test/mix/tasks/xaas_stop_court_test.exs
+
+      - name: Oracle lane summary
+        if: always()
+        run: |
+          set -euo pipefail
+          {
+            echo '## Differential oracle lane'
+            echo 'Supplied gates: GGEN_IGNITER_DIR (compiled sibling), python3 rdflib, jq, ~/ggen-marketplace, ~/ash_atlassian.'
+            echo 'Still host-gated (named skips remain): ~/.claude/dfcm/validate_receipt.py, autofde binary, ggen binary.'
+          } >> "$GITHUB_STEP_SUMMARY"
+
   dialyzer:
     runs-on: ubuntu-latest
     # Cold (lock changed with no usable cache) is ~26 min; warm is analysis only.
@@ -408,13 +540,79 @@ jobs:
           if-no-files-found: error
           retention-days: 90
 
+  # ------------------------------------------------------------------
+  # Clean-tree generation parity gate (vector-4 CI closure, v26.10.6)
+  #
+  # W36 made the root `ggen sync run` deterministic (7 outputs, DETERMINISTIC
+  # replay). This lane proves it on the exact CI subject: build the exact
+  # ggen manufacturer at the same pinned SHA castle-paas-bridge.yml uses,
+  # run the root sync exactly as that job does, then refuse any tracked
+  # drift in the working tree. A committed graph whose outputs were not
+  # regenerated (stale projection) fails here. Untracked files are not
+  # gated: all 7 outputs are committed (W114), so tracked drift is the
+  # complete signal.
+  # ------------------------------------------------------------------
+  gen-parity:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    name: Clean-tree generation parity
+    env:
+      GGEN_SHA: 1e9fcb9679a61460fbd641415cb72511c7e50b33
+    steps:
+      - name: Checkout exact subject
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ env.SUBJECT_SHA }}
+          persist-credentials: false
+
+      - name: Assert exact subject identity
+        shell: bash
+        run: test "$(git rev-parse HEAD)" = "$SUBJECT_SHA"
+
+      - name: Checkout exact ggen manufacturer
+        uses: actions/checkout@v7
+        with:
+          repository: seanchatmangpt/ggen
+          ref: ${{ env.GGEN_SHA }}
+          path: _ggen
+          persist-credentials: false
+
+      - name: Setup exact XaaS BEAM toolchain
+        uses: erlef/setup-beam@54075bcc5e249e4758d363f27d099f55d843f124
+        with:
+          version-file: .tool-versions
+          version-type: strict
+
+      - name: Get XaaS dependencies before ggen hooks
+        run: mix deps.get
+
+      - name: Build exact ggen manufacturer
+        run: |
+          rustup toolchain install nightly-2026-06-22 --profile minimal
+          cargo +nightly-2026-06-22 build --release -p ggen-cli-lib --bin ggen --manifest-path _ggen/Cargo.toml
+          test -x _ggen/target/release/ggen
+
+      - name: Run root sync exactly as the bridge lane does
+        run: |
+          _ggen/target/release/ggen sync run
+          test -f ggen.lock
+          test -f .ggen-v2/receipt.json
+
+      - name: Refuse tracked generation drift
+        run: |
+          set -euo pipefail
+          git diff --exit-code
+          drift="$(git status --porcelain | grep -v '^??' | wc -l | tr -d ' ')"
+          echo "tracked_drift=${drift}"
+          test "$drift" = "0"
+
   receipt:
     # Not on cancellation: a superseded PR run must not report a failure for work
     # that was deliberately stopped.
     if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
     timeout-minutes: 2
-    needs: [ci, dialyzer, production, asyncapi, workbench, image-check]
+    needs: [ci, dialyzer, production, asyncapi, workbench, image-check, gen-parity]
     name: Bound CI receipt
     permissions:
       contents: read
@@ -428,6 +626,7 @@ jobs:
           R_ASYNCAPI: ${{ needs.asyncapi.result }}
           R_WORKBENCH: ${{ needs.workbench.result }}
           R_IMAGE: ${{ needs.image-check.result }}
+          R_GEN_PARITY: ${{ needs.gen-parity.result }}
           H_CI: ${{ needs.ci.outputs.cache_hit }}
           H_DIALYZER: ${{ needs.dialyzer.outputs.cache_hit }}
           H_PLT: ${{ needs.dialyzer.outputs.plt_hit }}
@@ -444,6 +643,7 @@ jobs:
             "asyncapi": "${R_ASYNCAPI}",
             "workbench": "${R_WORKBENCH}",
             "image_check": "${R_IMAGE}",
+            "gen_parity": "${R_GEN_PARITY}",
             "exact_cache_hit": {
               "test": "${H_CI}", "dev": "${H_DIALYZER}", "plt": "${H_PLT}", "prod": "${H_PRODUCTION}"
             },
@@ -462,8 +662,9 @@ jobs:
             echo "| asyncapi | ${R_ASYNCAPI} | - |"
             echo "| workbench | ${R_WORKBENCH} | - |"
             echo "| image build | ${R_IMAGE} | docker layer cache (gha) |"
+            echo "| gen parity | ${R_GEN_PARITY} | - |"
           } >> "$GITHUB_STEP_SUMMARY"
-          for r in "$R_CI" "$R_DIALYZER" "$R_PRODUCTION" "$R_ASYNCAPI" "$R_WORKBENCH" "$R_IMAGE"; do
+          for r in "$R_CI" "$R_DIALYZER" "$R_PRODUCTION" "$R_ASYNCAPI" "$R_WORKBENCH" "$R_IMAGE" "$R_GEN_PARITY"; do
             test "$r" = success
           done
 

@@ -1,0 +1,230 @@
+name: Closure Gates (advisory)
+
+# v26.10.6 convergence campaign, DoD 2 / P2-2 (lane W327).
+#
+# Three strict-flag legs that were absent from CI. Each job is ADVISORY
+# (continue-on-error: true) so wiring this file cannot break existing CI.
+# Operator promotion path: remove continue-on-error per job once green on
+# main, then add to the receipt needs: list in ci_cd.yaml (separate, reviewed
+# transition — this file never modifies ci_cd.yaml itself).
+#
+# Leg mapping:
+#   1. prod-strict-compile — EA34 leg (exact-head production compile court,
+#      standalone mirror of ci_cd.yaml production job; re-established here so
+#      the gate survives independently of the dirty ci_cd.yaml lane).
+#   2. surface-drift       — x8 gap 3 leg (priv/ash_surface regeneration
+#      parity: `mix xaas.ash_surface` then refuse tracked drift).
+#   3. root-sync-drift     — v26.10.6 §3 gate 1 leg (root `ggen sync run`
+#      clean-tree parity, mirror of ci_cd.yaml gen-parity).
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  SUBJECT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+  GGEN_SHA: 1e9fcb9679a61460fbd641415cb72511c7e50b33
+
+jobs:
+  prod-strict-compile:
+    # EA34 leg
+    name: "[advisory] prod strict compile (EA34)"
+    continue-on-error: true
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      MIX_ENV: prod
+    steps:
+      - name: Checkout exact subject
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ env.SUBJECT_SHA }}
+          persist-credentials: false
+
+      - name: Assert exact subject identity
+        shell: bash
+        run: test "$(git rev-parse HEAD)" = "$SUBJECT_SHA"
+
+      - name: Setup exact BEAM toolchain from .tool-versions
+        id: beam
+        uses: erlef/setup-beam@54075bcc5e249e4758d363f27d099f55d843f124
+        with:
+          version-file: .tool-versions
+          version-type: strict
+
+      - name: Restore prod deps and build
+        uses: actions/cache@v6
+        with:
+          path: |
+            deps
+            _build/prod
+          key: closure-gates-prod-${{ runner.os }}-${{ steps.beam.outputs.elixir-version }}-${{ hashFiles('mix.lock') }}
+          restore-keys: |
+            closure-gates-prod-${{ runner.os }}-${{ steps.beam.outputs.elixir-version }}-
+
+      - name: Fetch locked dependencies
+        run: mix deps.get
+
+      - name: Compile production with warnings as errors
+        run: mix compile --force --warnings-as-errors
+
+  surface-drift:
+    # x8 gap 3 leg
+    name: "[advisory] ash_surface regeneration drift (x8 gap 3)"
+    continue-on-error: true
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      MIX_ENV: dev
+    steps:
+      - name: Checkout exact subject
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ env.SUBJECT_SHA }}
+          persist-credentials: false
+
+      - name: Assert exact subject identity
+        shell: bash
+        run: test "$(git rev-parse HEAD)" = "$SUBJECT_SHA"
+
+      - name: Setup exact BEAM toolchain from .tool-versions
+        id: beam
+        uses: erlef/setup-beam@54075bcc5e249e4758d363f27d099f55d843f124
+        with:
+          version-file: .tool-versions
+          version-type: strict
+
+      - name: Restore dev deps and build
+        uses: actions/cache@v6
+        with:
+          path: |
+            deps
+            _build/dev
+          key: closure-gates-dev-${{ runner.os }}-${{ steps.beam.outputs.elixir-version }}-${{ hashFiles('mix.lock') }}
+          restore-keys: |
+            closure-gates-dev-${{ runner.os }}-${{ steps.beam.outputs.elixir-version }}-
+
+      - name: Fetch locked dependencies
+        run: mix deps.get
+
+      - name: Regenerate ash_surface
+        run: mix xaas.ash_surface
+
+      - name: Refuse ash_surface drift
+        run: git diff --exit-code priv/ash_surface
+
+  root-sync-drift:
+    # v26.10.6 §3 gate 1 leg
+    name: "[advisory] root ggen sync drift (§3 gate 1)"
+    continue-on-error: true
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - name: Checkout exact subject
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ env.SUBJECT_SHA }}
+          persist-credentials: false
+
+      - name: Assert exact subject identity
+        shell: bash
+        run: test "$(git rev-parse HEAD)" = "$SUBJECT_SHA"
+
+      - name: Checkout exact ggen manufacturer
+        uses: actions/checkout@v7
+        with:
+          repository: seanchatmangpt/ggen
+          ref: ${{ env.GGEN_SHA }}
+          path: _ggen
+          persist-credentials: false
+
+      - name: Setup exact BEAM toolchain from .tool-versions
+        id: beam
+        uses: erlef/setup-beam@54075bcc5e249e4758d363f27d099f55d843f124
+        with:
+          version-file: .tool-versions
+          version-type: strict
+
+      - name: Restore deps
+        uses: actions/cache@v6
+        with:
+          path: |
+            deps
+            _build/dev
+          key: closure-gates-dev-${{ runner.os }}-${{ steps.beam.outputs.elixir-version }}-${{ hashFiles('mix.lock') }}
+          restore-keys: |
+            closure-gates-dev-${{ runner.os }}-${{ steps.beam.outputs.elixir-version }}-
+
+      - name: Get dependencies before ggen hooks
+        run: mix deps.get
+
+      - name: Build exact ggen manufacturer
+        run: |
+          rustup toolchain install nightly-2026-06-22 --profile minimal
+          cargo +nightly-2026-06-22 build --release -p ggen-cli-lib --bin ggen --manifest-path _ggen/Cargo.toml
+          test -x _ggen/target/release/ggen
+
+      - name: Run root sync
+        run: |
+          _ggen/target/release/ggen sync run
+          test -f ggen.lock
+          test -f .ggen-v2/receipt.json
+
+      - name: Refuse tracked root-sync drift
+        run: |
+          set -euo pipefail
+          git diff --exit-code
+          drift="$(git status --porcelain | grep -v '^??' | wc -l | tr -d ' ')"
+          echo "tracked_drift=${drift}"
+          test "$drift" = "0"
+
+  receipt:
+    name: "[advisory] closure-gates receipt"
+    if: ${{ !cancelled() }}
+    needs: [prod-strict-compile, surface-drift, root-sync-drift]
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Report advisory leg results
+        shell: bash
+        env:
+          R_PROD: ${{ needs.prod-strict-compile.result }}
+          R_SURFACE: ${{ needs.surface-drift.result }}
+          R_SYNC: ${{ needs.root-sync-drift.result }}
+        run: |
+          set -euo pipefail
+          {
+            echo '## Closure gates (advisory) — v26.10.6 DoD 2 / P2-2'
+            echo '| leg | plan row | result |'
+            echo '|---|---|---|'
+            echo "| prod-strict-compile | EA34 | ${R_PROD} |"
+            echo "| surface-drift | x8 gap 3 | ${R_SURFACE} |"
+            echo "| root-sync-drift | §3 gate 1 | ${R_SYNC} |"
+            echo ''
+            echo 'All legs are continue-on-error (advisory) pending operator promotion to blocking.'
+          } >> "$GITHUB_STEP_SUMMARY"
+          mkdir -p artifacts/ci
+          standing="ALIVE"
+          for r in "$R_PROD" "$R_SURFACE" "$R_SYNC"; do
+            if [ "$r" != "success" ]; then standing="PARTIAL_ALIVE"; fi
+          done
+          cat > artifacts/ci/receipt.json <<JSON
+          {"repository":"${GITHUB_REPOSITORY}","subject_sha":"${SUBJECT_SHA}","workflow":"${GITHUB_WORKFLOW}","run_id":"${GITHUB_RUN_ID}","standing":"${standing}","legs":{"prod-strict-compile":"${R_PROD}","surface-drift":"${R_SURFACE}","root-sync-drift":"${R_SYNC}"},"boundaries":["prod-compile","ash-surface-drift","ggen-root-sync"],"advisory":true}
+          JSON
+          cat artifacts/ci/receipt.json
+
+      - name: Upload receipt
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: closure-gates-receipt-${{ github.run_id }}
+          path: artifacts/ci/receipt.json
+          if-no-files-found: error
+          retention-days: 14
