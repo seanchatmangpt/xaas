@@ -178,6 +178,13 @@ defmodule Xaas.Operations.CapabilityLivenessReceipt do
       # Xaas.Operations.Validations.CapabilityLivenessReceiptStatusGate.
       validate {Xaas.Operations.Validations.CapabilityLivenessReceiptStatusGate, []}
 
+      # W968c / SPEC-14 (W750-G2): preserve the immediately-prior observed
+      # status before the identity upsert overwrites it in place, so
+      # detect/1 can see an in-place ALIVE->non-ALIVE regression on the
+      # same capability+subject. See
+      # Xaas.Operations.Changes.SetPreviousStatus.
+      change {Xaas.Operations.Changes.SetPreviousStatus, []}
+
       upsert?(true)
       upsert_identity(:capability_subject)
     end
@@ -198,6 +205,13 @@ defmodule Xaas.Operations.CapabilityLivenessReceipt do
 
     attribute :status, :string do
       allow_nil?(false)
+      public?(true)
+    end
+
+    # W968c / SPEC-14 (W750-G2): immediately-prior observed status,
+    # written only by the :ingest upsert path (NOT in the accept list, so
+    # a caller cannot forge it) before the row is overwritten in place.
+    attribute :previous_status, :string do
       public?(true)
     end
 

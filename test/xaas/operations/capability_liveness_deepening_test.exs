@@ -177,15 +177,79 @@ defmodule Xaas.Operations.CapabilityLivenessDeepeningTest do
     assert hd(rows).status == "REFUTED"
     assert hd(rows).detail == "re-ingested after a real failing run"
 
-    # And the refresh flips the regression detector: latest non-ALIVE
-    # after a prior ALIVE (same row, overwritten) — but note the upsert
-    # destroys the prior-ALIVE history, so detect/1 sees only one row and
-    # reports NO regression. That is the real, pinned behavior.
+    # W968c / SPEC-14 (W750-G2) — visible diff: the prior-ALIVE history is
+    # no longer destroyed by the upsert. `previous_status` preserves it,
+    # so detect/1 now reports the in-place ALIVE->REFUTED regression on
+    # the same capability+subject. (This assertion previously pinned the
+    # blindness: `assert regressions == []`.)
     regressions =
       CapabilityLivenessRegressions.detect()
       |> Enum.filter(&(&1.capability == receipt.capability))
 
-    assert regressions == []
+    assert [
+             %{
+               capability: cap,
+               was: %{status: "ALIVE", subject: subject},
+               now: %{status: "REFUTED", subject: subject}
+             }
+           ] = regressions
+
+    assert cap == receipt.capability
+    assert subject == receipt.subject
+  end
+
+  test "W968c: previous_status is written by :ingest on overwrite and not forgeable by callers" do
+    receipt = ingest!(base_attrs([]))
+
+    assert is_nil(receipt.previous_status),
+           "a first ingest has no prior status to preserve"
+
+    refreshed =
+      ingest!(
+        base_attrs(
+          capability: receipt.capability,
+          subject: receipt.subject,
+          status: "BLOCKED",
+          exit_code: 2
+        )
+      )
+
+    assert refreshed.previous_status == "ALIVE"
+
+    # Caller-side forgery attempt: the attribute is not in :ingest's accept
+    # list, so an input value is silently dropped (no path sets it).
+    forged =
+      ingest!(
+        base_attrs(
+          capability: receipt.capability,
+          subject: receipt.subject,
+          status: "ALIVE",
+          previous_status: "FABRICATED"
+        )
+      )
+
+    # refreshed.previous_status was "ALIVE" (captured from the BLOCKED row)
+    assert forged.previous_status == "ALIVE"
+
+    # ALIVE->ALIVE is not a regression even though previous_status is set.
+    assert CapabilityLivenessRegressions.detect()
+           |> Enum.filter(&(&1.capability == receipt.capability)) == []
+  end
+
+  test "W968c: non-ALIVE then non-ALIVE in place does not fire detect/1" do
+    receipt = ingest!(base_attrs(status: "BLOCKED", exit_code: 2))
+
+    ingest!(
+      base_attrs(
+        capability: receipt.capability,
+        subject: receipt.subject,
+        status: "REFUTED",
+        exit_code: 1
+      )
+    )
+
+    assert CapabilityLivenessRegressions.detect()
+           |> Enum.filter(&(&1.capability == receipt.capability)) == []
   end
 
   test "regression detection fires only for a real ALIVE-then-non-ALIVE sequence across distinct subjects" do

@@ -40,19 +40,43 @@ defmodule Xaas.Operations.CapabilityLivenessRegressions do
       sorted = Enum.sort_by(rows, & &1.inserted_at, {:asc, DateTime})
 
       case Enum.reverse(sorted) do
-        [%{status: latest_status} = latest | [%{status: prev_status} = prev | _]]
-        when latest_status != "ALIVE" and prev_status == "ALIVE" ->
-          [
-            %{
-              capability: capability,
-              was: %{status: prev.status, subject: prev.subject},
-              now: %{status: latest.status, subject: latest.subject}
-            }
-          ]
-
-        _ ->
+        [] ->
           []
+
+        [latest | prev_rows] ->
+          case in_place_regression(latest) do
+            nil -> cross_subject_regression(capability, latest, prev_rows)
+            regression -> [regression]
+          end
       end
     end)
+  end
+
+  # W968c / SPEC-14 (W750-G2): the upsert-overwrite blindness repair. A
+  defp in_place_regression(%{status: status, previous_status: previous_status} = latest)
+       when status != "ALIVE" and previous_status == "ALIVE" do
+    %{
+      capability: latest.capability,
+      was: %{status: latest.previous_status, subject: latest.subject},
+      now: %{status: latest.status, subject: latest.subject}
+    }
+  end
+
+  defp in_place_regression(_), do: nil
+
+  defp cross_subject_regression(capability, latest, prev_rows) do
+    case prev_rows do
+      [%{status: prev_status} = prev | _] when latest.status != "ALIVE" and prev_status == "ALIVE" ->
+        [
+          %{
+            capability: capability,
+            was: %{status: prev.status, subject: prev.subject},
+            now: %{status: latest.status, subject: latest.subject}
+          }
+        ]
+
+      _ ->
+        []
+    end
   end
 end

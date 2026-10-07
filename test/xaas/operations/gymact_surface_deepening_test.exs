@@ -20,6 +20,8 @@ defmodule Xaas.Operations.GymactSurfaceDeepeningTest do
 
   use ExUnit.Case, async: false
 
+  require Ash.Query
+
   alias Xaas.Marketplace.Provider
   alias Xaas.Operations.{ActuationIntent, ActuationReceipt, GymactSurface}
 
