@@ -112,6 +112,7 @@ defmodule XaasWeb.ApprovalTierDowngradeControllerTest do
       ApprovalTierDowngrade
       |> Ash.Changeset.for_create(:create, %{
         requested_by: requested_by,
+        org_id: org_id,
         subscription_id: subscription.id,
         requested_tier: requested_tier
       })
@@ -373,7 +374,13 @@ defmodule XaasWeb.ApprovalTierDowngradeControllerTest do
       |> put_req_header("content-type", "application/vnd.api+json")
       |> patch("/api/approval_tier_downgrade/#{pending.id}", body)
 
-    assert conn.status == 403
+    # SPEC-07 (lane W970a): the org-isolation refusal surface MOVED from a
+    # policy 403 to a query-layer 404 -- with real attribute-strategy
+    # multitenancy, a cross-org row is INVISIBLE to the attacker's tenant
+    # (NotFound), which is the stronger Ash-idiomatic shape. The security
+    # property is unchanged and still asserted below: no approval, no tier
+    # change, no Ledger money movement.
+    assert conn.status == 404
 
     persisted = ApprovalTierDowngrade |> Ash.get!(pending.id, authorize?: false)
 
