@@ -19,6 +19,31 @@ defmodule Xaas.Ocel do
   explicit `UNSUPPORTED`.
   """
 
+  @doc """
+  Fold `Xaas.Ocel.ObjectStateDelta` rows into an object-state map.
+
+  This is the executable form of the append-only fold law documented on
+  `Xaas.Ocel.ObjectStateDelta`'s moduledoc: object state is the fold of its
+  delta rows in `occurred_at` order (ascending, `DateTime` compare),
+  per-attribute last write wins (`Map.put`). Pure and order-deterministic:
+  the same delta sequence yields the same state regardless of the order the
+  rows are supplied in.
+
+  Accepts any enumerable of delta-shaped maps/structs exposing
+  `occurred_at`, `attribute`, and `new_value`. `initial_state` seeds the
+  fold (default `%{}`).
+  """
+  @spec fold_object_state(Enumerable.t(), %{optional(String.t()) => term()}) :: %{
+          optional(String.t()) => term()
+        }
+  def fold_object_state(deltas, initial_state \\ %{}) when is_map(initial_state) do
+    deltas
+    |> Enum.sort_by(& &1.occurred_at, DateTime)
+    |> Enum.reduce(initial_state, fn delta, state ->
+      Map.put(state, delta.attribute, delta.new_value)
+    end)
+  end
+
   use Ash.Domain,
     otp_app: :xaas,
     extensions: [AshAdmin.Domain]
