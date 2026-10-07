@@ -71,6 +71,18 @@ All paths verified on disk 2026-10-07. Provenance receipts live under
 | Generated castle-bridge ERRC page verification | S5 | `docs/claude/diataxis/reference/generated-castle-bridge-errc.md` | `docs/sjira/v26.10.6/plans/w754-castle-bridge-verify.md` |
 | Cycle-log refresh | S5 | `docs/cro/CYCLE-LOG.md` | `docs/sjira/v26.10.6/plans/w753-cycle-log-refresh.md` |
 
+### W850–W980 wave additions (`test -f`-verified 2026-10-07, lanes W970c + W970d)
+
+| Artifact | Stage(s) | Evidence path | Provenance receipt |
+|---|---|---|---|
+| Execution-fabric controller coverage consolidation | S3 | `docs/cro/artifacts/execution-fabric-coverage.md` | `docs/sjira/v26.10.6/plans/w970b-fabric-coverage.md` |
+| Castle refusal-negative coverage (5 refusal classes, court coverage) | S3 | `docs/cro/artifacts/castle-refusal-negative-coverage.md` | `docs/sjira/v26.10.6/plans/w975-refusal-negative-fold.md` |
+| Generated surface census (v26.10.6, relocated W919/W980c) | S3 | `docs/cro/artifacts/generated-surface-census-v26.10.6.md` | `docs/sjira/v26.10.6/plans/w849-generated-surface-census.md` (relocation receipts `w919-census-relocate-receipt.md`, `w980c-relocation-exec.md`) |
+| WitnessLive mount-only read note (court-backed design fact) | S3 | `docs/cro/artifacts/witness-live-court-note.md` | `docs/sjira/v26.10.6/plans/w934-witness-live-note.md` |
+| Delaware Caremark/Marchand rebuttal evidence map (Thm 8.2) | S2 | `docs/cro/artifacts/delaware-rebuttal-evidence-map.md` | no plans/ receipt — authored lane W525c per artifact header (2026-10-06); no `w525c-*.md` exists in `docs/sjira/v26.10.6/plans/` (disclosed) |
+| S3 evidence pack replay validation (W439) | S3 | `docs/cro/artifacts/s3-evidence-pack-replay-validation.md` | no dedicated authoring receipt — authored lane W439 per artifact header; nearest plans/ receipt `docs/sjira/v26.10.6/plans/w861-evidence-pack-refresh.md` (reads it as "(W439)") |
+| Implementation wave ledger (W500-series anti-vapor) | S3 | `docs/cro/artifacts/implementation-wave-ledger.md` | `docs/sjira/v26.10.6/plans/w781-wave-ledger-refresh.md` (Terminal-4 append; earlier `w917-ledger-batch-fold.md`, `w650*/ledger-terminal*`) |
+
 ## Produced per cycle (human/CRM outputs — version in CYCLE-LOG entry)
 
 | Artifact | Stage | Notes |

@@ -158,3 +158,102 @@ a corrected entry is a new entry citing the old one.
   machine, multitenancy, atomic_update — disclosed, docketed), W650c
   order-dependence class (art73/art50/counterfactual under some async
   orderings). No commit made this lane (coordinator owns integration).
+
+## CYCLE-2-FOLD — Consolidation wave (2026-10-07, lane W952)
+
+**Headline.** Fold of the v26.10.6 consolidation wave since CYCLE-1-PREP (W753).
+xaas: 30 commits on `feat/playwright-surface` from `a0723bf6` to tip `fab56ae1`
+(29-commit repair/court batch landed by W940 per `plans/w940-xaas-commits.md`,
+plus SPEC-16/17 `fab56ae1` per `plans/w940b-spec16-commit.md`); fleet: 12
+commits / 11 repos + the vendored submodule, committed 2026-10-07, no push
+(`plans/w937-fleet-commits.md`). Both playwright legs ALIVE: xaas priority set
+24 passed / 1 skipped / 0 failed on a fresh boot, PW_PORT=4126, exit 0
+(`plans/w842-e2e-revalidation.md`, closes W752's PARTIAL_ALIVE); ash_surface
+371/371 ×2 real Chromium runs on `main@d55c576d` (`plans/w901-ash-surface-playwright.md`).
+
+**FMEA deltas — the wave's repair class.** The w859 typed-gap register
+(`plans/w859-typed-gap-register.md`, at HEAD 49 rows = 30 OPEN + 17 REPAIRED +
+2 TYPED-OPEN, re-derived after the W950 flip) records the wave's repairs; the
+sweeps w943c/w944/w950 flipped/appended rows only where a status-bearing
+receipt's real run closed the row (w943c: W838-G1 awaiter hardening per
+`w918b-awaiter-hardening.md` + W765 GAP-B/C via `w935-spec16-impl.md`/`w940b-spec16-commit.md`;
+w944: W880 counterfactual + W836 health-timeout rows appended REPAIRED per
+`w907-bare-fun-fix.md`/`w860-health-timeout.md`; w950: W674-GAP-2 flipped after
+`w928-gymact-hygiene.md` 11/11 ×2). Major named guards of the wave, each with a
+typed-refusal court:
+1. Claim-authority — `Xaas.Actuation.run/4` admitted a `ComputationClaim` as
+   authority evidence; `admit_authority/2` now refuses claim-shaped maps
+   (W763 G1 measured: a CANDIDATE claim actuated and flipped a Provider row).
+   Receipt `plans/w780-claim-authority-guard.md`.
+2. Incident terminal guard — `:resolve` on a resolved incident now typed-refused
+   via `IncidentResolvedIsTerminal`; ALIVE, sandboxed Postgres, mock-grep zero.
+   Receipt `plans/w818-incident-guards.md`.
+3. Slot-release — cancel now frees the capacity slot (`EnforceSessionCapacity`
+   status filter); closes W893's gap, closing `plans/w893-enrollment-journey.md`'s
+   registered row via `plans/w925-slot-release.md`.
+4. Return-guard — checkout `:return` open-checkout guard; PARTIAL_ALIVE
+   (verification green on uncommitted diff, coordinator owns commit).
+   Receipt `plans/w809-return-guard.md` (transport failure: lane build root
+   mid-compile deletion, disclosed).
+5. ALIVE-gate — capability liveness gate (W750 G1) — `plans/w768-liveness-alive-gate.md`.
+
+**Controls (new court families).** Doctor task (release-audit/doctor mix tasks,
+W814/W791 — `plans/w791-doctor-task.md`, landed in commit 07fb370b); gap register
+as a standing control surface (w859 register + `plans/w859-register-receipt.md`);
+typed-gap register sweeps w943b/c (totals re-derived by awk/grep each sweep, drift
+between register and status receipts is itself the failure class the sweeps kill).
+
+**Open residue.**
+1. Exactly 1 typed open gap: 49.3 EU-AI-Act corpus OPEN_GAP (deployer
+   EU-database registration) — `plans/w815-gap-registration.md` (zero others,
+   per the census).
+2. Register: 30 OPEN rows; 18 DESIGN-class rows spec'd for the DESIGN wave per
+   `plans/w905-design-gap-specs.md` (S/M/L estimates, sequencing deps named).
+3. Operator steps (all NOT YET, per `plans/w946d-runbook-final.md` §FINAL):
+   lane-lease cleanup (80 dirs / ~31.71 GB per `plans/w878-lease-census.md`),
+   dev migrate, ggen sync (one-line page-10 delta predicted by `w918-sync-drift-precheck.md`),
+   pin advance (ggen.toml at `518572b6`), push (xaas + fleet, gated on step 4).
+   Standing: fixes ALIVE on uncommitted working tree at `fab56ae1`+lane diffs;
+   no commit made this lane.
+
+## CYCLE-CLOSE — Campaign closing entry (2026-10-07, lane W977)
+
+**Terminal state as witnessed, receipt-cited.**
+(a) Census doubly witnessed on `fab56ae1`: W926 gate 1352 passed / 1 excluded /
+exit 0, open-gap census 33/34 with exactly 1 flunk = the 49.3 marker
+(`plans/w926-terminal-census-3.md`); W935b independent lane + independent build
+root reproduced 1352 gated / 34 open-gap-tagged
+(`plans/w935b-census-count-capture.md`).
+(b) Fleet pin matrix 11/11 GREEN at the exact W937 committed SHAs (W939 five-row
+run + W963 six-row run; clears the W955 §1b hold) — `plans/w939-fleet-pin-postcommit.md`,
+`plans/w963-fleet-pin-remaining6.md`.
+(c) Fleet: 12 commits / 11 repos + the vendored submodule, committed 2026-10-07,
+no push (`plans/w937-fleet-commits.md`); xaas 30 commits `a0723bf6`→`fab56ae1`
+(`plans/w940-xaas-commits.md` + SPEC-16/17 `fab56ae1` per `plans/w940b-spec16-commit.md`).
+   Fleet push executed 2026-10-07 per W955 §2/§3: 11 of 12 subjects pushed to their
+   branches — `@{push}` == HEAD ×10 plus beam4pm (`@{push}` = HEAD = `560202484f5f`);
+   wasm4pm's branch created new on remote. Typed findings: F1
+   PUSH_REJECTED(NON_FAST_FORWARD) on beam4pm vendor/ggen-marketplace main
+   (remote diverged to `3ddbfeb7e`; local `6e4de9765` on no remote branch; no
+   force/merge/rebase attempted — reconciliation lane W980b in flight, no receipt
+   on disk as of this fold); F2 DANGLING_GITLINK_REMOTE on beam4pm origin main
+   (references vendor `6e4de9765`, unreachable upstream; fresh
+   `clone --recurse-submodules` fails) until W980b lands; F3 SPEC_DRIFT on w955 §2
+   rows 7/8/10 (wasm4pm new remote branch; ash_pplan had no upstream, `-u` used) —
+   both landed on their own feat/fix branches. xaas row 12 held per W955
+   §1a/§1d/§4/§5. Facts and full table: `plans/w980-fleet-push.md` (lane W980);
+   fold by lane W961d, receipt `plans/w961d-push-fold.md`.
+(d) Typed-gap register converged 48→50 rows = 17 OPEN / 31 REPAIRED / 2 TYPED-OPEN
+via sweeps 4–7 + the W971 audit, which flipped 8 stale OPEN rows against on-tree
+evidence with named repair receipts and reconciled W968b's concurrent flips at
+divergence 0 (`plans/w971-open-recount.md`); counts corrected W979 to the
+grep-verified on-disk register totals (W968b landed 5 flips after the W977
+snapshot: `plans/w968b-register-final-flips.md` + W971's subsequent flips).
+(e) Deliberate residue: sole typed open gap = EUAI-ACT 49.3 deployer EU-database
+registration (`plans/w815-gap-registration.md`); OPEN rows now 25 (was 30 at the
+W952 fold; W971 flipped 8 stale), 18 DESIGN-class spec'd for the DESIGN wave per
+`plans/w905-design-gap-specs.md`; operator steps remain NOT YET per
+`plans/w946d-runbook-final.md` §FINAL + `plans/w954-sync-gate-spec.md` /
+`plans/w955-push-gate-spec.md`: lane-lease cleanup, dev migrate, ggen sync, pin
+advance, push (gated in that order). Standing: written on the uncommitted tree at
+`fab56ae1`; no commit, no push from this lane. Receipt `plans/w977-closing-entry.md`.

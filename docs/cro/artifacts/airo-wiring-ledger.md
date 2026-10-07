@@ -5,6 +5,35 @@ wiring wave. Assembled by lane W639, 2026-10-06. Per-lane receipts live in
 `docs/sjira/v26.10.6/plans/` (xaas side); sibling-repo artifacts are listed
 per row.
 
+> **Fleet SHAs updated post-W937 commit wave (W965, 2026-10-07); pre-commit
+> SHAs in plans/w937-fleet-commits.md**
+
+## Fleet repo SHAs (post-W937 commit wave, W965)
+
+Each HEAD verified via real `git -C <repo> rev-parse HEAD` on 2026-10-07.
+Wave-commit column annotates the commit landed by W937
+(`docs/sjira/v26.10.6/plans/w937-fleet-commits.md`).
+
+| repo | branch | HEAD (post-W937) | wave commit | lane receipt |
+|---|---|---|---|---|
+| ggen-marketplace | feat/aaif-gcp-roadmap-v26.10.5 | `b58d7854142bacbd3aeffb83501646cae56c858a` | b58d78541 | plans/w602-airo-marketplace.md |
+| ggen | feat/v26.10.5-release-cut | `ba837d7437367dd84543c07b5179c88e214cbff4` | ba837d743 | plans/w614-ggen-airo.md |
+| beam4pm | main | `560202484f5f61568e74fb0bfde13f6f6a67fdd2` | 56020248 | plans/w634-beam4pm-airo.md |
+| beam4pm/vendor/ggen-marketplace (submodule) | main | `6e4de9765e36392c09539afb1464e1eae4f9b2d8` | 6e4de9765 | plans/w658b (via w937) |
+| ash_surface | main | `b70da9e1c2f5c3ff0bc61299b5a0dcc65bcdd1d3` | b70da9e1c | plans/w637-affidavit-surface-airo.md |
+| gymact | v26926/gymact-land-aloop-execution-kernel | `2fa947cb71f91b6cfbc7f86cc5d69efc9f349337` | 2fa947c | plans/w603-gymact-airo.md |
+| autofde-lab | feat/doctrine-lab | `31e3decfbbbd2d0df8f5fb9085d5d9de32042911` | 31e3decf | plans/w604-autofde-airo.md |
+| wasm4pm | fix/v26.9.30-ci-fmt-tsc | `d980a2a2941327a7d2b0bd892afbb2cf017e230e` | d980a2a29 | plans/w615-wasm4pm-zcode-airo.md |
+| zcode-cli | fix/v26926-preview-publish-typed-skip | `1e40596c6ce7ace3868484556827ff14e840f5a7` | 1e40596 | plans/w615-wasm4pm-zcode-airo.md |
+| ex4pm | main | `abac0d23e2a5517a13a605da514da417e651147a` | abac0d2 | plans/w680-ex4pm-airo-pin.md |
+| ash_pplan | fix/ggen-verify-header | `343e52aebf299a18d12eb81e83c53df78650d15b` | 343e52a | plans/w682-ash-pplan-airo-pin.md |
+| ferroplan | main | `e2c48d339cb084a94f0c5d6ae4cccc1904b74b1f` | e2c48d3 | plans/w638-ferroplan-airo.md |
+
+beam4pm gitlink check: `git -C beam4pm rev-parse HEAD:vendor/ggen-marketplace`
+= `6e4de9765e36392c09539afb1464e1eae4f9b2d8` = submodule HEAD — not dangling.
+Repos not touched by W937 (ash_a2a, ash_r2rml, ggen_igniter, ash_affidavit)
+retain their pre-wave HEADs; no post-pin commit was reported for them.
+
 ## Coverage statement
 
 **14 repos covered across 13 lanes — all receipts landed.** Poll of
