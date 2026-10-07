@@ -58,6 +58,17 @@ defmodule Xaas.Bridges.Registry do
   @spec ids() :: [atom()]
   def ids, do: Enum.map(all(), & &1.id)
 
+  @doc """
+  SPEC-10 (W731-GAP-2, lane W976): the registry reads the real
+  `Xaas.Graphlaw.EngineLimit` rows (`abi` scope) — the registry capability
+  surface now names its own engine-limit enforcement data. Previously no
+  registry function read an EngineLimit row.
+  """
+  @spec engine_limits() :: [Xaas.Graphlaw.EngineLimit.t()]
+  def engine_limits do
+    Xaas.Graphlaw.Catalog.limits_by_scope(Xaas.Graphlaw.LimitGate.scope())
+  end
+
   defp entries do
     [
       pplan: %{

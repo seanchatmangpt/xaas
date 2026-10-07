@@ -79,29 +79,100 @@ defmodule Xaas.Bridges.Graphlaw do
   def assess(claim, opts \\ []) when is_map(claim) and is_list(opts) do
     subject = Keyword.get(opts, :subject) || Xaas.Bridges.subject()
 
-    data = %{"text" => purchase_facts(claim, subject), "dialect" => "ntriples"}
+    gate =
+      Xaas.Graphlaw.LimitGate.enforce(
+        Xaas.Graphlaw.LimitGate.scope(),
+        %{"max_json_depth" => Xaas.Graphlaw.LimitGate.json_depth(claim)}
+      )
+
+    case gate do
+      :ok ->
+        do_assess(claim, subject, opts)
+
+      {:refused, info} ->
+        {:refused, limit_refusal_envelope(subject, info)}
+    end
+  end
+
+  defp do_assess(claim, subject, opts) do
+    facts = purchase_facts(claim, subject)
+    data = %{"text" => facts, "dialect" => "ntriples"}
 
     steps = [
       %{"step" => "n3", "rules" => @rules},
       %{"step" => "shacl", "shapes" => purchase_shapes(subject)}
     ]
 
-    law_opts = Keyword.delete(opts, :subject)
+    case gate_engine_limits(facts, data, steps) do
+      :ok ->
+        law_opts = Keyword.delete(opts, :subject)
 
-    case AshGraphLaw.law(data, steps, law_opts) do
-      {:ok, %AshGraphLaw.Admitted{} = admitted} ->
-        {:ok, admitted_envelope(subject, admitted)}
+        case AshGraphLaw.law(data, steps, law_opts) do
+          {:ok, %AshGraphLaw.Admitted{} = admitted} ->
+            {:ok, admitted_envelope(subject, admitted)}
 
-      {:error, %AshGraphLaw.Refusal{code: code} = refusal} ->
-        envelope = Xaas.Bridges.envelope(subject, "graphlaw purchase policy", :refused)
+          {:error, %AshGraphLaw.Refusal{code: code} = refusal} ->
+            envelope = Xaas.Bridges.envelope(subject, "graphlaw purchase policy", :refused)
 
-        {:refused,
-         envelope
-         |> Map.put(:code, code)
-         |> Map.put(:class, refusal.class)
-         |> Map.put(:broken_term, Map.get(refusal, :broken_term))
-         |> Map.put(:message, AshGraphLaw.Refusal.message(refusal))}
+            {:refused,
+             envelope
+             |> Map.put(:code, code)
+             |> Map.put(:class, refusal.class)
+             |> Map.put(:broken_term, Map.get(refusal, :broken_term))
+             |> Map.put(:message, AshGraphLaw.Refusal.message(refusal))}
+        end
+
+      {:refused, info} ->
+        {:refused, limit_refusal_envelope(subject, info)}
     end
+  end
+
+  # Lane W981k (SPEC-10 continuation): the remaining engine limits with a
+  # true consumption seam at this bridge are the byte limits on the exact
+  # payloads handed to the engine:
+  #
+  # - `max_request_bytes` (abi scope, 16 MiB) — the JSON request the bridge
+  #   renders for `AshGraphLaw.law/3` (data + steps), caller-controlled via
+  #   the claim;
+  # - `n3_max_term_bytes` (n3 scope, 64 KiB) — the largest single N-Triples
+  #   line (subject/predicate/object terms) in the rendered facts;
+  # - `n3_max_total_bytes` (n3 scope, 256 MiB) — total bytes of the facts
+  #   text fed to the n3 step.
+  #
+  # All three use the same `LimitGate.enforce/2` consumer as the depth gate;
+  # a limit row that is absent or unreadable stays fail-open (the seam's
+  # DB-independent court contract), and only a real recorded exceedance
+  # refuses. Measured on what is actually sent — no artificial plumb-through.
+  defp gate_engine_limits(facts, data, steps) do
+    request_bytes =
+      %{"data" => data, "steps" => steps}
+      |> Jason.encode!()
+      |> byte_size()
+
+    n3_lines = String.split(facts, "\n", trim: true)
+    n3_term_bytes = n3_lines |> Enum.map(&byte_size/1) |> Enum.max()
+    n3_total_bytes = byte_size(facts)
+
+    abi = Xaas.Graphlaw.LimitGate.enforce("abi", %{"max_request_bytes" => request_bytes})
+    n3 = Xaas.Graphlaw.LimitGate.enforce("n3", %{"n3_max_term_bytes" => n3_term_bytes})
+
+    n3_total =
+      Xaas.Graphlaw.LimitGate.enforce("n3", %{"n3_max_total_bytes" => n3_total_bytes})
+
+    Enum.find([abi, n3, n3_total], &match?({:refused, _}, &1)) || :ok
+  end
+
+  defp limit_refusal_envelope(subject, info) do
+    envelope = Xaas.Bridges.envelope(subject, "graphlaw purchase policy", :refused)
+
+    envelope
+    |> Map.put(:code, :limit_exceeded)
+    |> Map.put(:class, :refused_admission)
+    |> Map.put(:broken_term, :mu_on_O)
+    |> Map.put(:limit, info.limit)
+    |> Map.put(:limit_value, info.limit_value)
+    |> Map.put(:refusal_name, info.refusal_name)
+    |> Map.put(:message, info.message)
   end
 
   defp admitted_envelope(subject, %AshGraphLaw.Admitted{} = admitted) do
