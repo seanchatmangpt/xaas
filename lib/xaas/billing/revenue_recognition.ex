@@ -27,6 +27,24 @@ defmodule Xaas.Billing.RevenueRecognition do
     repo(Xaas.Repo)
   end
 
+  # SPEC-07 (W905 W729-GAP-3, lane W982p): real Ash attribute-strategy
+  # multitenancy backstop, converging on the convention lane W970a landed on
+  # the sibling Xaas.Billing approval resources (see
+  # approval_pricing_override.ex for the full comment, including the Ash
+  # 3.34 update-path reason for `global?(true)`). Tenant-less operations
+  # behave exactly as before (org_id remains `allow_nil?(false)` and is
+  # accepted on :actuate_recognition, the only create); any operation that
+  # DOES bind a tenant is hard-filtered to that org's rows. The
+  # ReactorContext validation below is unchanged -- it still refuses any
+  # :actuate_recognition not manufactured through the Xaas.Actuation DO
+  # path (which itself accepts a tenant option that now binds isolation).
+  # See test/xaas/billing/billing_multitenancy_court_test.exs.
+  multitenancy do
+    strategy(:attribute)
+    attribute(:org_id)
+    global?(true)
+  end
+
   policies do
     bypass action_type(:read) do
       authorize_if(always())

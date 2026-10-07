@@ -167,6 +167,27 @@ defmodule Xaas.Billing.Subscription do
     repo(Xaas.Repo)
   end
 
+  # SPEC-07 (W905 W729-GAP-3, lane W982p): real Ash attribute-strategy
+  # multitenancy backstop, converging on the convention lane W970a landed on
+  # the sibling Xaas.Billing approval resources (see
+  # approval_pricing_override.ex for the full comment): `global?(true)`
+  # because every existing caller runs tenant-less today AND because Ash
+  # 3.34's update path (Ash.Actions.Update.set_tenant/1) enforces tenant
+  # presence from the RESOURCE flag regardless of per-action `:allow_global`
+  # -- so resource-level global? is the only shape that keeps every existing
+  # tenant-less mutation working. Tenant-less operations behave exactly as
+  # before (org_id is still `allow_nil?(false)` and explicitly accepted, so
+  # every real caller already stamps it); any operation that DOES bind a
+  # tenant is hard-filtered to that org's rows. The `:unique_org` identity
+  # below stays a plain whole-table unique index -- tenant-scoped identities
+  # are a separate decision, and one subscription per org is unchanged. See
+  # test/xaas/billing/billing_multitenancy_court_test.exs.
+  multitenancy do
+    strategy(:attribute)
+    attribute(:org_id)
+    global?(true)
+  end
+
   actions do
     defaults([:read])
 
@@ -246,8 +267,8 @@ defmodule Xaas.Billing.Subscription do
 
     # Loose string, not a belongs_to FK -- same real, disclosed convention
     # `Xaas.Accounts.Org`'s own moduledoc documents for every existing
-    # org_id attribute in this repo (real Ash multitenancy wiring is
-    # named there as disclosed follow-up work, not done here either).
+    # org_id attribute in this repo (SPEC-07 lane W982p now wires the
+    # multitenancy block itself; see it above the `actions` block).
     attribute :org_id, :string do
       allow_nil?(false)
       public?(true)

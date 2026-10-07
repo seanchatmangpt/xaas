@@ -55,7 +55,8 @@ defmodule Xaas.Billing.ApprovalPatchSlaCreditApply do
     # both now real-check `Xaas.Billing.Checks.SlaCreditActorOrgMatches`
     # (the actor's `X-Org-Id`-resolved org must match this record's real
     # `org_id`). See that module's moduledoc for why this is needed --
-    # this resource has no `multitenancy` block of its own to backstop it.
+    # SPEC-07 lane W982p now adds the resource-level `multitenancy` block as
+    # the data-layer backstop on top of this actor-identity check.
     bypass action(:create) do
       authorize_if(Xaas.Billing.Checks.SlaCreditActorOrgMatches)
     end
@@ -88,6 +89,23 @@ defmodule Xaas.Billing.ApprovalPatchSlaCreditApply do
   postgres do
     table("approval_patch_sla_credit_applies")
     repo(Xaas.Repo)
+  end
+
+  # SPEC-07 (W905 W729-GAP-3, lane W982p): real Ash attribute-strategy
+  # multitenancy backstop, converging on the convention lane W970a landed on
+  # the sibling approval resources (see approval_pricing_override.ex for the
+  # full comment, including the Ash 3.34 update-path reason for
+  # `global?(true)`). Tenant-less operations behave exactly as before
+  # (org_id remains `allow_nil?(false)` and is explicitly accepted on
+  # :create); any operation that DOES bind a tenant is hard-filtered to that
+  # org's rows. The SlaCreditActorOrgMatches policy checks below stay
+  # unchanged -- they gate actor identity at the policy layer, this block
+  # backstops row isolation at the data layer. See
+  # test/xaas/billing/billing_multitenancy_court_test.exs.
+  multitenancy do
+    strategy(:attribute)
+    attribute(:org_id)
+    global?(true)
   end
 
   actions do
@@ -131,9 +149,8 @@ defmodule Xaas.Billing.ApprovalPatchSlaCreditApply do
 
     # Real, necessary addition beyond the prior read-only skeleton's
     # attribute set: crediting an org's Ledger.Account requires a real
-    # org identifier. No multitenancy machinery is wired here (unlike
-    # Xaas.Governance.ApprovalBackupRetentionChange) -- this is a plain
-    # string identifier, used directly as the Xaas.Ledger.Account
+    # org identifier. Plain string identifier (not a belongs_to FK), used
+    # directly as the Xaas.Ledger.Account
     # `identifier` for the org's account, same convention
     # Xaas.Billing.Changes.SubscriptionChargeOnActivate and
     # Xaas.Governance.Changes.ApprovalBackupRetentionChangeChargeOverage
