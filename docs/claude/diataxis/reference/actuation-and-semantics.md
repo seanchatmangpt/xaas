@@ -251,6 +251,106 @@ How a descriptor's `graph_digest` relates to its admission snapshot is declared 
 
 `Xaas.Ultracode.SemanticWork.materialize/2` pins `:snapshot` itself (it admits with `binding: :snapshot` unless the caller declared a mode), so the materialize boundary is strict: the descriptor's graph digest must bind to its admission anchors.
 
+## EU-AI-Act semantics layer (v26.10.6)
+
+A typed, structural admission and evidence layer over the EU AI Act's prohibited
+practices (Art. 5(1)(a)-(h)) and Article-risk vocabulary. It sits beside — never
+inside — the actuation DO path: it admits, refuses, and produces evidence
+artifacts, but grants no authority and performs no DO. The only mutation-authority
+path remains `Xaas.Actuation.run/4` (and its external seal protocol, above).
+
+### Admission boundary: `Xaas.Semantics.EuAiActAdmission`
+
+`admit/1` renders the eight Art. 5(1) partitions as *unrepresentable inputs* —
+structural disjointness checks over the declared intent schema, never content
+inspection (no free text, model output, or user data is ever read):
+
+| Art. 5(1) | refusal atom | structural invariant |
+| --- | --- | --- |
+| (a) manipulative/subliminal/deceptive | `:REFUSED_EUAIA_MANIPULATIVE` | technique class in `[:manipulate_behavior, :deceptive, :subliminal]` (`eu_ai_act_admission.ex:141`) |
+| (a) vulnerability exploit | `:REFUSED_EUAIA_VULNERABILITY_EXPLOIT` | technique in `[:exploit_vulnerability, :target_vulnerable_audience]` (`eu_ai_act_admission.ex:147`) |
+| (b) social scoring | `:REFUSED_EUAIA_SOCIAL_SCORING` | `:social_behavior` domain joined to `:unrelated_context_join` (`eu_ai_act_admission.ex:153`) |
+| (c) predictive policing | `:REFUSED_EUAIA_PREDICTIVE_POLICING` | `:predict_offending` purpose + `:individualized_profile_join` (`eu_ai_act_admission.ex:160`) |
+| (d) untargeted facial scraping | `:REFUSED_EUAIA_FACIAL_SCRAPING` | `:facial_images` domain with provenance ≠ `:consented` (`eu_ai_act_admission.ex:165`) |
+| (e) emotion recognition | `:REFUSED_EUAIA_EMOTION_RECOGNITION` | `:affective` domain in `:workplace`/`:education` setting (`eu_ai_act_admission.ex:170`) |
+| (f) biometric categorization | `:REFUSED_EUAIA_BIOMETRIC_CATEGORIZATION` | biometric surface with non-empty `:inferences` or non-`:boolean` match tokens (`eu_ai_act_admission.ex:175`) |
+| (g)/(h) realtime RBI | `:REFUSED_EUAIA_REALTIME_RBI` | `:public_space` + `:biometric_identification` + `:realtime` latency (`eu_ai_act_admission.ex:180`) |
+
+The refusal set is closed: the eight atoms above (declared at
+`eu_ai_act_admission.ex:33`) plus `:REFUSED_EUAIA_MALFORMED_CANDIDATE` for a
+non-map candidate (`eu_ai_act_admission.ex:116`). Checks run in article order and the first
+violated invariant wins (`eu_ai_act_admission.ex:106`). `describe/1` maps each atom
+to its Art. 5(1) partition string. `List.wrap`-based totality guards (W630) make
+improper lists opaque leaves rather than crashes (`eu_ai_act_admission.ex:196`).
+
+### Runtime intake gate: `XaasWeb.Plugs.EuAiActAdmissionPlug` (W521)
+
+The admission is wired at the `/a2a` JSON-RPC intake, not the router: an endpoint
+plug (`XaasWeb.Endpoint` immediately after `Plug.Parsers`) keyed on
+`%{method: "POST", path_info: ["a2a" | _]}` runs `admit/1` over the decoded JSON-RPC
+`params` BEFORE agent dispatch. Normalization atomizes ONLY the nine declared
+schema fields via `String.to_existing_atom/1` — the prohibited-practice vocabulary
+is precompiled into the admission module's beam, no new atom is minted, and unknown
+keys/free text are never atomized or inspected (`eu_ai_act_admission_plug.ex:19-29`).
+A refusal is a JSON-RPC 2.0 error envelope (HTTP 200, code -32600) with the typed
+refusal atom in `error.data` plus the `describe/1` article string
+(`eu_ai_act_admission_plug.ex:56-66`, `:155`). GETs (agent card), SSE, and all
+non-`/a2a` paths pass untouched; `:require_internal_api_token` stays the single
+auth floor and the plug grants no authority — it only refuses.
+
+### Position relative to the actuation DO path
+
+The semantics modules (`lib/xaas/semantics/*.ex`) are admission/observation
+surfaces: they produce typed verdicts, risk graphs, incident reports, margin and
+governance evidence — none of them actuates, and none of them is granted any
+authority ceiling. Consequential DO remains exclusively behind `Xaas.Actuation.run/4`
+and the Ash.Reactor intent/receipt path documented above. A refusal from this layer
+halts the request at the intake plug; it can never mint authority or route into the
+actuation ledger.
+
+### AIRo mapping (vendored ontology + deterministic graph)
+
+- Vendored AIRo ontology: `priv/semantic/airo/airo.ttl`, sha256-pinned by
+  `test/xaas/semantics/airo_vendored_pin_test.exs` (existence, digest, and
+  key-class/property presence — drift fails the pin test, not a degraded pass).
+- `Xaas.Semantics.AiroRiskMapping` renders a deterministic AIRo Turtle risk graph:
+  one `airo:RiskSource` + `airo:Hazard` per ledger refusal variant, one
+  `airo:RiskControl` per enforcing module with `airo:detectsRiskConcept` /
+  `airo:mitigatesRiskConcept` edges, the `airo:AISystem` / `airo:AIDeployer` nodes
+  and `airo:hasRisk` edges (`airo_risk_mapping.ex:1-15`, graph body `:218-298`).
+  `Xaas.Semantics.EuAiActAdmission` is registered as an enforcing module in the
+  mapping (`airo_risk_mapping.ex:79`), and the euaia refusal strings seed
+  `Xaas.Semantics.IncidentReport` (`incident_report.ex:38`).
+
+### Export endpoint: `GET /internal-api/eu-ai-act/pack` (OS-14)
+
+`XaasWeb.EuAiActExportController` (router mount `router.ex:98`, inside the
+`/internal-api` scope with the `:require_internal_api_token` floor) serves the SAME
+pack as `mix xaas.eu_ai_act_pack` via that task's public `Mix.Tasks.Xaas.EuAiActPack.build/1`
+(`lib/mix/tasks/xaas.eu_ai_act_pack.ex:141`). The build is fail-closed: missing
+cited evidence path, missing coverage map, or empty typed-gaps extraction returns
+`{:refused, reason}` → HTTP 503 with `schema: "xaas.eu_ai_act_pack_refusal/v1"`
+(`eu_ai_act_export_controller.ex:18-33`). The pack never claims a gap closed; the
+typed-gaps section is carried verbatim from the map. Artifacts are generated on
+request, not persisted.
+
+See also `docs/claude/diataxis/reference/eu-ai-act-semantics.md` for the
+article-level semantics; this section records the admission/DO boundary.
+
+### Witness verification-key semantics (key rotation)
+
+- Two distinct key materials under the same algorithm (ES256) register distinct
+  `kid`s; the catalog carries all of them.
+- Each receipt carries the `verifying_key_hex` actually ingested;
+  `record_verification` standing binds to that key — verifying a v1-key receipt
+  leaves the v2-key receipt `verified == false`.
+- An unknown algorithm is a typed skip
+  (`{0, "DILITHIUM2", :algorithm_not_in_admitted_enum}` in `:skipped`), never a
+  silent drop and never a row; no `:ingest_refused` error is raised.
+
+Courted in `test/xaas/witness/catalog_durability_test.exs` (`:eu_ai_act` tag);
+receipt: `docs/sjira/v26.10.6/plans/w709-witness-durability.md`.
+
 ## Digest forms (producer contract)
 
 WHICH fields the snapshot digests cover is a property of the producer version, so it is an explicit, versioned part of the contract: a descriptor carrying `admitted_work_order` MUST declare `digest_form`. XaaS computes and checks exactly the declared form; it is never inferred from the snapshot's shape, and an undeclared form is refused (`:digest_form_undeclared`), not defaulted.

@@ -60,7 +60,11 @@ custom_types: [
 All 19 domains live directly under `lib/xaas/*.ex` (one file per domain), each
 `use Ash.Domain, otp_app: :xaas, extensions: [...]`, each with `admin do show? true end`
 where extensions permit. Resource counts are read directly from each domain's real
-`resources do ... end` block (re-verified 2026-10-06 at HEAD `d1db2b03`; 116 resources total).
+`resources do ... end` block (re-verified 2026-10-07 at HEAD `a0723bf6`; 116 resources total).
+Extension columns record which extensions a domain `use`s — that is code
+wiring, not proof the corresponding protocol is served over HTTP (see
+[GraphQL surface status](#graphql-surface-status) below for the AshGraphql
+case).
 
 | Domain module | File | Extensions | Resource count |
 |---|---|---|---|
@@ -84,21 +88,19 @@ where extensions permit. Resource counts are read directly from each domain's re
 | `Xaas.Ultracode` | `lib/xaas/ultracode.ex` | `AshJsonApi.Domain`, `AshGraphql.Domain`, `AshAdmin.Domain` | 8 |
 | `Xaas.Witness` | `lib/xaas/witness.ex` | `AshAdmin.Domain` | 2 (`Xaas.Witness.CertifiedReceipt`, `Xaas.Witness.VerificationKey`) |
 
-| Domain module | File | Extensions | Resource count |
-|---|---|---|---|
-| `Xaas.Library` | `lib/xaas/library.ex` | `AshJsonApi.Domain`, `AshGraphql.Domain`, `AshAdmin.Domain`, `AshAi` | 7 |
-| `Xaas.Accounts` | `lib/xaas/accounts.ex` | `AshJsonApi.Domain`, `AshGraphql.Domain`, `AshAdmin.Domain`, `AshTypescript.Rpc` | 5 |
-| `Xaas.Billing` | `lib/xaas/billing.ex` | `AshJsonApi.Domain`, `AshGraphql.Domain`, `AshAdmin.Domain`, `AshTypescript.Rpc` | 8 |
-| `Xaas.Coupling` | `lib/xaas/coupling.ex` | `AshAdmin.Domain` | 1 |
-| `Xaas.Generation` | `lib/xaas/generation.ex` | (none) | 1 |
-| `Xaas.Governance` | `lib/xaas/governance.ex` | `AshJsonApi.Domain`, `AshGraphql.Domain`, `AshPaperTrail.Domain`, `AshAdmin.Domain` | 28 |
-| `Xaas.Ledger` | `lib/xaas/ledger.ex` | `AshJsonApi.Domain`, `AshGraphql.Domain`, `AshAdmin.Domain` | 4 |
-| `Xaas.Marketplace` | `lib/xaas/marketplace.ex` | `AshJsonApi.Domain`, `AshGraphql.Domain`, `AshAdmin.Domain`, `AshTypescript.Rpc` | 2 |
-| `Xaas.Ocel` | `lib/xaas/ocel.ex` | `AshAdmin.Domain` | 5 |
-| `Xaas.Operations` | `lib/xaas/operations.ex` | `AshJsonApi.Domain`, `AshGraphql.Domain`, `AshAdmin.Domain`, `AshTypescript.Rpc`, `Xaas.Operations.ProjectMeasure.Extension` | 21 |
-| `Xaas.Platform` | `lib/xaas/platform.ex` | `AshJsonApi.Domain`, `AshGraphql.Domain`, `AshAdmin.Domain` | 7 |
-| `Xaas.TemporalMemory` | `lib/xaas/temporal_memory.ex` | (none) | 1 |
-| `Xaas.Ultracode` | `lib/xaas/ultracode.ex` | `AshJsonApi.Domain`, `AshGraphql.Domain`, `AshAdmin.Domain` | 8 |
+### GraphQL surface status
+
+The `AshGraphql.Domain` entries in the table above record **extension
+presence only — they do not imply HTTP GraphQL exposure**. At v26.10.6:
+
+- `Xaas.GraphqlSchema` (`lib/xaas/graphql_schema.ex`) compiles, but is **not
+  mounted over any HTTP route**: no `Absinthe.Plug` forward exists in
+  `lib/xaas_web/router.ex`, the endpoint, or either JSON:API router.
+- Only **3 domains** are wired into the schema (`Xaas.Operations`,
+  `Xaas.Library`, `Xaas.Marketplace`) — not "most" of the 19 listed above.
+- Standing: `UNSUPPORTED(graphql-http-surface)` per
+  `docs/sjira/v26.10.6/plans/w802-graphql-surface.md` (verified 2026-10-07 at
+  HEAD `a0723bf6`).
 
 What the domains added since the original eight own:
 
@@ -170,15 +172,41 @@ Resources:
   `algorithm`, `signature_hex`, `verifying_key_hex`) are write-once at create
   time; policies forbid every action except `:read`, create `:ingest`, and the
   narrow `:record_verification` update, which refuses once `verified` is true
-  (verification results are also write-once). Algorithms: `es256`, `ed25519`,
-  `es256k`, `ml_dsa65`.
+  (verification results are also write-once). Stored algorithms: `es256`,
+  `ed25519`, `es256k`, `ml_dsa65` (`lib/xaas/witness/certified_receipt.ex:20`);
+  all 6 wire algorithms (the 4 stored atoms plus `ES256K_RECOVERABLE` and
+  `ML-DSA-65` aliases) round-trip real signatures in the W698 deepening
+  courts — ECDSA/Ed25519 via `:crypto`, ML-DSA-65 via the real OpenSSL CLI
+  (`pkeyutl -rawin`, FIPS 204) — each with tampered-message negative controls
+  (`docs/sjira/v26.10.6/plans/w698-witness-deepening.md`).
 - `Xaas.Witness.VerificationKey` (`lib/xaas/witness/verification_key.ex`) — a
   registered verifying key (kid + algorithm + key material); registering the
-  same kid twice is refused by identity.
+  same kid twice is refused by identity `:unique_kid`
+  (`lib/xaas/witness/verification_key.ex:33`).
 - `Xaas.Witness.Catalog` (`lib/xaas/witness/catalog.ex`) — the context that
   ingests affidavit's mutation-baseline JSON plus signing-surface metadata into
   these resources and records verification results. Supported wire algorithms
   additionally include `ES256K_RECOVERABLE` and `ML-DSA-65` aliases.
+
+Identity constraints and ingest semantics (W709/W726):
+
+- Duplicate `(subject, payload_hash_hex)` or duplicate `kid` creates surface
+  as a typed `Ash.Error.Invalid` ("has already been taken"), not
+  `Ash.Error.Unknown` wrapping a raw `Ecto.ConstraintError`: the identity
+  `:unique_subject_payload`
+  (`lib/xaas/witness/certified_receipt.ex:49`) and `:unique_kid`
+  (`lib/xaas/witness/verification_key.ex:33`) are backed by indexes renamed to
+  Ash's derived constraint names by migration
+  `priv/repo/migrations/20261007000000_rename_witness_identity_indexes.exs`
+  (`witness_certified_receipts_unique_subject_payload_index`,
+  `witness_verification_keys_unique_kid_index`; guarded no-op renames,
+  reversible `down`). Cited from
+  `docs/sjira/v26.10.6/plans/w726-witness-constraint-fix.md`.
+- `Catalog.ingest/1` is idempotent-reuse: re-ingesting the same subject
+  payload or re-registering the same kid reuses the existing receipt/key
+  (byte-identical) instead of faulting
+  (`lib/xaas/witness/catalog.ex:115-117`, `lib/xaas/witness/catalog.ex:152`;
+  contract cited from `docs/sjira/v26.10.6/plans/w709-witness-durability.md`).
 
 E2E spec `e2e/witness.spec.cjs` (lane W1, v26.10.6) targets a read-only
 `/witness` LiveView; the route is mounted at `lib/xaas_web/router.ex:62`
