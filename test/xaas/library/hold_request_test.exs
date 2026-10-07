@@ -5,7 +5,7 @@ defmodule Xaas.Library.HoldRequestTest do
   """
   use Xaas.DataCase, async: false
 
-  alias Xaas.Library.{Book, HoldRequest}
+  alias Xaas.Library.{Book, Checkout, HoldRequest}
   require Ash.Query
 
   setup do
@@ -119,6 +119,19 @@ defmodule Xaas.Library.HoldRequestTest do
 
       reloaded_book = Ash.get!(Book, book.id, authorize?: false)
       assert reloaded_book.available_copies == 0
+
+      # W970b (W796-G3 close): fulfillment really mints the hand-off
+      # Checkout row for the holding student -- open (:borrowed), pointing
+      # at the held book and the hold's own school. Before this repair the
+      # hand-off was implicit (inventory moved, no loan row existed).
+      checkout =
+        Checkout
+        |> Ash.Query.filter(book_id == ^book.id and user_id == ^user.id and status == :borrowed)
+        |> Ash.read_one!(authorize?: false)
+
+      assert %Checkout{} = checkout
+      assert checkout.school_id == hold.school_id
+      assert checkout.returned_at == nil
     end
 
     test "refuses to fulfill a hold that is already fulfilled" do

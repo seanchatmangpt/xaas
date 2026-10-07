@@ -75,6 +75,13 @@ defmodule Xaas.Platform.RouteProjectsBackups do
       authorize_if(Xaas.Platform.Checks.ActorOrgMatches)
     end
 
+    # W970b (W770 retention-sweep row): the real prune path is gated by the
+    # same org-match check as :create -- only the owning org's actor may
+    # purge its own expired backups.
+    bypass action(:purge_expired) do
+      authorize_if(Xaas.Platform.Checks.ActorOrgMatches)
+    end
+
     policy always() do
       forbid_if(always())
     end
@@ -92,6 +99,7 @@ defmodule Xaas.Platform.RouteProjectsBackups do
       get(:read)
       index(:read)
       post(:create)
+      delete(:purge_expired)
     end
   end
 
@@ -116,6 +124,21 @@ defmodule Xaas.Platform.RouteProjectsBackups do
       ])
 
       validate(Xaas.Platform.Validations.RouteProjectsBackupsValidProjectName)
+    end
+
+    # W970b (closing the W770 "no transition path: RouteProjectsBackups
+    # lacks :update/:destroy (no retention sweep)" OPEN register row): the
+    # real retention sweep is a typed destroy, not a bare one -- a backup
+    # row may be pruned only after its own `retain_until` has passed
+    # (RouteProjectsBackupsRetainUntilPassed). A bare generic `:update`/
+    # `:destroy` stays deliberately absent: status transitions remain
+    # unimplemented (the disclosed non-ported k8s reconciliation loop).
+    destroy :purge_expired do
+      description("Real retention sweep: prune a backup whose retain_until has passed.")
+
+      accept([])
+
+      validate(Xaas.Platform.Validations.RouteProjectsBackupsRetainUntilPassed)
     end
   end
 

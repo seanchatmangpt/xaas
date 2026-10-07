@@ -21,9 +21,9 @@ defmodule Xaas.Platform.PlatformRouteDeepeningTest do
     record's own `org_id`); RouteOrgsCustomDomain additionally enforces the
     RFC 1123 hostname shape rule on `:create` and the
     active-requires-certificate-secret rule on `:update`.
-  - RouteProjects remains create-less: no create action exists, so new rows
-    can still never be minted through this resource (W792 added a real
-    `:approve` update action on existing rows only).
+  - RouteProjects gained a real `:create` in W969c / SPEC-21 (W770-GAP-3),
+    so `requested_by` rows are now mintable through the resource (W792
+    added the real `:approve` half of the maker-checker pair).
 
   Approval wiring corrected in W792 (asserted, not assumed):
 
@@ -396,21 +396,96 @@ defmodule Xaas.Platform.PlatformRouteDeepeningTest do
              Ash.get!(RouteProjectsBackups, row.id, authorize?: false)
   end
 
+  test "(4c) W970b/W770 retention sweep: purge_expired refuses before retain_until, purges after it (row really gone), cross-org refused" do
+    slug = "w970b-purge-#{System.unique_integer([:positive])}"
+    now = DateTime.utc_now() |> DateTime.truncate(:second)
+
+    row =
+      authorized_create!(RouteProjectsBackups, :create, %{
+        org_id: slug,
+        namespace: "ns",
+        project_name: "p",
+        job_name: "j",
+        taken_at: now,
+        size_bytes: 0,
+        retain_until: now
+      }, org_actor(slug))
+
+    # (i) a row whose retain_until is in the future: typed refusal, row
+    # survives on disk
+    future_row =
+      authorized_create!(RouteProjectsBackups, :create, %{
+        org_id: slug,
+        namespace: "ns",
+        project_name: "p2",
+        job_name: "j2",
+        taken_at: now,
+        size_bytes: 0,
+        retain_until: DateTime.add(now, 7 * 24 * 3600, :second)
+      }, org_actor(slug))
+
+    assert_raise Ash.Error.Invalid, fn ->
+      future_row
+      |> Ash.Changeset.for_destroy(:purge_expired, %{},
+        actor: org_actor(slug),
+        authorize?: true
+      )
+      |> Ash.destroy!()
+    end
+
+    assert %RouteProjectsBackups{} = Ash.get!(RouteProjectsBackups, future_row.id,
+             authorize?: false
+           )
+
+    # (ii) cross-org purge refused by ActorOrgMatches (typed Forbidden)
+    assert_raise Ash.Error.Forbidden, fn ->
+      row
+      |> Ash.Changeset.for_destroy(:purge_expired, %{},
+        actor: org_actor("attacker-#{System.unique_integer([:positive])}"),
+        authorize?: true
+      )
+      |> Ash.destroy!()
+    end
+
+    assert %RouteProjectsBackups{} = Ash.get!(RouteProjectsBackups, row.id, authorize?: false)
+
+    # (iii) after retain_until passes: the real prune succeeds and the row
+    # is really gone from disk
+    assert :ok =
+             row
+             |> Ash.Changeset.for_destroy(:purge_expired, %{},
+               actor: org_actor(slug),
+               authorize?: true
+             )
+             |> Ash.destroy()
+
+    assert nil == Ash.get(RouteProjectsBackups, row.id, authorize?: false)
+  end
+
   # ------------------------------------------------------------------
   # (5) RouteProjects -- read-only by construction
   # ------------------------------------------------------------------
 
-  test "(5) RouteProjects is create-less; :approve exists and is the only write" do
+  test "(5) RouteProjects :create exists (W969c / SPEC-21) alongside :approve" do
     action_names = Enum.map(Ash.Resource.Info.actions(RouteProjects), & &1.name)
-    assert action_names -- [:read, :approve] == []
+    assert action_names -- [:read, :approve, :create] == []
     assert :read in action_names
     assert :approve in action_names
+    assert :create in action_names
 
-    assert_raise ArgumentError, fn ->
+    # The old pin (create attempt raises ArgumentError) flips here: the
+    # create half of the maker-checker pair is real, so a real create
+    # through the resource must persist a row.
+    row =
       RouteProjects
-      |> Ash.Changeset.for_create(:create, %{requested_by: "w770"}, actor: @internal_api, authorize?: true)
+      |> Ash.Changeset.for_create(:create, %{requested_by: "w969c"},
+        actor: @internal_api,
+        authorize?: true
+      )
       |> Ash.create!()
-    end
+
+    assert %RouteProjects{requested_by: "w969c", approved_by: nil} =
+             Ash.get!(RouteProjects, row.id, authorize?: false)
   end
 
   # ------------------------------------------------------------------
@@ -516,11 +591,13 @@ defmodule Xaas.Platform.PlatformRouteDeepeningTest do
              Ash.get!(RouteSecrets, secret.id, authorize?: false)
   end
 
-  test "(6c) RouteProjects :approve on an existing row enforces maker-checker; non-system actor refused; no create action added" do
-    # row inserted at the storage layer: the resource is create-less by
-    # construction (W770's disclosed dead-write gap, kept as-is except for
-    # the approve surface). Raw insert with RETURNING because the table's
-    # uuid has a DB-side default and Postgrex needs the binary form.
+  test "(6c) RouteProjects :approve on an existing row enforces maker-checker; non-system actor refused" do
+    # row still inserted at the storage layer here to keep the original
+    # W792 block's real-row construction unchanged (W969c / SPEC-21 added
+    # a real `:create`; that half is courted in test (5) and
+    # route_projects_create_court_test.exs). Raw insert with RETURNING
+    # because the table's uuid has a DB-side default and Postgrex needs
+    # the binary form.
     import Ecto.Query
 
     {1, _} =

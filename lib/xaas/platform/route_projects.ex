@@ -20,9 +20,14 @@ defmodule Xaas.Platform.RouteProjects do
     # system-authority gate (matching the flags/secrets mutation gate),
     # plus the RouteProjectsRequiresApprover validation on the action
     # itself (approved_by present and distinct from requested_by).
-    # RouteProjects remains create-less: :approve operates on existing
-    # rows only.
+    # W969c / SPEC-21: rows can now be minted through the resource's own
+    # real `:create` (previously create-less: rows could only exist via
+    # storage-layer insert_all).
     bypass action(:approve) do
+      authorize_if({Xaas.Checks.SystemActor, []})
+    end
+
+    bypass action(:create) do
       authorize_if({Xaas.Checks.SystemActor, []})
     end
 
@@ -54,12 +59,21 @@ defmodule Xaas.Platform.RouteProjects do
   actions do
     defaults([:read])
 
+    # W969c / SPEC-21 (W770-GAP-3): the create half of the maker-checker
+    # pair. Before this action the columns existed but could never be
+    # produced through the resource (`approved_by` metadata dead-ended at
+    # the W792 :approve operating only on storage-inserted rows). Policy
+    # gate matches the flags/secrets mutation gate (SystemActor).
+    create :create do
+      accept([:requested_by])
+    end
+
     # W792: real maker-checker approve action -- a second, distinct actor
     # (named by `approved_by`, refused when equal to `requested_by` by the
     # validation) signs the project row. Previously the *RequiresApprover
     # validation / *Approve change shims were wired to no action anywhere
-    # and the resource was write-dead. This does NOT add a create: rows
-    # still cannot be minted through this resource.
+    # and the resource was write-dead. W969c / SPEC-21 adds the `:create`
+    # half so `requested_by` can now be lawfully produced too.
     update :approve do
       accept([:approved_by])
       require_atomic?(false)

@@ -116,7 +116,7 @@ defmodule Xaas.Library.HoldRequest do
 
     update :fulfill do
       description(
-        "Fulfills an active hold when a copy becomes available, decrementing book inventory"
+        "Fulfills an active hold when a copy becomes available, decrementing book inventory and minting the real hand-off Checkout (W970b/W796-G3)"
       )
 
       accept([])
@@ -146,6 +146,27 @@ defmodule Xaas.Library.HoldRequest do
             {:error, error} ->
               {:error, error}
           end
+        end)
+      end)
+
+      # W970b (closing W796-G3: "fulfilled hold mints no real Checkout row;
+      # hand-off implicit"): fulfillment now really mints the physical
+      # hand-off row. A fulfilled hold leaves behind an open Checkout
+      # (:borrowed) for the holding student, created in the same
+      # after_action transaction as the inventory decrement -- a Checkout
+      # create failure fails the fulfillment and rolls back both.
+      change(fn changeset, _context ->
+        Ash.Changeset.after_action(changeset, fn _changeset, hold ->
+          checkout =
+            Xaas.Library.Checkout
+            |> Ash.Changeset.for_create(:create, %{
+              book_id: hold.book_id,
+              user_id: hold.user_id,
+              school_id: hold.school_id
+            })
+            |> Ash.create!(authorize?: false)
+
+          {:ok, hold}
         end)
       end)
     end
