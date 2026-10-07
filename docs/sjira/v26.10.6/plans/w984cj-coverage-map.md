@@ -1,0 +1,148 @@
+# W984cj — Coverage Map of `lib/xaas` vs `test/`
+
+Lane: W984cj, xaas v26.10.6 campaign. Date: 2026-10-07.
+Subject: branch `feat/playwright-surface`, working tree as of this run (uncommitted
+lane edits present, see git status snapshot).
+
+## Method
+
+Script (Elixir, run via `elixir /tmp/w984cj_coverage.exs` under the pinned asdf
+toolchain, no project compile needed — pure file walk):
+
+1. Enumerate every `lib/xaas/**/*.ex` (825 files).
+2. Module name parsed from the file's actual `defmodule X` line (path-derived
+   camelization is WRONG for non-standard names — e.g. `lib/xaas/bridges/pplan.ex`
+   defines `Xaas.Bridges.PPlan`, path-camelize gives `Pplan`).
+3. Covered if the full dotted module name appears anywhere in the concatenated
+   `test/**/*.exs` corpus, OR the last segment appears as a whole word anywhere in
+   it (brace-alias pass: `alias Xaas.Runtime.{ProviderRegistry, Router}` never
+   spells the dotted name).
+4. NON-TESTABLE classes: protocol-only modules (`defprotocol` without `defimpl`),
+   igniter/mix-task modules, and a config-class list (repo, application, release,
+   postgrex_types, prom_ex, mailer, dev_seeds, legacy_repo, aws_repo, resource, pack).
+
+## Totals
+
+**As-written walk: 825 modules — 629 COVERED (76.2%), 193 UNCOVERED, 15 NON-TESTABLE.**
+Re-run (same script, +12 min later, after concurrent lanes added files): **826 modules —
+629 COVERED, 194 UNCOVERED, 15 NON-TESTABLE.** The delta is
+`Xaas.Operations.AuthorityLedgerExport` (6 public functions, UNCOVERED, v26.10.7 WP-1
+operator-facing authority/refusal export) — it slots at rank #4 in the table below;
+Operations domain uncovered 28 → 29. This is a living checkout (same-checkout fan-out);
+treat totals as of-run, regenerate before consuming the backlog.
+
+## Domain totals (covered / uncovered / non-testable / total)
+
+| Domain | Cov | Uncov | NT | Total |
+|---|---|---|---|---|
+| Governance | 51 | 73 | 0 | 124 |
+| Operations | 31 | 28 | 0 | 59 |
+| Ultracode | 129 | 21 | 0 | 150 |
+| ResearchRuntime | 22 | 20 | 0 | 42 |
+| Platform | 10 | 12 | 0 | 22 |
+| Billing | 23 | 7 | 0 | 30 |
+| Trimtab | 25 | 5 | 0 | 30 |
+| Runtime | 60 | 5 | 0 | 65 |
+| Library | 24 | 3 | 0 | 27 |
+| Accounts | 11 | 3 | 0 | 14 |
+| SelfDigest | 7 | 2 | 0 | 9 |
+| CS2 | 3 | 2 | 0 | 5 |
+| AwsRepo | 0 | 2 | 1 | 3 |
+| Actuation | 7 | 2 | 0 | 9 |
+| Tunnel | 4 | 1 | 0 | 5 |
+| SparqlBridge | 0 | 1 | 0 | 1 |
+| Secrets | 0 | 1 | 0 | 1 |
+| PromEx | 1 | 1 | 0 | 2 |
+| Ocel | 11 | 1 | 0 | 12 |
+| Ledger | 7 | 1 | 0 | 8 |
+| Hddl | 0 | 1 | 0 | 1 |
+| AshTypescriptManifest | 0 | 1 | 0 | 1 |
+| Zoe, Workbench, Witness, Vault, TemporalMemory, Telemetry, Tasks, SystemAuthority | 21 | 0 | 0 | 21 (fully covered) |
+
+## Ranked UNCOVERED backlog (top 25, by public functions × zero courts)
+
+| # | Pub | Module | File | Description (@moduledoc first line) |
+|---|---|---|---|---|
+| 1 | 7 | `Xaas.SparqlBridge` | lib/xaas/sparql_bridge.ex | "Real Monitor substrate for a MAPE-K loop: projects real, live Postgres rows from three Ash resources into RDF triples, serialized as real Turtle text." |
+| 2 | 5 | `Xaas.Hddl.Mermaid` | lib/xaas/hddl/mermaid.ex | "Generates Mermaid flowchart DAG text from HDDL domain files and Ash.Reactor modules." |
+| 3 | 5 | `Xaas.Tunnel.Submit` | lib/xaas/tunnel/submit.ex | "Run + first-Epoch submission shared by `XaasWeb.ExecutionFabricController`" |
+| 4 | 6 | `Xaas.Operations.AuthorityLedgerExport` | lib/xaas/operations/authority_ledger_export.ex | "Operator-facing authority and refusal receipt export (v26.10.7 WP-1)" — added by a concurrent lane mid-run |
+| 5 | 4 | `Xaas.Accounts.Token.RevokeVerifier` | lib/xaas/accounts/token/revoke_verifier.ex | "`AshOnetime.Verifier` used to key the one-time-nonce protection on" |
+| 6 | 4 | `Xaas.CS2.FleetContract` | lib/xaas/cs2/fleet_contract.ex | "XaaS projection of the canonical RFC-CS2-001 fleet contract." |
+| 7 | 4 | `Xaas.Library.ILSRepo.FixtureAdapter` | lib/xaas/library/ils_repo/fixture_adapter.ex | "Default `Xaas.Library.ILSRepo` adapter: real, deterministic, seeded" |
+| 8 | 4 | `Xaas.Ultracode.ProviderMesh.ProviderWorker` | lib/xaas/ultracode/provider_mesh/provider_worker.ex | "Provider mesh runtime primitive." |
+| 9 | 4 | `Xaas.Ultracode.SubstitutionPolicy` | lib/xaas/ultracode/substitution_policy.ex | "Executable consumer of the canonical interchangeable-parts qualification TTL." |
+| 10 | 3 | `Xaas.Actuation.SpgGate` | lib/xaas/actuation/spg_gate.ex | "Fail-closed Semantic Procedural Graph identity admission for consequential DO." |
+| 11 | 3 | `Xaas.CS2.GeneratedFleetContract` | lib/xaas/cs2/generated_fleet_contract.ex | "Canonical consumer projection for RFC-CS2-001." |
+| 12 | 3 | `Xaas.Governance.Checks.FreezeWindowActive` | lib/xaas/governance/checks/freeze_window_active.ex | "SPEC-18 (W765-GAP-D, W905 backlog; lane W969b design-wave 2): real" |
+| 13 | 3 | `Xaas.Platform.Validations.RouteProjectsBackupsRetainUntilPassed` | lib/xaas/platform/validations/route_projects_backups_retain_until_passed.ex | "Real business rule for `Xaas.Platform.RouteProjectsBackups`'s" |
+| 14 | 3 | `Xaas.SelfDigest.Shadow` | lib/xaas/self_digest/shadow.ex | (no moduledoc) |
+| 15 | 3 | `Xaas.Ultracode.ProviderMesh.ReconciliationLoop` | lib/xaas/ultracode/provider_mesh/reconciliation_loop.ex | "Provider mesh runtime primitive." |
+| 16 | 2 | `Xaas.Actuation.Validations.CausalAdmission` | lib/xaas/actuation/validations/causal_admission.ex | "Admits structurally evidenced causal-intervention certificates before DO." |
+| 17 | 2 | `Xaas.AwsRepo.AwsAdapter` | lib/xaas/aws_repo_adapters/aws_adapter.ex | (no moduledoc) |
+| 18 | 2 | `Xaas.AwsRepo.FixtureAdapter` | lib/xaas/aws_repo_adapters/fixture_adapter.ex | (no moduledoc) |
+| 19 | 2 | `Xaas.Billing.Changes.ApprovalInvoiceReconciliationApproveApprove` | .../approval_invoice_reconciliation_approve_approve.ex | (no moduledoc) |
+| 20 | 2 | `Xaas.Billing.Changes/Validations` batch: ApprovalPatchSlaCreditApplyApprove, ApprovalPricingOverrideApprove, ApprovalQuotaOverrideApprove; Validations: ApprovalTierDowngradeTargetsLowerTier, SubscriptionChangeTierNotNoOp | lib/xaas/billing/changes/*, lib/xaas/billing/validations/* | "Real business rule for `Xaas.Billing.ApprovalTierDowngrade`'s `:create`" etc. |
+| 21 | 2 | `Xaas.Governance.Changes.ApprovalBackupRetentionChangeApprove` | lib/xaas/governance/changes/approval_backup_retention_change_approve.ex | (no moduledoc) |
+| 22 | 2 | `Xaas.Governance.Changes.ApprovalBreakGlassJustificationReviewApprove` | .../approval_break_glass_justification_review_approve.ex | (no moduledoc) |
+| 23 | 2 | `Xaas.Governance.Changes.ApprovalChangeOfControlNotifyApprove` | .../approval_change_of_control_notify_approve.ex | (no moduledoc) |
+| 23–25 | 2 | remaining 2-public-function modules in governance changes/validations, ultracode provider mesh — full machine-readable list at `/tmp/w984cj_map.txt` (copy into a durable location if this receipt should be self-contained) |
+
+## NON-TESTABLE (15)
+
+`Xaas.Application`, `Xaas.AwsRepo`, `Mix.Tasks.Xaas.Chicago.Render`, `Xaas.DevSeeds`,
+`Xaas.Igniter.Catalog`, `Xaas.Igniter.PackManifest`, `Xaas.Igniter.RefusalCode`,
+`Xaas.LegacyRepo`, `Xaas.Mailer`, `Xaas.Pack`, `Xaas.PostgrexTypes`, `Xaas.PromEx`,
+`Xaas.Release`, `Xaas.Repo`, `Xaas.Resource`.
+
+## Verification (spot checks — 3 modules, actually read)
+
+1. `Xaas.Runtime.ProviderRegistry` — map: COVERED. Verified by reading
+   `test/xaas/runtime/router_test.exs:3` (`alias Xaas.Runtime.{ProviderRegistry, Router}`
+   + `start_supervised!({ProviderRegistry, ...})`, `ProviderRegistry.register/candidates`
+   assertions). This was a FALSE NEGATIVE under path+full-name matching, which motivated
+   the alias (last-segment) pass.
+2. `Xaas.Sjira.DeliveryBatch` — map: COVERED. Verified by reading
+   `test/xaas/sjira/atlassian_test.exs:3,43-58` (`alias Xaas.Sjira.{Atlassian,
+   AtlassianCursor, DeliveryBatch}` + real `DeliveryBatch.plan/record` assertions
+   incl. cycle rejection). Same false-negative class, now correctly covered.
+3. `Xaas.SparqlBridge` — map: UNCOVERED. Verified `grep -rl SparqlBridge test/` →
+   0 files. Genuinely zero courts; it is the top-ranked backlog item.
+4. Bonus: `Xaas.Bridges.PPlan` — initially ranked #1 UNCOVERED because path-derived
+   camelization produced "Pplan"; actual module is `PPlan` (test/xaas/chicago/bridges/
+   pplan_test.exs:24 aliases it). Fixed by parsing `defmodule` from source; now
+   correctly COVERED. This is the naming-mismatch class the task warned about.
+
+## Known limitations (disclosed)
+
+- **Indirect coverage is invisible.** A module exercised only through the Ash action
+  that declares it (validations/changes/preparations referenced by name in resource
+  DSL, e.g. `Xaas.Billing.Validations.ApprovalTierDowngradeTargetsLowerTier` is
+  plausibly exercised by `test/xaas_web/controllers/approval_tier_downgrade_controller_test.exs`
+  without naming the module) counts as UNCOVERED here. Treat those as "no *direct*
+  court" rather than "untested".
+- **Last-segment collision**: two modules sharing a last segment
+  (`Xaas.Runtime.ProviderRegistry` vs `Xaas.Ultracode.ProviderRegistry` — both exist)
+  are both credited with the alias pass if either is referenced. Full-name pass is
+  collision-free; the alias pass is conservative-toward-covered. A collision flag
+  column would be the next hardening step.
+- Public-function count is a line heuristic (`def`/`defdelegate`/`defmacro` at
+  column 0-ish), not a docs dump.
+
+## Transport / lease failures
+
+- First `mix run` attempt under `MIX_BUILD_ROOT=_build-laneW984cj` was killed at the
+  120s foreground timeout while compiling; **`/Users/sac/xaas/_build-laneW984cj`
+  (357M) remains on disk** — `rm` was denied by the session permission system.
+  Coordinator: delete this lane build root at integration (fanout cleanup law).
+- All subsequent runs used `elixir` directly (no project compile needed); the
+  `MIX_BUILD_ROOT` was never required for the actual map.
+
+## Standing
+
+ALIVE (as a map): the enumeration and classification is real, executed output;
+totals re-read from `/tmp/w984cj_map.txt` at write time (825/629/193/15).
+The ranked backlog is a heuristic surface — each entry is UNKNOWN until a depth
+lane opens a direct court on it. Full 193-row list lives at `/tmp/w984cj_map.txt`
+(not durable); regenerate with the script content preserved in this receipt's
+method section, or copy the file before /tmp is cleared.
