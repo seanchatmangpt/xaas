@@ -727,9 +727,18 @@ defmodule XaasWeb.ExecutionFabricController do
   # `Xaas.Actuation.Kernel.seal/2` persisted.
   # Wire-surface formatting. When the actuate intent targets the quiescent
   # attractor, the module's typed envelope (W824's absent-envelope finding)
-  # is surfaced additively: `target` and `already_stopped` on every response,
-  # plus `refusal` when the kernel refused/failed — never a shape change to
-  # the generic actuation response for non-quiescent intents.
+  # is surfaced additively: `target` and `already_stopped` on every response —
+  # never a shape change to the generic actuation response for non-quiescent
+  # intents.
+  #
+  # Note: the former `maybe_refusal/2` [:refused, :failed] clause was DELETED
+  # (W938/W859 dead-branch disposition). The kernel contract makes it
+  # unreachable on the admitted fabric path: `Xaas.Actuation.run/4` normalizes
+  # `:refused`/`:failed` envelopes to `{:error, error}` (admit-time tool
+  # errors), so an OK envelope carries only `:succeeded`/`:replayed` and the
+  # `refusal` key could never be produced. W866's courts (g)/(h) in
+  # quiescent_fabric_tie_test.exs fence this contract — if the kernel ever
+  # starts emitting OK refused/failed envelopes, those courts are the tripwire.
   defp format_actuation(envelope, opts) do
     base = %{
       status: Atom.to_string(envelope.status),
@@ -743,23 +752,10 @@ defmodule XaasWeb.ExecutionFabricController do
       base
       |> Map.put(:target, "quiescent")
       |> Map.put(:already_stopped, envelope.status == :replayed)
-      |> maybe_refusal(envelope)
     else
       base
     end
   end
-
-  defp maybe_refusal(formatted, %{status: status} = envelope)
-       when status in [:refused, :failed] do
-    Map.put(formatted, :refusal, refusal_code(envelope.error))
-  end
-
-  defp maybe_refusal(formatted, _envelope), do: formatted
-
-  # Kernel refusal codes surface as strings on the wire (atoms are never
-  # JSON-encodable); non-atom reasons inspect losslessly-enough for a wire tag.
-  defp refusal_code(reason) when is_atom(reason), do: Atom.to_string(reason)
-  defp refusal_code(reason), do: inspect(reason)
 
   # The fabric has no dedicated halt verb: the halt is `action:
   # "actuate_status"` + `input.status == "suspended"` — exactly

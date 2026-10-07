@@ -298,8 +298,12 @@ defmodule Xaas.CastleRefusalNegativeTest do
     end
   end
 
+  # W974: this helper previously re-entered itself inside with_castle_lock/1 —
+  # infinite self-recursion, so every manufacture-based test deadlocked on its
+  # own /tmp file lock (13/19 ExUnit timeouts; W863 lsof evidence). Call the
+  # real kernel CLI manufacture/2 under the lock instead.
   defp castle_manufacture(intent, witness) do
-    with_castle_lock(fn -> castle_manufacture(intent, witness) end)
+    with_castle_lock(fn -> Xaas.Castle.Kernel.CLI.manufacture(intent, witness) end)
   end
 
   defp setup_fake_castle! do

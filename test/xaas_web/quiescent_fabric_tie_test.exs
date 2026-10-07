@@ -428,9 +428,11 @@ defmodule XaasWeb.QuiescentFabricTieTest do
   #     Wire: `Xaas.Actuation.run/4` normalizes a `:refused`/`:failed`
   #     envelope to `{:error, error}`, so a kernel refusal surfaces as a
   #     typed tool error — never as an OK envelope carrying a `refusal`
-  #     key. The `maybe_refusal/2` mapping is therefore reachable only if
-  #     the kernel's OK-envelope contract changes (W866 typed finding in
-  #     the lane receipt).
+  #     key. The `maybe_refusal/2` mapping was therefore DEAD and has been
+  #     DELETED (W970 disposition, dual-cited w866+w938/w859) — see the
+  #     comment on `format_actuation/2`. The (g) courts below remain the
+  #     fence: if the kernel's OK-envelope contract ever changes to emit
+  #     reachable `:refused`/`:failed` envelopes, they trip here.
   # ------------------------------------------------------------------
 
   test "kernel-refused quiescent attempt (idempotency conflict at admit): typed tool error, " <>
@@ -499,5 +501,38 @@ defmodule XaasWeb.QuiescentFabricTieTest do
 
     # The attractor was never driven: the subject is untouched.
     assert provider_status(marketplace_provider.id) == :pending
+  end
+
+  # ------------------------------------------------------------------
+  # W970 — dead-branch disposition fence: the deleted `maybe_refusal/2`
+  #     `[:refused, :failed]` clause must stay gone without changing the
+  #     reachable quiescent envelope. On the admitted fabric path the OK
+  #     envelope carries only `:succeeded`/`:replayed` (kernel refusals are
+  #     admit-time tool errors), so a `refusal` key must NEVER appear on a
+  #     wire response, while W844's `target`/`already_stopped` fields remain.
+  # ------------------------------------------------------------------
+
+  test "W970: quiescent OK envelopes (succeeded + replayed) carry no refusal key, " <>
+         "W844 envelope fields intact after the maybe_refusal/2 deletion",
+       %{conn: conn} do
+    marketplace_provider = Xaas.Generator.create_provider!(%{org_id: "org-w970-dead-branch"})
+    claim = halt_lease(conn, marketplace_provider)
+    token = claim["lease_token"]
+
+    key = halt_key()
+
+    assert {false, halt} = fabric_halt(conn, token, marketplace_provider.id, key)
+
+    assert halt["status"] == "succeeded"
+    assert halt["target"] == "quiescent"
+    assert halt["already_stopped"] == false
+    refute Map.has_key?(halt, "refusal")
+
+    assert {false, replay} = fabric_halt(conn, token, marketplace_provider.id, key)
+
+    assert replay["status"] == "replayed"
+    assert replay["target"] == "quiescent"
+    assert replay["already_stopped"] == true
+    refute Map.has_key?(replay, "refusal")
   end
 end

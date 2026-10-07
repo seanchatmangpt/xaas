@@ -287,6 +287,36 @@ defmodule XaasWeb.Router do
     plug(XaasWeb.Plugs.ResolveOrgActor)
   end
 
+  # SPEC-04 (W722-GAP-2; lane W969b design-wave 2): real per-org
+  # authentication derived from an org-carrying InternalApiToken
+  # (XaasWeb.Plugs.RequireInternalApiToken's
+  # conn.assigns[:current_org]) — binds the authenticated org as the Ash
+  # actor/tenant and lets the demoted ResolveOrgActor refuse a forged
+  # X-Org-Id header instead of honoring it. Must run AFTER
+  # :require_internal_api_token (which establishes :current_org) and
+  # BEFORE :resolve_org_actor (which consults the authenticated binding).
+  pipeline :authenticate_org do
+    plug(XaasWeb.Plugs.AuthenticateOrg)
+  end
+
+  # SPEC-30 (W819/W802-GAP-1; lane W975b design-wave 4): GraphQL over HTTP.
+  # `Xaas.GraphqlSchema` compiled but was never mounted -- the disclosed
+  # UNSUPPORTED(graphql-http-surface) gap. Mounted here behind the same
+  # `:require_internal_api_token` floor as every other machine surface
+  # (CLAUDE.md API-auth floor: no unauthenticated sibling route).
+  # Registered BEFORE the catch-all `forward "/api"` below -- `forward`
+  # matches every sub-path under its prefix and would otherwise shadow
+  # this route (same real reason as the /internal-api/fabric and /sparql
+  # scopes above).
+  scope "/api/graphql" do
+    pipe_through([:require_internal_api_token, :api])
+
+    forward("/", Absinthe.Plug,
+      schema: Xaas.GraphqlSchema,
+      json_codec: Jason
+    )
+  end
+
   scope "/" do
     # W299c (same class as W150): the token floor must precede content
     # negotiation here too. `:internal_api` carries `plug(:accepts,
@@ -298,6 +328,7 @@ defmodule XaasWeb.Router do
     pipe_through([
       :require_internal_api_token,
       :internal_api,
+      :authenticate_org,
       :resolve_org_actor,
       :set_internal_api_system_actor
     ])

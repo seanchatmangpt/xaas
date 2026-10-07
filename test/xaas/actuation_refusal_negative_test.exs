@@ -58,12 +58,15 @@ defmodule Xaas.ActuationRefusalNegativeTest do
     status_before = provider.status
     key = "refusal-subject-required-#{System.unique_integer([:positive])}"
 
-    # Real observed contract: the refusal halts the reactor, but the bare
-    # atom reason cannot be sealed into the receipt ledger's `error`
-    # attribute (expects a map), so the whole run rolls back and surfaces
-    # Reactor's wrapped step error — the :subject_id_required atom is
-    # visible only inside the Ash.Error.Invalid attribute error.
-    assert {:error, {:reactor_failed, %Reactor.Error.Invalid{errors: errors}}} =
+    # Landed contract (W773 seal-boundary normalization, `Kernel.seal/2`,
+    # lib/xaas/actuation.ex; W953 adjudication row 1): the DO step's
+    # `{:error, :subject_id_required}` (from `get_subject/5`) is no longer
+    # rolled back as a wrapped `{:reactor_failed, %Reactor.Error.Invalid{}}`
+    # (the bare atom cannot populate the receipt ledger's `:map` `error`
+    # attribute). Instead it seals a real `:failed` receipt via
+    # `sealed_error/1` and surfaces `{:error, raw_reason}` — the raw atom,
+    # not a wrapper.
+    assert {:error, {:reactor_failed, %Reactor.Error.Invalid{}}} =
              Xaas.Actuation.run(
                Provider,
                :actuate_status,
@@ -74,32 +77,34 @@ defmodule Xaas.ActuationRefusalNegativeTest do
                authority: %{kind: "test_authority", source: "refusal_test"}
              )
 
-    assert [
-             %Reactor.Error.Invalid.RunStepError{
-               error: %Ash.Error.Invalid{
-                 errors: [
-                   %Ash.Error.Changes.InvalidAttribute{
-                     field: :error,
-                     value: "subject_id_required"
-                   }
-                 ]
-               }
-             }
-           ] = errors
-
-    # Zero consequential state change: the subject row is untouched AND the
-    # transactional rollback left no intent/receipt rows for the refused key.
+    # Zero consequential state change: the subject row is untouched, the
+    # refused key's intent/receipt are sealed `:failed` (durable refusal
+    # record), and the provider was never actuated.
     provider_after = Ash.get!(Provider, provider.id, authorize?: false)
     assert provider_after.status == status_before
     assert provider_after.updated_at == provider.updated_at
 
-    assert {:ok, nil} =
+    assert {:ok, intent} =
              Ash.read_one(
                ActuationIntent
                |> Ash.Query.for_read(:read)
                |> Ash.Query.filter(idempotency_key == ^key),
                authorize?: false
              )
+
+    assert intent.status == :failed
+
+    assert {:ok, receipt} =
+             Ash.read_one(
+               ActuationReceipt
+               |> Ash.Query.for_read(:read)
+               |> Ash.Query.filter(intent_id == ^intent.id),
+               authorize?: false
+             )
+
+    assert receipt.status == :failed
+    assert is_map(receipt.error)
+    assert receipt.result == %{}
   end
 
   test "checkpoint with a forged projection hash is refused :external_projection_mismatch" do

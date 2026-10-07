@@ -30,14 +30,20 @@ defmodule XaasWeb.McpScope do
   above (which you must define) is what actually applies it, via
   `pipe_through`, exactly as shown.
 
-  Regenerate with:
+  W945b (W849 backlog-3): provenance normalized to the repo-relative
+  regen-command form used by the other PROVENANCE-ONLY surfaces
+  (`Xaas.Telemetry.OcelEnvelope`, `Xaas.Library.Manufacture` task). The
+  sources remain canonically at `priv/ggen_igniter/mcp_a2a/` (single
+  source; migrating to a `priv/packs/xaas_mcp_surface_pack/` copy would
+  fork the ontology and is deliberately NOT done here — see w945b
+  receipt). Regenerate with (from the repo root):
 
-      cd ~/ggen_igniter && mix ggen_igniter.sync \\
-        --ontology /Users/sac/xaas/priv/ggen_igniter/mcp_a2a/xaas-surface.ttl \\
-        --query spec=/Users/sac/xaas/priv/ggen_igniter/mcp_a2a/surface.rq \\
-        --query caps=/Users/sac/xaas/priv/ggen_igniter/mcp_a2a/mcp_capabilities.rq \\
-        --template /Users/sac/xaas/priv/ggen_igniter/mcp_a2a/templates/mcp_scope.eex \\
-        --out /Users/sac/xaas/lib/xaas_web/mcp_scope.ex
+      mix ggen_igniter.sync \\
+        --ontology priv/ggen_igniter/mcp_a2a/xaas-surface.ttl \\
+        --query spec=priv/ggen_igniter/mcp_a2a/surface.rq \\
+        --query caps=priv/ggen_igniter/mcp_a2a/mcp_capabilities.rq \\
+        --template priv/ggen_igniter/mcp_a2a/templates/mcp_scope.eex \\
+        --out lib/xaas_web/mcp_scope.ex
   """
 
   defmacro mount do

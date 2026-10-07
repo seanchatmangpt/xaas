@@ -23,7 +23,9 @@ defmodule XaasWeb.ExecutionFabricDeepeningTest do
     (e) refusal shapes are deterministic (same request twice -> identical
         body bytes);
     (+) the MCP `refuse` verb seals a real Receipt durably readable on the
-        lawful `GET /execution/epochs/:id/receipts` read path.
+        lawful `GET /execution/epochs/:id/receipts` read path;
+    (f) W945c: a genuine unexpected raise in tool dispatch is answered by
+        the fail-closed `-32603` rescue arm (real raise, real wire shape).
   """
 
   use XaasWeb.ConnCase, async: false
@@ -330,6 +332,37 @@ defmodule XaasWeb.ExecutionFabricDeepeningTest do
     # Lease/Ash raises (its -32603 contract, unchanged).
     assert {true, %{"error" => ":lease_token_and_reason_required"}} =
              tool_call(conn, "refuse", %{"lease_token" => 42})
+  end
+
+  test "c.5 a genuine unexpected raise in tool dispatch is the fail-closed -32603 rescue arm, never an HTML crash page",
+       %{conn: conn} do
+    # W945c (register row 12, w745 typed gap): exercises the fail-closed
+    # `rescue` arm on `XaasWeb.ExecutionFabricController.mcp/1` with a REAL
+    # raise, not a mock. `claim_next` with a non-accessible `arguments`
+    # (integer 42) raises FunctionClauseError at the `args["provider"]` Access
+    # get on
+    # the real dispatch path -- no rescue inside dispatch_tool, so the
+    # raise propagates to the controller's fail-closed arm, which must
+    # answer the provider's MCP client with a machine-readable JSON-RPC
+    # -32603 error (code -32603, id nil, data = raised exception class).
+    # Mutation rationale: deleting the `rescue` arm (or catching only the
+    # typed-refusal clauses and re-raising) crashes this test with the raw
+    # ArgumentError instead of observing the -32603 envelope.
+    conn =
+      mcp_post(conn, %{
+        jsonrpc: "2.0",
+        id: 7,
+        method: "tools/call",
+        params: %{"name" => "claim_next", "arguments" => 42}
+      })
+
+    assert conn.status == 500
+
+    assert %{
+             "jsonrpc" => "2.0",
+             "id" => nil,
+             "error" => %{"code" => -32_603, "message" => "internal error", "data" => "FunctionClauseError"}
+           } = json_response(conn, 500)
   end
 
   # ------------------------------------------------------------------

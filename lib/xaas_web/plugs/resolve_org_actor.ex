@@ -168,10 +168,61 @@ defmodule XaasWeb.Plugs.ResolveOrgActor do
 
   def call(conn, _opts) do
     cond do
+      authenticated_org?(conn) and tenant_scoped?(conn) ->
+        enforce_authenticated_org(conn)
+
       orgs_create?(conn) -> authorize_org_create(conn)
       tenant_scoped?(conn) -> resolve_org(conn)
       true -> conn
     end
+  end
+
+  # SPEC-04 (W722-GAP-2; lane W969b design-wave 2): demoted to
+  # derive-from-authenticated-identity. When the request authenticated
+  # through an org-carrying InternalApiToken (XaasWeb.Plugs.AuthenticateOrg
+  # has bound conn.assigns[:authenticated_org] + the Ash actor/tenant),
+  # the caller-asserted X-Org-Id header is no longer trusted as the
+  # binding source: a header that names a DIFFERENT org than the
+  # authenticated one is refused (403 org_mismatch, fail-closed), a
+  # header that matches is accepted, and a MISSING header is no longer an
+  # error — the authenticated org supplies the binding. Only the
+  # tenant-scoped path set is affected; every other /api route passes
+  # through unaffected, and the legacy shared-token tier keeps its
+  # original caller-asserted behavior unchanged below.
+  defp authenticated_org?(conn) do
+    case conn.assigns[:authenticated_org] do
+      %Xaas.Accounts.Org{} -> true
+      _ -> false
+    end
+  end
+
+  defp enforce_authenticated_org(conn) do
+    authenticated = conn.assigns[:authenticated_org]
+
+    case get_req_header(conn, "x-org-id") do
+      [header_org_id] when byte_size(header_org_id) > 0 ->
+        if header_org_id == authenticated.slug do
+          conn
+        else
+          org_mismatch(conn, authenticated.slug, header_org_id)
+        end
+
+      _ ->
+        # No header at all: the authenticated org already bound the Ash
+        # actor/tenant in XaasWeb.Plugs.AuthenticateOrg. Passthrough.
+        conn
+    end
+  end
+
+  defp org_mismatch(conn, authenticated_slug, asserted) do
+    conn
+    |> put_status(403)
+    |> Phoenix.Controller.json(%{
+      error: "org_mismatch",
+      detail:
+        "X-Org-Id #{inspect(asserted)} does not match the authenticated org #{inspect(authenticated_slug)}; refused"
+    })
+    |> halt()
   end
 
   # Real, nineteenth-pass, `Org`-only special case: `POST /api/orgs` (the

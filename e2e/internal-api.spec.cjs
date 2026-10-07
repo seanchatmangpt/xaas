@@ -11,7 +11,10 @@ const { test, expect } = require("@playwright/test");
  *     INTERNAL_API_TOKEN unset on the server -> fail-closed 503
  *     {"error":"internal_api_misconfigured", ...}.
  *   - XaasWeb.HealthController: 200 {"status":"ok"|"error","checks":{...}}
- *     (503 when any check fails -- dev env is expected healthy).
+ *     (503 only on a real "error" check — "skipped" is not down, per the
+ *     W836 court: under Oban testing:manual a fresh boot answers 200 with
+ *     ultracode_tick skipped(:warming_up) inside the boot+7min grace;
+ *     docs/sjira/v26.10.6/plans/w836-health-court.md).
  *   - XaasWeb.OcelSummaryController: 200 {"total_events":n,
  *     "by_activity":{...},"by_outcome":{...},"log_path": "..."}.
  *
@@ -88,13 +91,20 @@ test.describe("/internal-api token gate", () => {
     expect(res.status()).toBe(200);
 
     const body = await res.json();
+    // W836 pinned contract: aggregate stays 200/"ok" while ultracode_tick
+    // is skipped(:warming_up) inside the boot+7min grace (fresh-boot e2e).
     expect(body.status).toBe("ok");
     expect(body.checks).toBeInstanceOf(Object);
     // Real checks, not stubs: repo + ontop + ultracode tick + 7 domains.
     expect(body.checks).toHaveProperty("repo");
     expect(body.checks.repo).toMatchObject({ status: "ok" });
     expect(body.checks).toHaveProperty("ontop");
-    expect(body.checks).toHaveProperty("ultracode_tick");
+    // ultracode_tick: "ok" (real ticks flowing) or typed warming_up skip —
+    // never an "error" inside the fresh-boot grace window.
+    expect(["ok", "skipped"]).toContain(body.checks.ultracode_tick.status);
+    if (body.checks.ultracode_tick.status === "skipped") {
+      expect(body.checks.ultracode_tick).toMatchObject({ reason: "warming_up" });
+    }
     expect(body.checks).toHaveProperty("ash_domain:accounts");
     for (const check of Object.values(body.checks)) {
       expect(check).toHaveProperty("latency_ms");
