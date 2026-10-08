@@ -29,7 +29,11 @@ defmodule Xaas.Operations.RefusalLedgerExport do
 
   Canonicalization reuses the w603 idiom (`Xaas.Operations.AuthorityLedgerExport`):
   RFC 8785 JCS via `Xaas.Semantics.Jcs`, entries sorted by atom, no
-  wall-clock timestamp. Content digest: SHA-256 over the canonical bytes.
+  wall-clock timestamp. Content digest: SHA-256 over the exact written bytes
+  (canonical body + trailing newline), i.e. the digest `shasum -a 256`
+  reports on disk. (Digest framing rotated in W650v3 — see
+  `docs/sjira/v26.10.7/plans/w650v3-digest-framing.md`; prior to that the
+  digest covered the canonical body excluding the trailing newline.)
   BLAKE3 is not in `mix.lock` (checked W616); substitution disclosed here and
   in the artifact as `"hash_algorithm": "sha256"`.
 
@@ -160,7 +164,12 @@ defmodule Xaas.Operations.RefusalLedgerExport do
           | {:error, {:unpinned_variant, map()}}
   def emit do
     with {:ok, _canon, canonical_json} <- build() do
-      digest = :crypto.hash(:sha256, canonical_json) |> Base.encode16(case: :lower)
+      # Hash exactly what is written (W650v3): canonical body + trailing
+      # newline, so the emitted digest is the on-disk `shasum -a 256` value.
+      written = canonical_json <> "\n"
+      digest = :crypto.hash(:sha256, written) |> Base.encode16(case: :lower)
+      File.mkdir_p!(Path.dirname(out_path()))
+      File.write!(out_path(), written)
       File.mkdir_p!(Path.dirname(out_path()))
       File.write!(out_path(), canonical_json <> "\n")
       {:ok, %{path: out_path(), digest: digest}}
@@ -173,7 +182,7 @@ defmodule Xaas.Operations.RefusalLedgerExport do
 
     1. full-vocabulary emit succeeds (which itself proves every entry cites
        an on-disk court — a missing court refuses the emit),
-    2. digest replay: re-read the artifact from disk, recompute the digest,
+    2. digest replay: re-read the artifact from disk, hash the exact bytes,
        byte-identical match,
     3. mutation leg: injecting a fake variant with no court yields the typed
        refusal `{:error, {:unpinned_variant, _}}`.
@@ -198,15 +207,17 @@ defmodule Xaas.Operations.RefusalLedgerExport do
     end
   end
 
-  @doc "Re-read the artifact from disk and recompute its content digest."
+  @doc """
+  Re-read the artifact from disk and recompute its content digest — over the
+  exact written bytes (W650v3 framing), matching `shasum -a 256` on disk.
+  """
   @spec rebuild_digest() :: {:ok, String.t()} | {:error, term()}
   def rebuild_digest do
     with {:ok, body} <- File.read(out_path()) do
-      json = Jason.decode!(body)
-
-      {:ok,
-       :crypto.hash(:sha256, Xaas.Semantics.Jcs.encode(json))
-       |> Base.encode16(case: :lower)}
+      # Parse to keep the fail-closed shape check (malformed artifact errors),
+      # but hash the raw bytes so replay equals the on-disk digest.
+      _ = Jason.decode!(body)
+      {:ok, :crypto.hash(:sha256, body) |> Base.encode16(case: :lower)}
     end
   end
 

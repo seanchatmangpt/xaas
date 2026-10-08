@@ -63,9 +63,18 @@ Fresh root #1 (`MIX_BUILD_ROOT=_build-laneW650v3`, then reused for both runs):
 - `mix test test/xaas/operations/refusal_ledger_export_depth_test.exs` →
   `5 passed`.
 
-Fresh root #2 (`MIX_BUILD_ROOT=_build-laneW650v3b`): see addendum below.
+Fresh root #2 (`MIX_BUILD_ROOT=_build-laneW650v3b`):
 
-## Addendum — fresh root #2
+- `mix compile` EXIT=0; `mix xaas.export_refusal_ledger --court` EXIT=0 →
+  `sha256: 6d1e4b89…34ea7`, replay MATCH, `court: OK (fake-variant mutation
+  refused: %{atom: "REFUSED_FAKE_W616_NO_COURT", reason: :court_missing, …})`;
+  `shasum -a 256` on disk = `6d1e4b89…34ea7`; body vs pre-run snapshot
+  IDENTICAL.
+- `mix test test/xaas/operations/refusal_ledger_export_depth_test.exs` →
+  `Result: 5 passed`.
 
-PENDING (running at receipt-write time; to be filled from the background run's
-real output before integration).
+## Build-root lease note
+
+`_build-laneW650v3` (~426 MB) and `_build-laneW650v3b` (~424 MB) were left on
+disk — the lane's `rm -rf` cleanup command was denied by the permission system.
+Coordinator: delete both at integration per the fanout cleanup law.
