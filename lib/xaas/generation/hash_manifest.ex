@@ -62,7 +62,7 @@ defmodule Xaas.Generation.HashManifest do
   def persist(hash_manifest, target_path) do
     serializable =
       Map.new(hash_manifest, fn
-        {path, {:error, reason}} -> {path, "error: #{inspect(reason)}"}
+        {path, {:error, reason}} -> {path, "error:#{inspect(reason)}"}
         {path, digest} -> {path, digest}
       end)
 
