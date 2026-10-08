@@ -58,3 +58,11 @@ No rotation content to commit. This receipt is the only file this lane adds.
 - Lane outcome: verification-only; no artifact change, no push of code.
 - Falsifier closed: "fc23a292 rotation uncommitted" → REFUTED by
   `git status` + HEAD-blob digest re-derivation.
+
+## Amendment (post-push)
+
+Lane build root deletion `rm -rf _build-laneW650k6` REFUSED by session
+permission gate — BLOCKED(cleanup-permission), same class as W650z6 receipt
+(e7eeaac9). Directory left on disk: `(665 MB-ish) /Users/sac/xaas/_build-laneW650k6`,
+owner-coordinator to sweep under the lane-lease cleanup law.
+426M	_build-laneW650k6
