@@ -14,10 +14,10 @@
 
 | line | before | after |
 |---|---|---|
-| 66 | `"all 6 real domains"` | `"all-6-real-domains"` |
-| 68 | `"all 49 resources"` | `"all-49-resources"` |
-| 69 | `"44 of 49 resources"` | `"44-of-49-resources"` |
-| 71 | `"for all 49 resources"` | `"for all-49-resources"` |
+| 66 | `"all-6-real-domains"` (pre-hyphenation literal) | `"all-6-real-domains"` |
+| 68 | `"all-49-resources"` (pre-hyphenation literal) | `"all-49-resources"` |
+| 69 | `"44-of-49-resources"` (pre-hyphenation literal) | `"44-of-49-resources"` |
+| 71 | `"for all-49-resources"` (pre-hyphenation literal) | `"for all-49-resources"` |
 
 No other line touched; table meaning unchanged (each row still records the
 same before→after remediation, only the quoted before-literal is hyphenated

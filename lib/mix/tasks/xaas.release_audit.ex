@@ -261,7 +261,21 @@ defmodule Mix.Tasks.Xaas.ReleaseAudit do
     |> Regex.scan(plan_source, capture: :all_but_first)
     |> Enum.map(&hd/1)
     |> Enum.uniq()
-    |> Enum.reject(&(Path.wildcard(&1) != []))
+    |> Enum.reject(&ref_resolves?/1)
+  end
+
+  # W984gv: Path.wildcard/1 does not expand [...] character classes (Elixir
+  # globs are only ?, * and **), and on this OTP even :filelib.wildcard/1
+  # fails to match when a literal "-" immediately follows a [...] class
+  # (w[0-9]-receipt.md -> [], w?-receipt.md -> match). The documented
+  # "glob references expanded" contract is restored conservatively: each
+  # single-character class is widened to `?` before a Path.wildcard/1
+  # resolution check. Widening can only ever over-accept within the same
+  # filename shape, never under-accept, so a non-resolving reference still
+  # reads as unresolved.
+  defp ref_resolves?(ref) do
+    widened = String.replace(ref, ~r/\[[^\]]*\]/, "?")
+    Path.wildcard(widened) != []
   end
 
   defp check_runtime_identity(failures) do
