@@ -350,7 +350,7 @@ defmodule XaasWeb.ExecutionFabricControllerTest do
 
     test "claim_next with no ready work is a typed tool error, not silence", %{conn: conn} do
       assert tool_call(conn, "claim_next", %{provider: "zcode-chicago"}) ==
-               %{"error" => ":no_ready_work"}
+               %{"error" => "no_ready_work"}
     end
   end
 
@@ -775,7 +775,7 @@ defmodule XaasWeb.ExecutionFabricControllerTest do
                resource: "Xaas.Marketplace.Provider",
                action: "actuate_status",
                idempotency_key: "http-actuate-bad-token-type"
-             }) == %{"error" => ":lease_token_required"}
+             }) == %{"error" => "lease_token_required"}
     end
   end
 

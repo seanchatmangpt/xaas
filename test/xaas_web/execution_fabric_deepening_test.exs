@@ -198,7 +198,7 @@ defmodule XaasWeb.ExecutionFabricDeepeningTest do
     conn: conn
   } do
     # No lease_token at all -> the bare transport refusal.
-    assert {true, %{"error" => ":lease_token_required"}} =
+    assert {true, %{"error" => "lease_token_required"}} =
              tool_call(conn, "actuate", %{
                capability: "publish_change",
                resource: "Xaas.Marketplace.Provider",
@@ -330,7 +330,7 @@ defmodule XaasWeb.ExecutionFabricDeepeningTest do
     # catch-all: the typed arity refusal, not a raise and not an HTML
     # DebugPage. The fail-closed rescue arm stays for genuinely unexpected
     # Lease/Ash raises (its -32603 contract, unchanged).
-    assert {true, %{"error" => ":lease_token_and_reason_required"}} =
+    assert {true, %{"error" => "lease_token_and_reason_required"}} =
              tool_call(conn, "refuse", %{"lease_token" => 42})
   end
 
