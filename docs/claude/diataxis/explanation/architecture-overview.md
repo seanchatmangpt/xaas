@@ -7,6 +7,16 @@ webhooks, Reactor actuation, and the Ontop SPARQL bridge — compose on top of t
 set. It links out to the narrower existing explainers rather than re-deriving their content;
 read this first, then follow the links for depth on any one topic.
 
+Landed 2026-10-07: the SPG identity gate in the actuation path (`f0321df2`,
+receipts `docs/sjira/v26.10.7/plans/w650h22-commit.md`,
+`w650h33c-commit.md`), the OS-20 OTP-29 `Map.update/4` compat guard
+`Xaas.Compat.Otp29MapUpdate` (`c6bf5bbc`, receipt `w984ee-probe.md`), and the
+sa2a `Execute` authority-evidence repair (`1ac2ad42`, receipt
+`w984es-repair.md`) — see the cross-cutting bullets below. The graphlaw
+digest-pinned Wasmex host is contracted in
+`docs/claude/diataxis/reference/actuation-and-semantics.md` ("Graphlaw WASM
+host", landed by W984eg, receipt `w984eg-probe.md`) and is not re-derived here.
+
 ## The 19 Ash domains
 
 Defined in `lib/xaas/*.ex` (`use Ash.Domain`), configured in `config/config.exs:13-33`,
@@ -123,6 +133,12 @@ behind `Application.compile_env(:xaas, :dev_routes)` and never mounted outside d
   Reactor steps, generating immutable audit receipts and supporting transactional rollback.
   Worker-side consequential mutation additionally passes through the Ultracode lease kernel
   (`Xaas.Ultracode.Lease.actuate/2`) via the execution-fabric MCP `actuate` verb.
+  Identity admission for SPG (Semantic Procedural Graph) subjects is fail-closed at
+  `Xaas.Actuation.SpgGate` (`lib/xaas/actuation/spg_gate.ex`): `admit/1` requires all four
+  identity fields (`graph_id`, `graph_version`, `node_id`, `edge_id`) plus an admitted
+  state and refuses with typed atoms (`:spg_identity_required`, `:spg_not_admitted`);
+  the gate grants no authority — the BRCE actuation path stays exclusive
+  (`lib/xaas/actuation.ex:639-660`, `f0321df2`).
 - **External capability bridges** (v26.10.6) — read/admit-shaped edges to sibling systems,
   in three distinct mechanisms:
   - **Registry rows** — `Xaas.Bridges.Registry` (`lib/xaas/bridges/registry.ex`) is a
@@ -178,6 +194,20 @@ behind `Application.compile_env(:xaas, :dev_routes)` and never mounted outside d
   — and the forwarder calls the real `Ex4pm.OCEL.validate_envelope/1` before POSTing,
   refusing (logged `{:error, reason}`, never a silent non-2xx) on an invalid envelope
   (`lib/xaas/telemetry/ocel_forwarder.ex:135-161`; W702).
+- **OS-20 OTP-29 accumulator guard** — `Xaas.Compat.Otp29MapUpdate`
+  (`lib/xaas/compat/otp29_map_update.ex`, `c6bf5bbc`) is the typed replacement for raw
+  `Map.update/4`/accumulator append in new code: it applies the update fun only in an
+  explicit present-key arm, so a future OTP/Elixir where the absent-key path calls the
+  fun cannot silently corrupt the ~60 accumulator sites the OS-20 upgrade blocker
+  tracks. Pinned by the court `test/xaas/compat/otp29_map_update_court_test.exs`.
+- **sa2a Execute authority-evidence flow** — the DO body of the sa2a `:execute` action
+  (`Xaas.Sa2a.Changes.Execute`, `lib/xaas/sa2a/changes/execute.ex`) runs as a
+  `before_transaction` hook — deliberately not `before_action`, so a refusal invalidates
+  the changeset without rolling back the outer `Xaas.Actuation.run/4` transaction that
+  seals the `:refused` receipt — and passes the authority evidence map to
+  `Bridge.execute` (court-admitted requests can actually clear the authority gate;
+  `1ac2ad42`, receipt `w984es-repair.md`, court
+  `test/sa2a/changes/execute_deepening_test.exs`).
 - **A2A parse floor** — `XaasWeb.Plugs.A2AParseFloor`
   (`lib/xaas_web/plugs/a2a_parse_floor.ex`, W150) runs in `XaasWeb.Endpoint` before
   `Plug.Parsers` so malformed JSON on `/a2a` POSTs answers the JSON-RPC 2.0 `-32700`

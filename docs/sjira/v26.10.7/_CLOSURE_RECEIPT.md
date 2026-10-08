@@ -89,11 +89,13 @@ at HEAD** (final, DRAFT flag cleared).
   `plans/w637b-graphlaw-commit.md`.
 - Phase 2 host (W638, `plans/w638-wasmex-host.md`): `lib/xaas/semantics/graphlaw_wasm.ex`
   + 8-leg court + wasmex 0.15.1 (already locked) — landed-uncommitted;
-  court verdicts witnessed in receipt; **DRAFT(W638-commit-pending)** —
-  host code is not yet committed.
-- **DRAFT(W640-differential-pending)**: the W638-vs-native differential
-  court (W640) has no landed receipt yet; unification standing stays
-  PARTIAL until it does. See `_GRAPHLAW_WASM_UNIFICATION_RECEIPT.md`.
+  court verdicts witnessed in receipt; **DRAFT(W638-commit-pending) —
+  CLEARED (W984ge, 2026-10-07)**: host code committed in `2f2748b3`
+  (W650g).
+- **DRAFT(W640-differential-pending) — CLEARED (W984ge, 2026-10-07)**:
+  differential court receipt landed (`plans/w640-differential-shacl.md`,
+  ALIVE 5/5 ×2 fresh roots) and the court artifact is committed
+  (`a5f81439`, W650g2). See `_GRAPHLAW_WASM_UNIFICATION_RECEIPT.md`.
 
 ## 6. Fleet tags — 8/8 tagged per W648 audit
 
@@ -176,8 +178,8 @@ replay, not fixed by W633/W641.
 |---|---|---|---|
 | 1 | W984dj census re-witness | **CLOSED (W650b)** — W984dj receipt permanently absent; confirming census executed at HEAD `56325fa5` instead: 1352/0/1, exit 0 | `plans/w650b-open-items.md` |
 | 1b | W650b closure-table incorporation | **LANDED** — `plans/w650b-open-items.md` written; this table updated in place (W650b) | `plans/w650b-open-items.md` |
-| 2 | W638 Wasmex host commit | landed-uncommitted | `plans/w638-wasmex-host.md` |
-| 3 | W640 differential court | no landed receipt | (pending) |
+| 2 | W638 Wasmex host commit | **CLOSED (W984ge, 2026-10-07)** — host committed: `lib/xaas/semantics/graphlaw_wasm.ex` landed in commit `2f2748b3` (W650g integration, W638/W644), on `feat/playwright-surface`; clean vs HEAD (`git diff --stat HEAD --` empty) | `plans/w638-wasmex-host.md`, commit `2f2748b3` |
+| 3 | W640 differential court | **CLOSED (W984ge, 2026-10-07)** — receipt landed: `plans/w640-differential-shacl.md` (ALIVE, 5/5 ×2 fresh roots, host/guest agree, C0 typed-refused); court artifact `test/xaas/semantics/w640_differential_shacl_test.exs` committed in `a5f81439` (W650g2 restage) | `plans/w640-differential-shacl.md`, commit `a5f81439` |
 | 4 | ash_surface version-commit lane + tag | BLOCKED(version-commit-pending) | `w648-version-audit.md` row 22, `w635` |
 | 5 | ggen-marketplace version-commit lane + tag | BLOCKED(version-commit-pending) | `w648` row 7, `w635` |
 | 6 | ash_surface `priv/ash_surface/` projection byte-staleness vs fresh regen (content drift decomposed, not regenerated) | OPEN | `~/xaas/docs/sjira/v26.10.6/plans/w984n-ashsurface-regen-check.md` |
@@ -185,23 +187,38 @@ replay, not fixed by W633/W641.
 | 8 | affidavit pack migration | BLOCKED(pack-contract-divergence), tree restored byte-identical to `1056fc69` | `plans/w641a-affidavit-migration.md` |
 | 9 | ferroplan pack migration | BLOCKED(pack-capability-missing) — new pack ships no `queries/`, registry projection absent; falsifier + unblock condition written | `plans/w641b-ferroplan-migration.md` |
 | 10 | xaas_dev migration-ordering defect (dedup after index-create) | OPEN (typed, pre-existing) | `w633` §1, `w641` |
-| 11 | xaas seal commit `56325fa5` not reachable from `origin/main` — seal is branch-local until coordinator merges `feat/playwright-surface` → main | OPEN (BLOCKED-class, coordinator) | `plans/w650k3-tag-verdict.md` (W650k4) |
-| 12 | ash_pplan post-tag `847f487b` (W650j version-companion fix) is arguably release content — cut v26.10.8 or accept per W628b | OPEN (operator decision) | `plans/w650k3-tag-verdict.md`, `plans/w650j-pplan-pins.md` |
+| 11 | xaas seal commit `56325fa5` not reachable from `origin/main` — seal is branch-local until coordinator merges `feat/playwright-surface` → main | OPEN (BLOCKED-class, coordinator) — **re-verified 2026-10-07 (W984ge)**: `git merge-base --is-ancestor 56325fa5 origin/main` fails; still NOT reachable | `plans/w650k3-tag-verdict.md` (W650k4) |
+| 12 | ash_pplan post-tag `847f487b` (W650j version-companion fix) is arguably release content — cut v26.10.8 or accept per W628b | OPEN (operator decision) — **re-verified 2026-10-07 (W984ge)**: `~/ash_pplan` HEAD still `847f487`, `v26.10.7-2-g847f487` (2 commits ahead of tag); untouched | `plans/w650k3-tag-verdict.md`, `plans/w650j-pplan-pins.md` |
+| 13 | idempotency-deepening 3F (`run_idempotency_deepening_test.exs`) | **CLOSED (W650h23, 2026-10-07)** — real cause: unscoped global reads vs committed foreign rows in shared `xaas_test` (READ COMMITTED leak); scope fix, zero lib/ changes; repair + commit receipts landed | `~/xaas/docs/sjira/v26.10.6/plans/w650h23-repair.md`, `plans/w650h23-commit.md` (commit `8a5f7ea7`) |
+| 14 | W984ee court file (`test/xaas/compat/otp29_map_update_court_test.exs`) loss → W984fo restoration | **STILL OPEN — restoration in flight, NOT closed (W984ge, 2026-10-07)**: file present on disk (92 lines, W984ee/OS-20 guard + census court) but **untracked** (`git status` = `??`; never committed per `git log --all`); no `w984fo` receipt in either plans corpus. Owed: commit of the court file + landed W984fo receipt | evidence: `git log --all -- test/xaas/compat/otp29_map_update_court_test.exs` empty; file on disk 2026-10-07 |
 
 ## Standing summary
 
+> **Addendum — Updated 2026-10-07 (lane W984ge)**: open-items register
+> truthed against disk/git. Items 2 (W638 host commit `2f2748b3`) and 3
+> (W640 differential receipt + committed artifact `a5f81439`) are CLOSED;
+> the two register rows added since v2 (13: idempotency 3F closed by
+> W650h23; 14: W984ee court file still untracked, W984fo receipt still
+> absent) recorded. Items 11 and 12 re-verified still true/open. No DRAFT
+> flag was cleared without its precondition being met on disk.
+
 - Census gate: **ALIVE at HEAD `56325fa5`** (W650b confirming witness,
   1352/0/1, exit 0 — item 1 closed; W984dj superseded). Remaining DRAFT
-  blockers: items 2 (W638 commit) and 3 (W640 differential) only.
+  blockers after W984ge truthing: item 14 (W984ee court file untracked,
+  W984fo receipt absent) and the coordinator/operator items 11 and 12.
 - OS-18: ALIVE (`579454be`). Refusal ledger: ALIVE (`d95defa2`,
   digest `203fee7c…`). Playwright: ALIVE (371/371 + 6/6). WASM artifact:
-  ALIVE (`1869a16`, digest `b7664a5e…`); Wasmex host + differential:
-  PARTIAL/DRAFT. Fleet tags: **PARTIAL_ALIVE per W650k3/W650k4** — 8/8
+  ALIVE (`1869a16`, digest `b7664a5e…`); Wasmex host committed
+  `2f2748b3` (W650g); differential court ALIVE
+  (`plans/w640-differential-shacl.md`, artifact committed `a5f81439`,
+  W650g2). Fleet tags:
+  **PARTIAL_ALIVE per W650k3/W650k4** — 8/8
   ancestry-truthful and re-verified fresh at v2 (W650c ls-remote table
   above; 2 repos BLOCKED noted), with disclosures: xaas audit-green at
   HEAD not tag (42 ahead), seal branch-local until main merge (item 11),
   ash_pplan post-tag operator item (item 12). a2a doc fix: ALIVE
   (`13dd1a57`, tag rides at `e0fb769e`, W628b). Shared DB: ALIVE at head.
-- Seal verdict: **DRAFT — items 1 and 1b closed by W650b; not final until
-  items 2 (W638 host commit) and 3 (W640 differential court) close and
-  this receipt is re-read against them.**
+- Seal verdict: **DRAFT — items 1, 1b, 2, 3, and 13 closed (W650b, W984ge,
+  W650h23); not final until item 14 (W984ee court file commit + W984fo
+  receipt) closes, coordinator/operator items 11 and 12 resolve, and this
+  receipt is re-read against them.**
