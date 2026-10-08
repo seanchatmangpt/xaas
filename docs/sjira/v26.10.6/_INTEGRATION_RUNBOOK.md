@@ -659,3 +659,120 @@ residual commit.
 | Doctor statuses | `plans/w847-doctor-recal.md` | MET — PARTIAL_ALIVE, literal band 120..170 |
 | Postcommit gate | `plans/w663b-postcommit-gates.md` | NOT YET — step 4, replay at load <10 |
 | Push | — | NOT YET — gated on step 4 |
+
+## Staged-commit addendum (W981u, 2026-10-07, HEAD 6f235905)
+
+Manifest **v3 staging section** appended to `_COMMIT_MANIFEST_W850.md` this lane:
+(a) 3 new verified commits since the already-recorded 84a5ef51 base — 68a5c9f9
+(CG-17 NEW-GROUP: ash_surface regen, w978b), 4546f96a (CG-14, w981/w896b),
+6f235905 (CG-07, w946d via w981h); (b) 6 pending-integration families staged with
+receipt paths and live file statuses — W976 LimitGate (limit_gate.ex [??] + 2 wires
+[M] + 13-test court [??]), W975b SPEC-30 GraphQL-over-HTTP (router.ex/mix.exs [M] +
+court [??]), W981e/f AIRo ledger+docs (airo-wiring-ledger.md [M] + docs/airo/ [??]),
+W981m diataxis (2 reference pages [M]), migration guards (3 untracked migrations,
+W971b-triaged ALIVE per w981n). Push state: entire campaign unpushed
+(origin/feat/playwright-surface = a0723bf6). Receipt: `plans/w981u-manifest-v3-staging.md`.
+
+# OPERATOR SECTION (W984e, 2026-10-07) — supersedes W946d section (c) steps 2-4
+
+Supersedes-note: W946d's "Remaining operator steps" section (c) above is STALE in
+parts — steps 2 (dev migrate), 3 (ggen sync pin+relocate), and the push half of
+step 4 are superseded by the consolidated steps below. W946d step 1 (lease
+cleanup, W878 census rm list) remains valid as method, but its census is
+pre-W982-wave; see step 3 below for the current lease state. Step 4's post-commit
+gate definition (w663b) is unchanged and still applies before any push.
+Citations: `plans/w982y-dev-migrate-path.md`, `plans/w890-health-e2e-revalidate.md`,
+`plans/w982c-dedup-fk-remediation.md`, `plans/w980g-sync-exec.md`,
+`plans/w981y-push.md`, `plans/w982b-integration-commits.md`.
+
+## (O1) Dev DB migrate — coordinator-owned, BLOCKED(shared-db-authority)
+
+- Verdict (W982y, real fresh-DB falsifier run): whole-tree migrator path ALIVE —
+  84/84 migrations applied in order on an empty DB, exit 0, idempotent re-run.
+- W890's two named blockers are both RESOLVED:
+  - `20261007111457` compile break — STALE observation; file now carries the
+    W971b/W981q replay guards; not reproducible (W982y).
+  - `20261007120000` FK block — fixed by W982c's receipt-reparent-then-delete
+    rewrite, court-verified (w982c).
+- Operator step (coordinator only; shared-DB transition):
+  `PATH=$HOME/.asdf/shims:$PATH MIX_ENV=dev mix ecto.migrate` on `xaas_dev`.
+  Expected: 9 pending migrations applied in order, exit 0:
+  20261007010000, 20261007111457, 20261007120000, 20261007210000,
+  20261007220000, 20261007230000, 20261007231000, 20261007240000,
+  20261007250000. (xaas_dev at 75/84 recorded.)
+- Only remaining gate: BLOCKED(shared-db-authority) — same typed gap handed
+  off by W890/W982c/W982y. Receipts: w982y, w982c, w890.
+- **CORRECTION (2026-10-07, lane W984s)** — the plain `mix ecto.migrate`
+  operator step above is REFUTED by W984o's read-only precheck on live
+  xaas_dev (`plans/w984o-devdb-precheck.md`): the dup-sensitive partial
+  unique index migration (20261007010000) sorts BEFORE its own dedup repair
+  (20261007120000), so plain migrate aborts at 010000 with a unique-violation
+  (90 org-less dup groups / 109 doomed rows present), later migrations never
+  run, and the failure self-repeats on every re-run. W982y's fresh-DB ALIVE
+  verdict does not transfer to the current dirty dataset. Working handoff
+  (idempotent, no code edits; per w984o + w982c):
+  1. Stop the native phx server first — oban (19 idle LISTEN conns) could
+     insert new org-less epochs between pre-pass and the 010000 index build,
+     re-introducing a dup.
+  2. psql pre-pass executing 20261007120000's reparent_sql / delete_sql
+     verbatim (idempotent; expected per live counts: 42 receipts reparented,
+     109 doomed epochs deleted).
+  3. `PATH=$HOME/.asdf/shims:$PATH MIX_ENV=dev mix ecto.migrate` — applies all
+     9 pending; 20261007120000's dedup is then a no-op.
+  Then resume step (O2) server restart.
+
+## (O2) Dev server restart after migrate
+
+- W890's fresh-boot 503 blocker was `Phoenix.Ecto.PendingMigrationError` on
+  xaas_dev during e2e boots (w890). Step (O1) removes the cause.
+- After (O1) succeeds: restart the native server
+  (`MIX_ENV=dev INTERNAL_API_TOKEN=<real-token> mix phx.server`) so the boot
+  migration check passes; e2e health courts (W890's 4-test suite, contract
+  per w836: `skipped(:warming_up)` allowed inside boot+7min grace) are
+  expected green on the next fresh boot. Receipt: w890.
+
+## (O3) Lane-lease cleanup state (as-of 2026-10-07, this lane's ls+stat)
+
+- Remaining `_build-lane*` roots at `/Users/sac/xaas/` are ACTIVE-lane leases —
+  W982-wave through W984-wave lanes; do not bulk-delete.
+- Done-lane roots are swept by the coordinator per the fanout cleanup law
+  (receipt-existence check in `plans/` before each delete).
+- Stale >90min at time of writing (stat mtime, now epoch 1791392679):
+  `_build-laneW980l` (1791386814), `_build-laneW981b` (1791387051),
+  `_build-laneW981c` (1791387020), `_build-laneW981d` (1791387265).
+  Coordinator: confirm each owning receipt exists in `plans/` before rm.
+- 46 total `_build-lane*` roots on disk; `_build` (main) untouched.
+
+## (O4) ggen sync operator verification — STILL OPEN (W980g)
+
+- W980g EXECUTED the pin advance (518572b6..b58d78541 in `ggen.toml`) and the
+  sync run (FM-PACK-008 and FM-WRITE-005 resolved per tool remediation;
+  diff gate prediction HELD: exactly the predicted 2 hunks on the generated
+  ERRC page). Standing ALIVE at execution time.
+- STILL OPEN: operator verification of the W980g execution — re-run
+  `ggen sync` drift check at integration HEAD and confirm the W756
+  projection ("117 Ash resources ... 19 domains") on the generated page.
+  Receipt: `plans/w980g-sync-exec.md`.
+
+## (O5) Push state (as-of writing)
+
+- Branch `feat/playwright-surface` pushed through `6f235905` (W981y: origin
+  fast-forward a0723bf6..6f235905, post-push SHA equality, ALIVE; receipt
+  `plans/w981y-push.md`).
+- W984d's second push wave: IN-FLIGHT at time of writing — this section does
+  not assert its outcome. Post-wave falsifier:
+  `git ls-remote origin feat/playwright-surface` vs local head.
+
+## (O6) Shared-index commit hazard — standing rule for integration lanes
+
+- Incident (W982b, commit 691e0a93): a commit using the shared index swept in
+  another lane's staged rollback, reverting W970a's landed billing
+  multitenancy; fixed forward in ddb19522. Receipt:
+  `plans/w982b-integration-commits.md`.
+- STANDING RULE: integration-lane commits MUST use explicit pathspec commits
+  (`git commit -- <paths>`), never bare `git commit` over shared-index state.
+  All W982b commits after the incident used pathspec and were immune.
+
+## Conventions
+
+Sweep lanes: receipt sweeps must enumerate all `docs/sjira/*/plans/` dirs — v26.10.6 lanes keep writing here even during later campaign seals (W650g3 wrong-dir miss, corrected by W650g4; codified by W650h3).

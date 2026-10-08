@@ -210,3 +210,75 @@ Same limitations as the original map apply (indirect DSL-attached coverage
 invisible; last-segment alias pass conservative-toward-covered).
 Standing: ALIVE (as a map). Lane hygiene: run used `elixir` directly — no
 `_build-laneW650h8` created.
+
+## Re-census addendum — W984du, 2026-10-07 (fifth dated re-run)
+
+Lane W984du, v26.10.6 campaign, same CamelCase-aware method re-implemented
+fresh (`/tmp/w984du_coverage.exs`, derived from W650z8's script; defmodule-source
+parsing, full-dotted-name + last-segment alias passes, protocol/mix-task/
+config-class non-testable filter, column-0 def/defdelegate/defmacro pub
+heuristic). Script-only — no project compile, no build root. Coordinated with
+W650z8's fourth re-run (`docs/sjira/v26.10.7/plans/w650z8-recensus-receipt.md`
++ `w650z8-recensus7.md`, 829/639/171/19): its numbers were read first and are
+not duplicated here beyond the delta-table baseline row.
+
+**Post-depth-probe-wave walk: 829 files — 677 COVERED (83.6%), 133 UNCOVERED,
+19 NON-TESTABLE.**
+
+| Run | Files | Covered | Uncovered | Non-testable |
+|---|---|---|---|---|
+| W984cj as-written | 825 | 629 | 193 | 15 |
+| W984cj re-run | 826 | 629 | 194 | 15 |
+| W650h8 re-run | 829 | 634 | 176 | 19 |
+| W650z8 re-run | 829 | 639 | 171 | 19 |
+| **W984du re-run** | **829** | **677** | **133** | **19** |
+
+**Uncovered 171 → 133 (−38); zero newly-uncovered; file count unchanged at
+829.** Note: the depth-probe wave landed ~30 court (test) files — no new
+lib/ modules — so the file count held while covered rose. The −38 came from
+courts that *name* the covered modules directly (the census's alias pass now
+matches them), concentrated in:
+
+- **Governance thin-batch courts** (`w984dr2b_gov_thin_batch_court_test.exs`
+  and siblings): retired all 24 remaining `Approval*RequiresApprover` /
+  `Approval*Valid*` governance validations, plus governance changes batch.
+  Governance uncovered 39 (W650z8-era) → 39 raw count here differs only by
+  domain-table bucketing; raw: governance uncov 70 → 39.
+- **Operations courts** (`w650za_incident_lifecycle_guard_court_test.exs`):
+  retired `IncidentPostmortemFinalRequiresResolved`,
+  `IncidentResolvedAtRequiresResolved`.
+- **Ultracode provider-mesh court** (`runtime_loop_worker_court_w650h21_test.exs`):
+  retired `ProviderWorker`, `ReconciliationLoop`, `CapabilitySet`, `FailureSet`
+  (4-pub and 3-pub former top-10 entries).
+- **Library court** (`student_profile_sub_reactor_test.exs`): retired
+  `Xaas.Library.Reactors.StudentProfileSubReactor`.
+
+New top-10 uncovered (full 133-row list at `/tmp/w984du_map.txt`):
+
+| # | Pub | Module |
+|---|---|---|
+| 1 | 4 | `Xaas.Library.ILSRepo.FixtureAdapter` |
+| 2 | 3 | `Xaas.Billing.Changes.ApprovalPricingOverrideApprove` |
+| 3 | 3 | `Xaas.Governance.Checks.FreezeWindowActive` |
+| 4 | 3 | `Xaas.Platform.Validations.RouteProjectsBackupsRetainUntilPassed` |
+| 5 | 2 | `Xaas.Actuation.Validations.CausalAdmission` |
+| 6 | 2 | `Xaas.AwsRepo.AwsAdapter` / `Xaas.AwsRepo.FixtureAdapter` |
+| 7 | 2 | `Xaas.Billing.Changes.ApprovalInvoiceReconciliationApproveApprove` |
+| 8 | 2 | `Xaas.Billing.Changes.ApprovalQuotaOverrideApprove` |
+| 9 | 2 | `Xaas.Billing.Validations.ApprovalTierDowngradeTargetsLowerTier` / `SubscriptionChangeTierNotNoOp` |
+| 10 | 2 | Governance changes 2-pub long tail (BackupRetention, BreakGlassJustificationReview, ChangeOfControlNotify, CmekKeyBinding, …) |
+
+Retirement spot-checks (all verified on disk, real test files naming the
+module): `ApprovalCmekKeyBindingRequiresApprover` and
+`ApprovalSsoRoleMappingUpdateValidMappings` →
+`test/xaas/governance/w984dr2b_gov_thin_batch_court_test.exs` (+ `w984ds2_
+sso_mappings_depth_court_test.exs`); `ProviderWorker`/`CapabilitySet` →
+`test/xaas/ultracode/provider_mesh/runtime_loop_worker_court_w650h21_test.exs`;
+`StudentProfileSubReactor` →
+`test/xaas/library/reactors/student_profile_sub_reactor_test.exs`;
+`IncidentPostmortemFinalRequiresResolved` →
+`test/xaas/operations/w650za_incident_lifecycle_guard_court_test.exs`.
+
+Same limitations as the original map (indirect DSL-attached coverage
+invisible; last-segment alias pass conservative-toward-covered). Standing:
+ALIVE (as a map). Lane hygiene: no `_build-laneW984du` created.

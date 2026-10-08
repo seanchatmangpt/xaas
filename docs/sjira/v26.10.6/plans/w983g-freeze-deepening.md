@@ -54,6 +54,32 @@ mocking of any owned collaborator (Chicago).
 
 ## Verification (real tails, ×2)
 
-Run 1 (warm-up root, after one real fix: `create!` returns the struct, not `{:ok,_}` —
-initial court 4 matched the wrong shape, 3/4 → fixed):
-[next run outputs appended below]
+One real fix during run 1: `Ash.create!` returns the struct, not `{:ok, _}` — court 4
+initially matched the wrong shape (3/4 → fixed, no product change).
+
+- Run 1: `mix test test/xaas/governance/freeze_window_deepening_test.exs` —
+  `Finished in 1.4 seconds … Result: 4 passed` (exit 0)
+- Run 2 (root created fresh this session; compile resumed once after a harness background
+  timeout, no source change between runs): `Finished in 1.2 seconds … Result: 4 passed`
+  (exit 0)
+
+## Standing
+
+- Court 1 boundary precision: ALIVE (real closed-interval `[starts_at, ends_at]`, inclusive
+  both edges) + typed precision finding: sub-second edges NOT representable (`:utc_datetime`
+  second granularity + check truncates `now` to `:second`); order's literal microsecond probe
+  unsatisfiable at the type level; real semantics asserted instead.
+- Court 2 org spanning: ALIVE — freeze is genuinely per-org (`org_id` filtered), NOT global.
+  Identical action in org B admits while org A is refused.
+- Court 3 freeze lift: ALIVE — valid-dating `ends_at` to past admits the previously-refused
+  surface (quarantine; complements W969b's lift on promote).
+- Court 4 idempotent creation: ALIVE with typed DESIGN-FINDING (report-only): real contract is
+  duplicate-permitting — identical create twice yields 2 rows, no unique identity, no dedup;
+  enforcement not weakened (gate's existential query satisfied by either row).
+- Standing of the W969c `FreezeWindowActive` gate overall: ALIVE on both probed deploy-class
+  behaviors (refuse in-window, admit out-window), per-org, time-bounded.
+
+## Lease note
+
+`_build-laneW983g` left in the checkout for coordinator deletion (`rm -rf` denied in this
+lane's permission set). No commits made.
