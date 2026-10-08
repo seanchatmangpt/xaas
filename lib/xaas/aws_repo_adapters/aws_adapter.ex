@@ -15,7 +15,14 @@ defmodule Xaas.AwsRepo.AwsAdapter do
 
   alias Xaas.AwsRepo
 
-  @base_url "http://169.254.169.254"
+  # W984fy: runtime.exs already configures `base_url` for this module (test
+  # fixture profile), but @base_url was a compile-time module attribute, so
+  # that config was dead. Read it at call time with the real IMDS default.
+  defp base_url do
+    :xaas
+    |> Application.get_env(__MODULE__, [])
+    |> Keyword.get(:base_url, "http://169.254.169.254")
+  end
 
   @impl AwsRepo
   def get_cpu_average(instance_id) do
@@ -73,13 +80,15 @@ defmodule Xaas.AwsRepo.AwsAdapter do
 
   @impl AwsRepo
   def get_self_instance_id do
-    url = "#{@base_url}/latest/meta-data/instance-id"
+    url = "#{base_url()}/latest/meta-data/instance-id"
 
     with {:ok, aws_token} <- get_aws_token(),
-         {:ok, %Req.Response{body: body}} <-
+         {:ok, %Req.Response{status: status, body: body}} when status in 200..299 <-
            Req.get(url, headers: [{"X-aws-ec2-metadata-token", aws_token}]) do
       {:ok, body}
     else
+      {:ok, %Req.Response{status: status}} ->
+        {:error, "Failed to retrieve self instance id, error: unexpected_status_#{status}"}
       {:error, error} ->
         {:error, "Failed to retrieve self instance id, error: #{inspect(error)}"}
     end
@@ -104,12 +113,15 @@ defmodule Xaas.AwsRepo.AwsAdapter do
   end
 
   defp get_aws_token do
-    url = "#{@base_url}/latest/api/token"
+    url = "#{base_url()}/latest/api/token"
     headers = [{"X-aws-ec2-metadata-token-ttl-seconds", "21600"}]
 
     case Req.put(url, headers: headers) do
-      {:ok, %Req.Response{body: body}} ->
+      {:ok, %Req.Response{status: status, body: body}} when status in 200..299 ->
         {:ok, body}
+
+      {:ok, %Req.Response{status: status}} ->
+        {:error, "Failed to retrieve AWS token, error: unexpected_status_#{status}"}
 
       {:error, error} ->
         {:error, "Failed to retrieve AWS token, error: #{inspect(error)}"}
