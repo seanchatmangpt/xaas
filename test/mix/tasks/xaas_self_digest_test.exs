@@ -9,6 +9,8 @@ defmodule Mix.Tasks.Xaas.SelfDigestTest do
 
   import ExUnit.CaptureIO
 
+  require Ash.Query
+
   alias Xaas.Ultracode.CapitalCensus.WorkOrder
 
   setup do
@@ -57,8 +59,13 @@ defmodule Mix.Tasks.Xaas.SelfDigestTest do
     assert summary["frontier_episodes"] == 3
     assert [%{"created" => true}] = summary["created_work_orders"]
 
+    # Scoped to this suite's own subject (W984ep flake-class fix): the shared
+    # xaas_test work_orders table can carry committed foreign rows, so an
+    # unscoped read is only stable on a quiet DB.
     assert [%{classification: :verification, subject: "ultracode-self-digest"}] =
-             Ash.read!(WorkOrder, authorize?: false)
+             WorkOrder
+             |> Ash.Query.filter(subject == "ultracode-self-digest")
+             |> Ash.read!(authorize?: false)
   end
 
   test "--no-admit reports without persisting", %{tmp: tmp} do
@@ -82,7 +89,12 @@ defmodule Mix.Tasks.Xaas.SelfDigestTest do
       end)
 
     assert [_ticket] = Jason.decode!(out)["admitted_work_orders"]
-    assert Ash.read!(WorkOrder, authorize?: false) == []
+
+    # W984ep flake-class fix: scope to this suite's subject instead of
+    # asserting global table emptiness on the shared xaas_test DB.
+    assert WorkOrder
+           |> Ash.Query.filter(subject == "ultracode-self-digest")
+           |> Ash.read!(authorize?: false) == []
   end
 
   test "a refusal raises (non-zero exit)", %{tmp: tmp} do

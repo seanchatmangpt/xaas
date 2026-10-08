@@ -34,6 +34,8 @@ defmodule Xaas.Ultracode.SemanticDriveTest do
 
   use ExUnit.Case, async: false
 
+  require Ash.Query
+
   alias Xaas.Ultracode.{Ocel.Validator, Run, SemanticDrive}
   alias Xaas.Ultracode.SemanticDrive.Episode
 
@@ -307,7 +309,13 @@ defmodule Xaas.Ultracode.SemanticDriveTest do
               "detail" => %{"capability" => "recipe:not-registered"}
             }} = drive(ctx, out)
 
-    assert Ash.read!(Run, action: :read_unscoped, authorize?: false) == []
+    # W984ep flake-class fix: the shared ultracode_runs table has a
+    # documented committed-row leak class, so scope the emptiness check to
+    # the shape this refused drive could only ever produce: a Run without
+    # any admitted work-order descriptor.
+    assert Run
+           |> Ash.Query.filter(is_nil(work_order_iri) and is_nil(capability_id))
+           |> Ash.read!(action: :read_unscoped, authorize?: false) == []
     assert File.read!(Path.join(out, "ledger.ndjson")) == ""
     assert %{"outcome" => %{"reason" => "unregistered_capability"}} = read!(out, "refused.json")
     refute File.exists?(Path.join(out, "receipt.json"))

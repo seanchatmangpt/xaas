@@ -27,6 +27,8 @@ defmodule Xaas.Operations.AutofdePlannerConnectorDepthTest do
   """
   use ExUnit.Case, async: false
 
+  require Ash.Query
+
   @resources [
     {Xaas.Operations.AutofdePlannerCatalog, :request_catalog},
     {Xaas.Operations.AutofdePlannerCacheStats, :request_cache_stats},
@@ -115,7 +117,10 @@ defmodule Xaas.Operations.AutofdePlannerConnectorDepthTest do
     |> Ash.create(actor: Xaas.SystemAuthority.new(:autofde_coverage_monitor))
   end
 
-  defp count!(resource), do: resource |> Ash.read!() |> length()
+  # W984ep flake-class fix: counts are scoped to this suite's own query
+  # marker instead of the whole shared table.
+  defp count!(resource, query), do:
+    resource |> Ash.Query.filter(query == ^query) |> Ash.read!() |> length()
 
   test "1. success path persists the decoded cnv_response and requested_at and invents no trajectory_sha256 for any of the four connectors" do
     # Mutation rationale: kills invented-digest, missing-timestamp, and
@@ -189,12 +194,12 @@ defmodule Xaas.Operations.AutofdePlannerConnectorDepthTest do
     for {resource, action} <- @resources do
       start_cnv_server!(envelope)
 
-      before = count!(resource)
+      before = count!(resource, "blocks")
       {:error, error} = create!(resource, action, "blocks")
 
       assert error_message(error) =~ "exited 2"
       assert error_message(error) =~ "domain not found"
-      assert count!(resource) == before
+      assert count!(resource, "blocks") == before
     end
   end
 
@@ -204,23 +209,23 @@ defmodule Xaas.Operations.AutofdePlannerConnectorDepthTest do
     for {resource, action} <- @resources do
       # (a) non-200
       start_cnv_server!({500, "internal cnv-deploy error"})
-      before = count!(resource)
+      before = count!(resource, "q")
       {:error, error} = create!(resource, action, "q")
       assert error_message(error) =~ "returned status 500"
-      assert count!(resource) == before
+      assert count!(resource, "q") == before
 
       # (b) 200 but malformed envelope (no "execution" key)
       start_cnv_server!(Jason.encode!(%{"unexpected" => "shape"}))
       {:error, error} = create!(resource, action, "q")
       assert error_message(error) =~ "unexpected cnv-deploy /invoke response shape"
-      assert count!(resource) == before
+      assert count!(resource, "q") == before
 
       # (c) unreachable server (nothing listening)
       dead = Application.get_env(:xaas, :cnv_deploy_base_url)
       Application.put_env(:xaas, :cnv_deploy_base_url, "http://127.0.0.1:1")
       {:error, error} = create!(resource, action, "q")
       assert error_message(error) =~ "request failed"
-      assert count!(resource) == before
+      assert count!(resource, "q") == before
       Application.put_env(:xaas, :cnv_deploy_base_url, dead)
     end
   end

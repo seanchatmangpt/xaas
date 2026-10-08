@@ -5,6 +5,10 @@ defmodule Xaas.Billing.FiboRevenueActuationTest do
 
   use ExUnit.Case, async: true
 
+  import Ash.Expr
+
+  require Ash.Query
+
   alias Xaas.Billing.{FiboRevenueProfile, Revenue, RevenueRecognition}
   alias Xaas.Operations.ActuationReceipt
   alias Xaas.Semantics.Registry
@@ -28,6 +32,22 @@ defmodule Xaas.Billing.FiboRevenueActuationTest do
       },
       overrides
     )
+  end
+
+  # W984ep: suite-scoped reads for the idempotency counts (shared-table
+  # flake-class fix); these values are unique to this suite's fixtures.
+  defp recognition_rows do
+    RevenueRecognition
+    |> Ash.Query.filter(
+      expr(org_id == "org-fibo-revenue" and external_ref == "invoice-123")
+    )
+    |> Ash.read!(authorize?: false)
+  end
+
+  defp revenue_receipts do
+    ActuationReceipt
+    |> Ash.Query.filter(expr(resource_module == "Xaas.Billing.RevenueRecognition"))
+    |> Ash.read!(authorize?: false)
   end
 
   defp actuation_input do
@@ -148,8 +168,10 @@ defmodule Xaas.Billing.FiboRevenueActuationTest do
     assert recognition.currency == "USD"
     assert Decimal.equal?(recognition.amount, Decimal.new("125.50"))
 
-    recognition_count = RevenueRecognition |> Ash.read!(authorize?: false) |> length()
-    receipt_count = ActuationReceipt |> Ash.read!(authorize?: false) |> length()
+    # W984ep flake-class fix: scope the before/after counts to this suite's
+    # own org / resource instead of the whole shared xaas_test tables.
+    recognition_count = recognition_rows() |> length()
+    receipt_count = revenue_receipts() |> length()
 
     assert {:ok, replay} =
              Revenue.recognize(:service_fee, revenue_attrs(),
@@ -160,8 +182,8 @@ defmodule Xaas.Billing.FiboRevenueActuationTest do
     assert replay.status == :replayed
     assert replay.replay?
     assert replay.receipt.id == first.receipt.id
-    assert RevenueRecognition |> Ash.read!(authorize?: false) |> length() == recognition_count
-    assert ActuationReceipt |> Ash.read!(authorize?: false) |> length() == receipt_count
+    assert recognition_rows() |> length() == recognition_count
+    assert revenue_receipts() |> length() == receipt_count
   end
 
   test "recognition refuses missing authority, invalid amount and non-revenue source" do

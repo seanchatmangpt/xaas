@@ -73,14 +73,14 @@ defmodule Xaas.Ultracode.SemanticWaveTriggerTest do
     assert first[:enqueued?] == true
     assert second[:enqueued?] == false
     assert second[:deduped?] == true
-    assert pending_wave_count() == 1
+    assert pending_wave_count([@digest_a]) == 1
 
     # A different graph digest is a different frontier: its own wave.
     assert {:ok, %{wave: third}} =
              SemanticWork.materialize(wave_descriptor(sha, @digest_b, "d3"), binding: :graph)
 
     assert third[:enqueued?] == true
-    assert pending_wave_count() == 2
+    assert pending_wave_count([@digest_a, @digest_b]) == 2
   end
 
   test "concurrent enqueue attempts stay bounded to one pending wave per pair", %{sha: sha} do
@@ -101,7 +101,7 @@ defmodule Xaas.Ultracode.SemanticWaveTriggerTest do
     # the pair afterwards: the pre-check plus Oban-native uniqueness
     # together bound concurrent admissions to one pending wave.
     assert Enum.any?(results, &match?({:ok, %{enqueued?: true}}, &1))
-    assert pending_wave_count() == 1
+    assert pending_wave_count([@digest_a]) == 1
   end
 
   test "policy gate: a continuous_epoch_run admission enqueues no wave", %{sha: sha} do
@@ -116,7 +116,7 @@ defmodule Xaas.Ultracode.SemanticWaveTriggerTest do
 
     assert wave[:enqueued?] == false
     assert wave[:policy_gated?] == true
-    assert pending_wave_count() == 0
+    assert pending_wave_count([@digest_a]) == 0
   end
 
   test "transactional outbox: a failed materialization leaves no wave job", %{sha: sha} do
@@ -126,7 +126,7 @@ defmodule Xaas.Ultracode.SemanticWaveTriggerTest do
     input = %{wave_descriptor(sha, @digest_a, "boom") | verifier_suite: "not-registered"}
 
     assert {:error, _} = SemanticWork.materialize(input, binding: :graph)
-    assert pending_wave_count() == 0
+    assert pending_wave_count([@digest_a]) == 0
   end
 
   # -- the watchdog path ------------------------------------------------------
@@ -139,7 +139,7 @@ defmodule Xaas.Ultracode.SemanticWaveTriggerTest do
     # insert: a cancelled/crashed job) -- simulated through the trigger's
     # own explicit clear.
     assert {1, nil} = SemanticWaveTrigger.clear_pending_waves!(@digest_a, @repo)
-    assert pending_wave_count() == 0
+    assert pending_wave_count([@digest_a]) == 0
 
     # The watchdog fires the SAME action+authority the cron worker runs
     # (dispatch_now is the shared body; the generated cron worker reaches
@@ -217,11 +217,16 @@ defmodule Xaas.Ultracode.SemanticWaveTriggerTest do
     }
   end
 
-  defp pending_wave_count do
+  # W984ep flake-class fix: oban_jobs is a shared committed-state table, so
+  # counts are scoped to this suite's own fixture graph digests
+  # ("sha256:aaa…"/"sha256:bbb…" — values no foreign session can produce)
+  # instead of the whole worker's pending set.
+  defp pending_wave_count(digests) do
     Xaas.Repo.one(
       from(j in Oban.Job,
         where: j.worker == ^@worker,
         where: j.state in ^~w(suspended available scheduled executing retryable),
+        where: fragment("?->>'graph_digest'", j.args) in ^digests,
         select: count(j.id)
       )
     )

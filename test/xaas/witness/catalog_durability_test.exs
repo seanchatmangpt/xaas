@@ -14,6 +14,8 @@ defmodule Xaas.Witness.CatalogDurabilityTest do
   # EU AI Act Art. 12 record-keeping / Art. 74 post-market monitoring class
   @moduletag :eu_ai_act
 
+  require Ash.Query
+
   alias Xaas.Witness.Catalog
   alias Xaas.Witness.CertifiedReceipt
   alias Xaas.Witness.VerificationKey
@@ -44,8 +46,11 @@ defmodule Xaas.Witness.CatalogDurabilityTest do
 
   defp sha256_hex(bytes), do: Base.encode16(:crypto.hash(:sha256, bytes), case: :lower)
 
-  defp receipt_rows do
-    CertifiedReceipt |> Ash.read!() |> Enum.sort_by(& &1.subject)
+  defp receipt_rows(subject_prefix) do
+    CertifiedReceipt
+    |> Ash.read!()
+    |> Enum.filter(&String.starts_with?(&1.subject, subject_prefix))
+    |> Enum.sort_by(& &1.subject)
   end
 
   # (a) full baseline-JSON ingest creates the exact expected row set, and a
@@ -58,7 +63,7 @@ defmodule Xaas.Witness.CatalogDurabilityTest do
     expected_hash = sha256_hex(File.read!(@baseline_path))
     assert first.payload_hash_hex == expected_hash
 
-    rows = receipt_rows()
+    rows = receipt_rows(first.subject)
     assert length(rows) == 2
     assert Enum.map(rows, & &1.algorithm) == [:es256, :ml_dsa65]
     # receipt payload hashes are SHA-256 of each KAT vector's message_hex
@@ -73,7 +78,7 @@ defmodule Xaas.Witness.CatalogDurabilityTest do
     assert {:ok, second} = ingest()
 
     assert second.payload_hash_hex == first.payload_hash_hex
-    assert receipt_rows() == rows
+    assert receipt_rows(first.subject) == rows
   end
 
   # (b) tampered baseline bytes: the real contract records distinguishable
@@ -118,11 +123,24 @@ defmodule Xaas.Witness.CatalogDurabilityTest do
     # kid v1: the fixture ES256 key material; kid v2: same algorithm, new material
     rotated_vector = Map.put(es256_vector, "public_key_hex", String.duplicate("ab", 32))
 
-    assert {:ok, %{receipts: [v1_receipt, _ | _] = receipts}} =
+    assert {:ok, %{subject: subject, receipts: [v1_receipt, _ | _] = receipts}} =
              ingest(signing_surface: [es256_vector, ml_dsa_vector, rotated_vector])
 
-    kids = VerificationKey |> Ash.read!() |> Enum.map(& &1.kid) |> Enum.sort()
-    assert length(kids) == 3
+    # W984ep flake-class fix: scope to this suite's own key material instead
+    # of asserting on the whole shared witness_verification_keys table.
+    suite_materials = [
+      es256_vector["public_key_hex"],
+      ml_dsa_vector["public_key_hex"],
+      String.duplicate("ab", 32)
+    ]
+
+    suite_keys =
+      VerificationKey
+      |> Ash.read!()
+      |> Enum.filter(&(&1.key_material_hex in suite_materials))
+
+    assert length(suite_keys) == 3
+    kids = suite_keys |> Enum.map(& &1.kid) |> Enum.sort()
 
     assert {:ok, verified_v1} = Catalog.record_verification(v1_receipt, true)
     assert verified_v1.verified
@@ -139,7 +157,7 @@ defmodule Xaas.Witness.CatalogDurabilityTest do
     assert verified_v2.verifying_key_hex == String.duplicate("ab", 32)
     assert verified_v1.verifying_key_hex != verified_v2.verifying_key_hex
 
-    reloaded = receipt_rows()
+    reloaded = receipt_rows(subject)
     assert Enum.count(reloaded, & &1.verified) == 2
   end
 
@@ -156,9 +174,18 @@ defmodule Xaas.Witness.CatalogDurabilityTest do
 
     assert {:ok, result} = ingest(signing_surface: [unknown])
 
+    unknown_material = unknown["public_key_hex"]
+
     assert result.skipped == [{0, "DILITHIUM2", :algorithm_not_in_admitted_enum}]
     assert result.receipts == []
-    assert receipt_rows() == []
-    assert Ash.read!(VerificationKey) == []
+
+    # W984ep flake-class fix: scope both emptiness checks to this suite's
+    # own subject / key material (the shared witness tables can carry
+    # committed foreign rows).
+    assert receipt_rows(result.subject) == []
+
+    refute VerificationKey
+           |> Ash.read!()
+           |> Enum.any?(&(&1.key_material_hex == unknown_material))
   end
 end
