@@ -1,10 +1,12 @@
-# Evidence–Claims Index (lane W405; refreshed W711, W855, W984fp)
+# Evidence–Claims Index (lane W405; refreshed W711, W855, W984fp, W984lg, W984lz)
 
 Campaign v26.10.6 CRO-loop, honest-numbers directive. Subject: branch
 `feat/playwright-surface`. W405 audit at head `d1db2b03…` 2026-10-06;
 W711 refresh at head `a0723bf6` 2026-10-07; W855 refresh (rows 33–58) at
 head `a0723bf6` 2026-10-07; W984fp refresh (rows 59–76) at head
-`43265cb1` 2026-10-07. Repo `/Users/sac/xaas`.
+`43265cb1` 2026-10-07; W984lg refresh (rows 77–92) at head `52ce8236`
+2026-10-08; W984lz refresh (rows 93–95) at head `1ba31a97` 2026-10-08.
+Repo `/Users/sac/xaas`.
 
 Method: every pitch number checked against the on-disk artifact named in the
 table. "Real" = number as stated in the receipt file, not the pitch copy.
@@ -226,4 +228,97 @@ Receipt-absent lanes skipped, not invented: **W840-check** (no
 from its claim outright — one cross-row divergence (row 32's 116 vs W756's
 117 resources) recorded as DRIFT above.
 
-Total rows: 12 → 32 → 58 → 76 (W984fp, 2026-10-07).
+Total rows: 12 → 32 → 58 → 76 → 92 (W984lg, 2026-10-08).
+
+## Claims table — W984lg refresh (rows added 2026-10-08, batches #9–#11)
+
+One row per wave commit, 43265cb1 → 52ce8236 (16 commits), in landing
+order. Refresh at head `52ce8236` 2026-10-08. Each receipt read in full;
+court numbers re-read from the receipt, not the commit subject. All 16
+SHAs grep-verified against `docs/sjira/v26.10.{6,7}/plans/`.
+
+| # | Claim | Evidence artifact | What the receipt actually witnesses | Grade |
+|---|---|---|---|---|
+| 77 | W984gk doctor/stogaf fixes + 11-test family court | `docs/sjira/v26.10.7/plans/w984il-commit.md` | `6fbfb47a`: lib diffs verified to be exactly the two disclosed fixes (empty-SHA fallback; per-lane census walk cap, re-tightened 2,000→200/lane after a 120s court timeout against 127 orphaned lane roots). Batch gate 8 court files → **53 passed, 0 failures** (52/53 first run, timeout repaired in-lane); compile EXIT=0; mock gate `[]`; doctor smoke EXIT=0 with disclosed truncation. ALIVE | witnessed |
+| 78 | 8 family/remainder courts from finished lanes (batch #9 courts) | `docs/sjira/v26.10.7/plans/w984il-commit.md` | `c58a8cea`: W984hf(11)/hh(10)/hj(8)/he(3)/hi(3)/ho(7)/hq(6)/hp(10); same batch gate 53/53. ALIVE | witnessed |
+| 79 | Diataxis truth-pass doc edits + receipt-only probes (batch #9 docs) | `docs/sjira/v26.10.7/plans/w984il-commit.md` | `663786f5`: W984hv/hy/hz/ik truth-pass edits + probes w984hk/hs/hv/hy/hz/ik; already-tracked files skipped, out-of-contract dirty files untouched. LANDED (docs) | grep |
+| 80 | W984il landing-batch commit receipt | `docs/sjira/v26.10.7/plans/w984il-commit.md` | `145b5659` carries the receipt itself; cited as base by w984jm-commit and reconciled by w984kb-push (`145b5659` ancestor of HEAD, exit 0). Self-referential-limits class | grep |
+| 81 | Disclosed lib repairs + test repairs + their courts (batch #10) | `docs/sjira/v26.10.7/plans/w984jm-commit.md` | `ad159c18`: W984ht/W984ii lib repairs (ii lib/ diff byte-verified to be exactly the entries-shape guard in `recompute_root`) + W984ig/W984iq test repairs; 11 files. Batch gate 13 files → **160 passed, 0 failures** (12.2s); compile EXIT=0; mock `[]`. ALIVE | witnessed |
+| 82 | hn/ib/io/is/iv/ix/jb courts + owner probes (batch #10 courts) | `docs/sjira/v26.10.7/plans/w984jm-commit.md` | `ef2e8714`: 14 files; all 12 owner receipts read and confirmed green pre-landing (w984hn 7+32, ib 18, ig 12+119 dir, io 6, is 5+36 dir, iq 78, iv 16 ×2, ix 1, jb 5, ii 19, ht 45, ew 8); same batch gate 160/0. ALIVE | witnessed |
+| 83 | Art. 13.x counterfactual deepening court (batch #10) | `docs/sjira/v26.10.7/plans/w984jm-commit.md` | `79581cf6`: W984ew court (2 files), owner receipt w984ew 8 passed; same batch gate. ALIVE | witnessed |
+| 84 | Registers, manifests, truth-pass doc sections, witness receipts (batch #10 docs) | `docs/sjira/v26.10.7/plans/w984jm-commit.md` | `127dc790`: 18 files, docs-only. LANDED (docs) | grep |
+| 85 | W984jm landing-batch commit receipt | `docs/sjira/v26.10.7/plans/w984jm-commit.md` | `f446d9c5` carries the receipt itself; push state independently confirmed by w984kb-push (`rev-parse HEAD origin/...` → both `f446d9c5…`, `origin..HEAD` empty). Self-referential-limits class | grep |
+| 86 | Push-state reconciliation (jy's stale origin reading corrected) | `docs/sjira/v26.10.7/plans/w984kb-push.md` | `b6fad269` (doc-only): real git outputs — fetch, rev-parse both lines identical `f446d9c5…`, `origin/feat/playwright-surface..HEAD` empty, `merge-base --is-ancestor 145b5659 HEAD` exit 0. Nothing pushed; W984ir audit state recorded-not-committed. ALIVE (observed) | grep/existence (git outputs recorded verbatim in receipt) |
+| 87 | release_audit `ref_resolves?/1` glob-class widening + audit-zero repair | `docs/sjira/v26.10.7/plans/w984kc-commit.md` | `4a308950` (full SHA `4a3089500bc35b0a…` in receipt): diff verified as exactly one hunk (+15/−1); gates — compile EXIT=0, release_audit suite **19 passed exit 0**, `mix xaas.release_audit` **exit 0 zero findings** (version=26.10.7, ash_resources=122), mock `[]`. Disclosed: w984gv-probe.md does not exist (vacuous condition); the 4 first-run audit findings were the scanner self-trigger class, repaired per the w467 hyphenation precedent. ALIVE | witnessed |
+| 88 | W984kc landing receipt commit+push update | `docs/sjira/v26.10.7/plans/w984kc-commit.md` | `7d9968d0` appends the push block (`b6fad269..4a308950` FF, origin==HEAD==`4a308950` verified) to the receipt. Doc-only | grep |
+| 89 | W984fv TOFU pinning for agent-card trust surface (W784) | `docs/sjira/v26.10.7/plans/w984kf-commit.md` | `9a00385c`: `lib/xaas/a2a/tofu.ex` + `test/xaas/a2a/tofu_test.exs` + receipt; batch gate 16 court files → **99 passed, 0 failures, 6 excluded** (excluded = `support_court_w984jo` behind `eu_ai_act` tag, re-run `--include eu_ai_act` → 6 passed exit 0; total 105/0); mock `[]`; compile via test run EXIT=0. Disclosed task-path typo (tofu.ex is lib/, not test/). ALIVE | witnessed |
+| 90 | 16 family/remainder courts from finished lanes (batch #11 courts) | `docs/sjira/v26.10.7/plans/w984kf-commit.md` | `caf91669`: courts ie/hr/hw/hu/ip/iu/ij/jo/jq/jj/jf/ji/jk/je/jd + 14 owner probes; same batch gate 105/0. Scope disclosures: w984jv court skipped (no owner receipt); hh/hj already landed in batch #9. ALIVE | witnessed |
+| 91 | W784/W902 register flips, W984kd tally addendum, jy runbook addendum, jl/kd/fs receipts (batch #11 docs) | `docs/sjira/v26.10.7/plans/w984kf-commit.md` | `86c69061`: docs-only (w859-typed-gap-register flips, tally, runbook addendum #6, 4 receipt files). LANDED (docs) | grep |
+| 92 | W984kf landing-batch commit receipt | `docs/sjira/v26.10.7/plans/w984kf-commit.md` | `52ce8236` (HEAD at refresh) carries the receipt itself; independently cited as HEAD subject by `docs/sjira/v26.10.6/plans/w984lf-probe.md` (batch #11 = 9a00385c/caf91669/86c69061, lane receipt commit 52ce8236). Self-referential-limits class | grep |
+| 93 | 10 family/remainder courts from finished lanes (batch #12 courts) | `docs/sjira/v26.10.7/plans/w984kn-commit.md` | `fcef478b`: 6 files — courts `family_court_w984jc` (OCEL), `stragglers_court_w984jv`, `library_pack_render_court_w984ju` + owner probes w984jc/ju/jv. Batch gate: 10 candidate court files → **58 passed, 0 failures, exit 0** (exact sum of per-lane counts 2+6+9+6+8+5+3+11+3+5); mock gate `[]` exit 0; cold lane build `_build-laneW984kn`. Disclosed: 14 of the original 16 pathspec members already landed by `caf91669`; one PromEx/Grafana `:nxdomain` compile warning (environment). ALIVE | witnessed |
+| 94 | Receipt-only lanes jn/kl/kh (batch #12 docs) | `docs/sjira/v26.10.7/plans/w984kn-commit.md` | `6ff734f2`: docs-only — `w984jn-shacl-drift.md`, `w984kl-probe.md`, `w984kh-w729.md` (kh receipt on disk TODO-free; its W729 flip already landed in `86c69061`). Disclosed: runbook addendum #7 (kl) already landed in `86c69061`; the uncommitted runbook diff at commit time was W984li's in-flight edit, not staged. LANDED (docs) | grep |
+| 95 | W984kn landing-batch commit receipt | `docs/sjira/v26.10.7/plans/w984kn-commit.md` | `1ba31a97` (HEAD at refresh) carries the receipt itself; independently cited as HEAD subject by `docs/sjira/v26.10.6/plans/w984lt-probe.md` and `w984lx-probe.md` (batch #12 = fcef478b/6ff734f2/1ba31a97; lx confirms origin==HEAD==`1ba31a97…` via fetch+rev-parse, zero commits since lt's boundary). Self-referential-limits class | grep |
+
+### DRIFT summary (W984lg)
+
+- No prior row contradicted. Row 76's receipt-absent-by-construction note
+  (`43265cb1`) stands unchanged; nothing on disk newly cites `43265cb1`
+  as subject.
+- Receipt-absent-by-construction now also covers #80 (`145b5659`),
+  #85 (`f446d9c5`), #88 (`7d9968d0`), #92 (`52ce8236`) — each is a
+  receipt-carrier commit cited only by later probes/receipts, not by an
+  on-disk receipt naming it as a tested subject. Out-of-subject receipts
+  (C21) remain an open coordinator item, now spanning 5 of the last 36
+  wave commits.
+- W984lf-probe (on-disk at `52ce8236`) records a Blocker 1 for the seal:
+  `git merge-base --is-ancestor 56325fa5 origin/main` → exit 1 (seal not
+  reachable from origin/main at this head). Recorded here as observed
+  tree state, not adjudicated by this lane.
+- w984kc receipt: `mix xaas.release_audit` zero-findings run reports
+  `ash_resources=122` — newer than W756's 117/152 wrapper metrics
+  (rows 58/DRIFT W855); tree still growing, re-grep at use time.
+
+### Counts
+
+W984lg refresh (rows 77–92, 16 commits → 16 rows; each commit its own
+row, batch commits sharing receipts): witnessed 8 (#77, 78, 81, 82, 83,
+87, 89, 90 — batch gates re-run on the exact subjects per receipt) ·
+grep/existence 8 (#79, 80, 84, 85, 86, 88, 91, 92 — doc-only or
+receipt-carrier commits; #86's git outputs are recorded verbatim in the
+receipt). No receipt diverged from its commit's claim; disclosures
+recorded as-is (w984il timeout repair; w984kc missing w984gv-probe and
+scanner self-trigger audit findings; w984kf jv-skip and task-path typo).
+All 16 wave SHAs grep-verified against `docs/sjira/v26.10.{6,7}/plans/`;
+16/16 have an on-disk receipt citing or carrying them.
+
+### DRIFT summary (W984lz)
+
+- No prior row contradicted. Rows 1–92 re-skimmed at `1ba31a97`; none of
+  the batch #12 changes restate or invalidate an earlier claim.
+- Receipt-absent-by-construction now additionally covers #95
+  (`1ba31a97`), alongside #80/#85/#88/#92 — each a receipt-carrier commit
+  cited only by later probes/receipts (`w984lt-probe.md`, `w984lx-probe.md`)
+  rather than by an on-disk receipt naming it as a tested subject. Now
+  6 of the last 39 wave commits; C21 (out-of-subject receipts) remains
+  an open coordinator item.
+- W984lo batch #13: NOT landed at write time (zero `w984lo*` files in
+  either plans tree, zero log hits beyond runbook negative mentions) —
+  rows for it are not owed yet. W984lp (falsifier PASS, exit 0) and
+  W984lq (8th re-census, 95.3%) receipts remain untracked/in-flight;
+  their rows are owed when landed.
+- Batch #12's own disclosure recorded here: `fcef478b` carried 6 of the
+  original 16 files (14 already landed by `caf91669`), so row 93's
+  "10 courts" refers to the batch gate subject, not this commit's file
+  count.
+
+### Counts (W984lz refresh)
+
+Rows 93–95: 3 commits → 3 rows (one per commit, batch commits sharing
+the `w984kn-commit.md` receipt): witnessed 1 (#93 — batch gate 58/0
+re-run on the exact court subjects per receipt) · grep 2 (#94 docs-only;
+#95 receipt-carrier). No prior row contradicted; disclosures recorded
+as-is (fcef478b's 14-file pre-landing by caf91669; kn's PromEx
+`:nxdomain` compile warning; 6ff734f2's not-staged W984li runbook edit).
+All 3 wave SHAs grep-verified against `docs/sjira/v26.10.{6,7}/plans/`;
+3/3 have an on-disk receipt citing or carrying them. Cumulative index:
+**95 rows** (rows 1–92 unchanged from W984lg; 93–95 appended).

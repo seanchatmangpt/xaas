@@ -422,3 +422,185 @@ W865 (~0.86 GB); KEEP: W880 (in-flight at census time). (W885's summary quoted
 "~28.57 GB / 73 lease dirs" — that is W885's live-rollup figure, not the receipt's own
 totals; recorded here to prevent number drift.) Gates only the operator lease-cleanup
 step, not the commit gate. Remaining PENDING: explicit user commit instruction only.
+
+## CG-16 · Castle-bridge sync wave: pin advance + regen + census relocate (W980c/W980g) — appended W961e, 2026-10-07
+Wave commit 84a5ef51 carried 3 files; the other 4 wave files landed in concurrent commits
+(verified `git log --oneline -5` + `git show --name-only`, HEAD 84a5ef51 @ feat/playwright-surface).
+
+| File | Status | Owner / receipt | Commit mapping |
+|---|---|---|---|
+| `ggen.toml` [M] | committed | W980g (sync exec: pin 518572b6 → b58d7854) | 84a5ef51 |
+| `docs/claude/diataxis/reference/generated-castle-bridge-errc.md` [M] | committed | W980g/W980c — regen: line-10 rationale + census-deletion | ed407ef8 (W966 cap-doc-sync) |
+| `docs/claude/diataxis/reference/generated-surfaces.md` [new] | committed | W980c/W966 — new generated-surfaces doc | ed407ef8 |
+| `docs/cro/artifacts/generated-surface-census-v26.10.6.md` [new] | committed | W980c — census relocated from diataxis to cro/artifacts | 7a0b58fc (w970b-d/w952/w977) |
+| `docs/claude/diataxis/README.md` [M] | committed | W966 — index line updated for the two generated-surface docs | ed407ef8 |
+| `docs/claude/diataxis/reference/w919-census-relocate-plan.md` [new] | committed | W919 — census relocation plan | 88c2c515 |
+| `docs/sjira/v26.10.6/plans/w919-census-relocate-receipt.md` [M] | committed @ 24172283 (CG-14); working-tree modification UNCOMMITTED | W919 — relocation receipt | 24172283 (+ open working-tree delta) |
+| `docs/sjira/v26.10.6/plans/w956-line-dispute-resolve.md` | committed | W956 — line-dispute resolution feeding regen rationale | 24172283 (CG-14 blanket) |
+| `docs/sjira/v26.10.6/plans/w980c-relocation-exec.md` [new] | committed | W980c — relocation execution receipt | 84a5ef51 |
+| `docs/sjira/v26.10.6/plans/w980g-sync-exec.md` [new] | committed | W980g — sync execution receipt | 84a5ef51 |
+
+Status: **DONE — no push.** `ggen.lock` is gitignored (`/Users/sac/xaas/.gitignore:121`),
+so it is correctly absent from every wave commit; regen reproducibility rests on the pinned
+`ggen.toml` SHA (b58d7854) plus the w980g sync receipt.
+
+## Manifest v3 staging (W981u, 2026-10-07, HEAD 6f235905 @ feat/playwright-surface)
+
+Enumerated by real `git log --format='%h %ad %s' --date=short 84a5ef51~1..HEAD`; do not
+trust the briefing list. Truth: 4 commits landed **after** the already-recorded
+84a5ef51 (the briefing's "since" fence); 84a5ef51 itself and 88c2c515 are the
+already-recorded base. All times 2026-10-07.
+
+### (a) New commits since 84a5ef51 (already-recorded base), verified
+
+| # | commit | date | subject | manifest group | receipt(s) | gates attested | push state |
+|---|---|---|---|---|---|---|---|
+| 1 | `68a5c9f9` | 2026-10-07 | chore(ash_surface): regen priv/ash_surface to 418 entrypoints (w978b, additive SPEC-16/registration-cancel/route-approve) | **NEW-GROUP → CG-17** (generated ash_surface client regen; no prior group carries `priv/ash_surface/*`) | `plans/w978b-*.md` (w978b regen receipt); commit msg names SPEC-16/registration-cancel/route-approve as additive entrypoints | w978b regen receipt attests the 418-entrypoint surface; commit is a pure projection regen (`priv/ash_surface/` 4 files, +182/−10) — no lib source in the diff | UNPUSHED (`origin/feat/playwright-surface` = a0723bf6; every campaign commit since is unpushed) |
+| 2 | `4546f96a` | 2026-10-07 | docs(sjira): W981 enoent court verification — NO-OP commit (already in 51150f4c), court 4/4 at HEAD via scratch materialization; land w896b plan doc | **CG-14** (sjira plans receipt blanket) | `plans/w981-enoent-commit.md` (in this commit), `plans/w896b-court-fix.md` (in this commit); ownership chain w896 → w873 → w896b (per W889b addendum row 5) | w981 receipt attests enoent court 4/4 green at HEAD (real run via scratch materialization); confirms commit 51150f4c already carried the court test — no code delta in this commit (docs only) | UNPUSHED |
+| 3 | `6f235905` | 2026-10-07 | docs(semantics): dedup duplicated @doc on sliced W1 (w946d, landed by w981h integration lane) | **CG-07** (semantics lib; `lib/xaas/semantics/dataset_admission.ex` already CG-07 per W889b addendum row 1) | `plans/w946d-*.md` (w946d); integration receipt `plans/w981h-integration-commit.md` | w981h integration receipt attests the dedup; 1-file, 5-line deletion of a duplicate `@doc` — compile-neutral | UNPUSHED |
+
+Push state (verified once, applies to all three): `git rev-list origin/feat/playwright-surface..HEAD` = 50+ commits including all of the above; `origin/feat/playwright-surface` sits at `a0723bf6` (pre-campaign). The entire v26.10.6 campaign is unpushed; coordinator owns push.
+
+### (b) Pending-integration: landed-but-UNCOMMITTED work (each with receipt path + owner-lane status)
+
+| item | receipt path | owner-lane status | files in tree (live status) |
+|---|---|---|---|
+| W976 LimitGate (SPEC-10 / W731-GAP-2, Graphlaw bridge admission gate) | `docs/sjira/v26.10.6/plans/w976-design-wave5.md` | W976 — LANDED, uncommitted (receipt states "uncommitted; coordinator owns commits") | `lib/xaas/graphlaw/limit_gate.ex` [??], `lib/xaas/bridges/graphlaw.ex` [M], `lib/xaas/bridges/registry.ex` [M], `test/xaas/graphlaw_limit_gate_test.exs` [??, 13 tests] |
+| W975b SPEC-30 GraphQL-over-HTTP | `docs/sjira/v26.10.6/plans/w984ao-graphql-removal.md`; lane note below | **OUT-OF-SCOPE(removed-by-operator)** — operator directive "no GraphQL" 2026-10-07; landed work (691e0a93/39e9d77f) subsequently removed fix-forward by w984ao (commits 12d5f6d3+c0ba9f20), W984bu, W984bk; see (b2) row and CYCLE-LOG.md CYCLE-4 addendum | none — all graphql surfaces deleted from tree |
+| W981e AIRo wiring ledger extension | `docs/sjira/v26.10.6/plans/w981e-airo-wiring-extension.md` | W981e — LANDED, uncommitted | `docs/cro/artifacts/airo-wiring-ledger.md` [M], `docs/airo/{ash_graphlaw,ggen-ecosystem,chatman-ecosystem}/airo-reference.md` [??] |
+| W981f AIRo wiring ledger Wave-2 | `docs/sjira/v26.10.6/plans/w981f-airo-wiring-wave2.md` | W981f — LANDED, uncommitted | `docs/cro/artifacts/airo-wiring-ledger.md` [M, same file as W981e], `docs/airo/<6 more repos>/airo-reference.md` [??] |
+| W981m diataxis deepening | `docs/sjira/v26.10.6/plans/w981m-diataxis-deepening.md` | W981m — LANDED, uncommitted (docs-only lane) | `docs/claude/diataxis/reference/actuation-and-semantics.md` [M], `docs/claude/diataxis/reference/http-api-surface.md` [M] |
+| Migration guards (3 untracked migrations, W971b/W981n triage) | `docs/sjira/v26.10.6/plans/w971b-migration-replay.md` + triage appendix; `docs/sjira/v26.10.6/plans/w981n-migration-triage.md` | W981n — TRIAGED: `20261007111457_add_ash_onetime_logical_partitions.exs` = W971b, complete, ALIVE; remaining 2 triaged in receipt | `priv/repo/migrations/20261007111457_add_ash_onetime_logical_partitions.exs`, `.../20261007120000_dedup_orgless_epochs_then_unique_index.exs`, `.../20261007250000_add_org_id_to_billing_approval_tables.exs` [all ??] |
+
+Note: the tracked [M] surface listed here overlaps the W881 Final totals section (which
+remains authoritative for full-tree counts); this section stages only the six
+post-W889b item families the task names, plus the three new commits above.
+
+### (c) v3 standing
+
+- Manifest v3 staging: **ALIVE as staging** — commit table grounded in real
+  `git log`/`git show --stat` output at HEAD `6f235905`; pending-integration rows
+  grounded in on-disk receipts read this lane.
+- Commit execution: **UNKNOWN** — coordinator-owned, per standing rule.
+- Push: **BLOCKED/not requested** — nothing pushed; origin at a0723bf6.
+- No git write operations performed by lane W981u (file append only).
+
+## Manifest v3 staging — extension 2 (W984j, 2026-10-07, HEAD 1f2a2b23 @ feat/playwright-surface)
+
+Fresh enumeration: `git log --format='%h %ad %s' --date=short 84a5ef51~1..HEAD`
+(13 commits total since base 84a5ef51; the three already staged by W981u —
+68a5c9f9, 4546f96a, 6f235905 — are not restaged here). Delta vs extension 1:
+9 new commits. Push state re-verified: `git rev-parse
+origin/feat/playwright-surface` = **6f235905** — the push advanced since W981u
+(origin was a0723bf6); 68a5c9f9/4546f96a/6f235905/fc14f10b are now PUSHED;
+8 commits (39c405fc..1f2a2b23) remain UNPUSHED (`git rev-list
+origin/feat/playwright-surface..HEAD` = 8). Push in-flight per W984d
+(no w984d receipt on disk at this lane's read time; only
+`plans/w984e-runbook-operator-section.md` exists among w984*).
+
+### (a2) New commits since 6f235905 (extension-1 HEAD), verified
+
+| # | commit | date | subject | manifest group | receipt(s) | gates attested | push state |
+|---|---|---|---|---|---|---|---|
+| 1 | `fc14f10b` | 2026-10-07 | fix(platform): register RouteProjects :create in SystemActor map (w969c completion) | **CG-12-adjacent** (platform/checks lib — `lib/xaas/checks/system_actor.ex`, 1 file +3) | commit message only (w969c completion); no dedicated receipt greps on disk for this exact change | none beyond the commit itself; compile-neutral registration addition | PUSHED (ancestor of origin 6f235905) |
+| 2 | `39c405fc` | 2026-10-07 | fix(billing): SPEC-07 W970a half — attribute-strategy multitenancy on 4 approval resources (w982k integration) | **CG-02** (billing lib + migrations; `lib/xaas/billing/*` + `priv/repo/migrations/*`) | `plans/w982k-spec07-integration.md` (integration); owner `plans/w970a-design-wave6.md` | w982k: fresh-root `MIX_BUILD_ROOT=_build-laneW982k mix compile --force --warnings-as-errors` EXIT=0 (942 files); `mix test` (court + deepening + reversal + tier controller) **57 passed, 0 failures**; court re-witnessed 5/5 post-integration | UNPUSHED |
+| 3 | `bf9f5cb9` | 2026-10-07 | test(billing): SPEC-07 W970a court + tier controller fixture (w982k integration) | **CG-02** (billing courts) | `plans/w982k-spec07-integration.md`; contested shared-surface note: court blob staged via temp-index (`git hash-object`+cacheinfo) because the on-disk court file is contested with lane W982p | same w982k gate set (57 passed; court 5/5) | UNPUSHED |
+| 4 | `691e0a93` | 2026-10-07 | feat(graphql): mount SPEC-30 GraphQL-over-HTTP surface (w975b, landed by w982b) | **CG-11-adjacent** (web surface: router, mix.exs deps, GraphQL HTTP court) | `plans/w982b-integration-commits.md` (#1); owner `plans/w975b-design-wave4.md` | w982b: SPEC-30 ALIVE, court passed at HEAD; full-tree `mix compile --force --warnings-as-errors` EXIT=0 (sole disclosed dep-only ash_affidavit warning, non-fatal) | UNPUSHED |
+| 5 | `ddb19522` | 2026-10-07 | fix(billing): land W970a SPEC-07 billing multitenancy (restores content swept by 691e0a93; landed by w982b) | **CG-02** (billing lib + migration + courts; fix-forward of commit 4's shared-index sweep) | `plans/w982b-integration-commits.md` (#2); owner `plans/w970a-design-wave6.md` | w982b standing: W970a SPEC-07 ALIVE (restored/landed after sweep); full-tree strict compile EXIT=0; full billing court run left to owner lane receipt (disclosed exclusion) | UNPUSHED — see process note below |
+| 6 | `39e9d77f` | 2026-10-07 | feat(graphql): SPEC-31 domain wiring — wire remaining domains into Xaas.GraphqlSchema (w973c, landed by w982b) | **CG-11-adjacent** (GraphQL schema + domain lib wiring + domain-wiring court) | `plans/w982b-integration-commits.md` (#3); owner `plans/w973c-design-wave8.md` | w982b: SPEC-31 ALIVE, court passed at HEAD; full-tree strict compile EXIT=0 | UNPUSHED |
+| 7 | `f9c4f090` | 2026-10-07 | feat(graphlaw): W976 LimitGate — engine-limit enforcement at the graphlaw bridge (w976, landed by w982b) | **NEW-GROUP → CG-18** (graphlaw bridge admission gate: `lib/xaas/graphlaw/limit_gate.ex` + bridge/registry wiring; no prior group carries graphlaw bridge enforcement) | `plans/w982b-integration-commits.md` (#4); owner `plans/w976-design-wave5.md`; W981k byte-limit extension included with disclosure (w981k had not landed its own commit at integration time) | w982b: W976 ALIVE, LimitGate court passed at HEAD; full-tree strict compile EXIT=0 | UNPUSHED |
+| 8 | `49a719ab` | 2026-10-07 | docs(sjira): w982b integration commits receipt | **CG-14** (sjira plans receipt blanket) | is itself `plans/w982b-integration-commits.md` | docs-only (1 file, +95) | UNPUSHED |
+| 9 | `1f2a2b23` | 2026-10-07 | feat(migrations): land migration corpus from owner lanes (w983i integration) | **CG-02** (migrations + migration courts; adds 111457 + 120000 migrations, replay + dedup courts, w983i receipt) | `plans/w983i-migration-integration.md` (in this commit); owner receipts w971b/w981q/w982c/w970a named inside | w983i: fresh-lane `MIX_BUILD_ROOT=_build-laneW983i mix compile --force --warnings-as-errors` EXIT=0 (212 lib artifacts); migration/replay/consistency courts **9 passed**; version-uniqueness verified against committed migrations | UNPUSHED (HEAD) |
+
+### (a3) Manifest process note — W982b shared-index incident + fix-forward
+
+Commit `691e0a93` (W982b, commit #1) used the **shared git index**, which also
+held another lane's staged rollback of SPEC-07; it swept in a revert of W970a's
+landed billing multitenancy (approval_* resources, org_id migration,
+`billing_multitenancy_court_test.exs` deletion). No content was lost — the
+working tree stayed intact — and W982b fixed forward in `ddb19522`, committing
+the full W970a workstream; all subsequent commits used explicit pathspec commits
+(`git commit -- <paths>`), immune to shared-index state. This is the manifest
+instance of the standing rule (user memory `xaas-concurrent-sessions` /
+`no-stash-baselining-xaas`: explicit-path staging; temp-index commits when the
+checkout is shared; never stash in a shared checkout). Source: disclosure in
+`plans/w982b-integration-commits.md` §"Staged paths per commit" #1–2, read this
+lane. Rule: integration lanes in this campaign commit by explicit pathspec or
+temp-index, never via the shared index.
+
+### (b2) Pending-integration table — update (W984j re-verification)
+
+| item | prior status (ext 1) | now | evidence |
+|---|---|---|---|
+| W976 LimitGate | landed, uncommitted | **RESOLVED — committed `f9c4f090`** | `git show --stat f9c4f090` = exactly the 4 files the ext-1 row named |
+| W975b SPEC-30 GraphQL-over-HTTP | landed, uncommitted | **RESOLVED — committed `691e0a93`, then OUT-OF-SCOPE(removed-by-operator)** — work landed 2026-10-07 (691e0a93/39e9d77f) was subsequently removed fix-forward under the operator "no GraphQL" directive (w984ao commits 12d5f6d3+c0ba9f20; W984bu e2e; W984bk straggler sweep) | `git show --stat 691e0a93` = router.ex, mix.exs, graphql_http_surface_test.exs (all since deleted) |
+| Migration guards (3 untracked migrations) | untracked, triaged | **RESOLVED — 111457+120000 committed `1f2a2b23` (w983i); 250000 committed `ddb19522`** | w983i receipt owner table; `git show --stat ddb19522`/`1f2a2b23` |
+| SPEC-07 second half (W970a remainder + W982p extension) | — | **IN FLIGHT — W983o lane live**, no receipt on disk at read time | `ls plans/ \| grep w983o` = none; w982k receipt records the on-disk second-half extension as NOT part of its commits |
+| Conference/identity corpus | — | **IN FLIGHT — W983j / W984c lanes live**, no receipts on disk at read time | `ls plans/ \| grep -E 'w983j\|w984c'` = none; conference files visible in working tree (`git status`: `lib/xaas/conference/registration.ex` [M] + enrollment journey court test [M]) |
+| Docs/receipts corpus (W981e/W981f/W981m diataxis + AIRo ledger) | ext-1 rows: landed, uncommitted | **STILL PENDING — W983m in flight**; `docs/airo/` [??], airo-wiring-ledger.md [M], diataxis refs [M] all still in tree | `git status` at HEAD 1f2a2b23; no w983m receipt on disk |
+
+### (c2) v3 standing (updated)
+
+- Manifest v3 staging (ext 2): **ALIVE as staging** — all 9 new rows grounded in
+  real `git log`/`git show --stat` output at HEAD 1f2a2b23; receipts read on disk
+  this lane (w982b, w982k, w983i).
+- Commit execution: **UNKNOWN** — coordinator-owned, per standing rule.
+- Push: **IN FLIGHT (W984d)** — origin advanced a0723bf6 → 6f235905 between
+  extension 1 and this lane; 8 commits remain unpushed. No w984d receipt on disk
+  at read time.
+- No git write operations performed by lane W984j (manifest append + receipt
+  write only).
+
+---
+
+## Manifest v4 staging (W984cd, 2026-10-07, HEAD 04a153f6 @ feat/playwright-surface)
+
+Fresh enumeration: `git log --format='%h %ad %s' --date=short b5d677b3..HEAD` —
+**10 commits** (W984ao ×3, W984u ×3, W984aj ×4). Note: W984ba's 2 commits
+(1e07a3da docs corpus + b5d677b3 receipt) sit AT/BEFORE baseline b5d677b3
+(excluded from the range). Push state verified live: `git rev-parse HEAD
+origin/feat/playwright-surface` → both `04a153f6c69df75f3e7ac3d5f269afa2c364b5b9`
+(fast-forward push 5, receipt `plans/w984cb-push5.md`). Expectation check vs
+dispatch: W984ao 3 ✓, W984u 3 ✓, W984aj 4 ✓, w984ba 2 — NOT in range
+(pre-baseline); no commits beyond expectations.
+
+### (a) Commit table b5d677b3..HEAD, verified
+
+| # | commit | date | subject | group | receipt(s) | gates attested | push state |
+|---|---|---|---|---|---|---| every row PUSHED (origin == HEAD 04a153f6, w984cb) |
+| 1 | `90eb6491` | 2026-10-07 | feat(conference): scoped registration identity + terminal-cancel guard (W983a/W981s, W984c/W973b) | **CG-11-adjacent** (conference lib: registration.ex identity scope + terminal-cancel guard) | `plans/w984aj-conference-commits.md` (integration); owners `plans/w983a-w981s-restore.md`, `plans/w984c-terminal-guard.md`, `plans/w981s-registration-identity-scope.md`, `plans/w973b-journey-wave3.md` | w984aj: fresh-root `MIX_BUILD_ROOT=_build-laneW984aj mix compile --force --warnings-as-errors` EXIT=0 (942 files); enrollment court + conference deepening **16 passed, 0 failed** (court 5, deepening 11); enrollment court pre-commit 5/5 | PUSHED |
+| 2 | `dabd404e` | 2026-10-07 | test(conference): enrollment journey court leg-6 flip + W973b re-register cycle (W984aj integration) | **CG-10** (domain deepening courts: conference) | `plans/w984aj-conference-commits.md`; owner `plans/w973b-journey-wave3.md` | same w984aj gate set (16 passed, court 5/5) | PUSHED |
+| 3 | `9126142c` | 2026-10-07 | docs(sjira): W984aj lane receipt — conference commits 90eb6491 + dabd404e | **CG-14** (sjira plans receipt blanket) | is itself `plans/w984aj-conference-commits.md` | docs-only; no gate beyond the commit itself | PUSHED |
+| 4 | `8e2d47de` | 2026-10-07 | docs(sjira): W984aj receipt correction — build root left for coordinator (rm denied) | **CG-14** | is itself `plans/w984aj-conference-commits.md` (correction section) | docs-only correction disclosure | PUSHED |
+| 5 | `32487e08` | 2026-10-07 | fix(billing): W984k re-approve guards on 4 approval resources + W982r score_book Decimal fix (w984u integration) | **CG-02** primary (approval double-approve guards, W746 idiom) + **CG-03** (score_book ledger fix) | `plans/w984u-billing-commits.md` (integration); owners `plans/w984k-reapprove-guards.md`, `plans/w982r-nextread-cluster.md` | w984u: fresh-root `MIX_BUILD_ROOT=_build-laneW984u mix compile --force` EXIT=0 (942 files); billing dir + checkout_policy_deepening **53 passed**; court ALIVE post-commit | PUSHED |
+| 6 | `d7beb066` | 2026-10-07 | test(billing): flip approval lifecycle court legs to guarded contract + update checkout policy test contracts (w984u integration) | **CG-02** (billing courts) | `plans/w984u-billing-commits.md` | same w984u gate set (53 passed) | PUSHED |
+| 7 | `4d59c680` | 2026-10-07 | docs(sjira): W984u lane receipt | **CG-14** | is itself `plans/w984u-billing-commits.md` | docs-only | PUSHED |
+| 8 | `c0ba9f20` | 2026-10-07 | refactor(graphql): remove GraphQL-over-HTTP surface — router scope, deps, schema, HTTP courts | **NEW-GROUP → CG-19** (minted: total graphql-surface removal — router, deps, schema, config, courts; no prior group carries removal) | `plans/w984ao-graphql-removal.md` | w984ao: fresh-root strict compile `--warnings-as-errors` EXIT=0 (942 files); eu_ai_act gate **1352 passed / 1 excluded** (≥1352 floor) | PUSHED |
+| 9 | `12d5f6d3` | 2026-10-07 | refactor(graphql): remove resource graphql blocks + AshGraphql extensions across domains (98 files) | **CG-19** | `plans/w984ao-graphql-removal.md` | same w984ao gate set (strict compile EXIT=0; 1352/0) | PUSHED |
+| 10 | `04a153f6` | 2026-10-07 | test(graphql): rewrite graphql-coupled courts for removed surface + registry re-pin | **CG-19** | `plans/w984ao-graphql-removal.md`; e2e revalidation `plans/w984bc-e2e-revalidate.md`; straggler sweep `plans/w984bk-straggler-removal.md` | same w984ao gate set; census re-witness `plans/w984am-census-rewitness.md` + `plans/w984ax-euaia-rewitness.md`: **1352 passed / 0 failed / 1 excluded, EXIT=0** held through removal | PUSHED |
+
+### (b) Manifest process note — the "no GraphQL" directive arc
+
+Operator directive: "check and remove graphql code without reverting, fix
+forward." Arc: SPEC-30/31 GraphQL-over-HTTP surface landed fix-forward
+(691e0a93/39e9d77f, w982b, ext-2 table), then **totally removed fix-forward**
+under the operator directive — W984ao swept every AshGraphql extension,
+`graphql do` block, schema, dep (ash_graphql + absinthe_plug), config block,
+and court across 3 commits (c0ba9f20 router/deps/schema/courts; 12d5f6d3 98
+resource/domain files; 04a153f6 court rewrites + registry re-pin). E2E
+revalidation (W984bu, cited in w984ao/bz; no `w984bu-*.md` receipt on disk at
+this lane's read time) and W984bk straggler sweep closed the residual.
+**Register rows OUT-OF-SCOPE for the removal**: SPEC-30/31 register flips are
+NOT part of w984ao's commits — the register file (`plans/w859-typed-gap-register.md`)
+remains modified-unstaged in the working tree, per W984ba's typed SKIP. Census
+1352 held through removal (w984am @ 5f7f70d9 mid-flight; w984ax @ 5f7f70d9
+post-check: 1352/0/1, EXIT=0, identical to the certified floor).
+
+### (c) Pending-integration table — update (W984cd re-verification)
+
+| item | prior status (ext 2) | now | evidence |
+|---|---|---|---|
+| SPEC-08 (W729 atomic_update retrofit) | BLOCKED(billing-tree-hot) → re-typed by w984az | **IN FLIGHT (w984cc)** — no `w984cc-*.md` receipt on disk at read time; w984az staged the full implementation plan and named w984cc as successor lane | `ls plans/ \| grep w984cc` = none; `plans/w984az-w729-spec08.md` (BLOCKED + full plan staged) |
+| W984bv source commit (graphql-removal straggler) | — | **NO-OP or landed** — `plans/w984bv-removal-commit.md` **MISSING on disk**; the only W984b* removal lanes with receipts are w984ba (docs, committed pre-baseline) and w984bk (straggler sweep, docs). No commit in b5d677b3..HEAD or uncommitted tree attributable to W984bv. Treated as no-commit lane. | `ls plans/ \| grep w984bv` = none; `git log --all --grep w984bv` = empty |
+| Docs purge phase 2 (w984bz) | — | **IN FLIGHT / LANDED-WORKING-TREE, UNCOMMITTED** — w984bz receipt EXISTS; 5 diataxis files + CYCLE-LOG/CLOSURE_PLAN/RUNBOOK modified-unstaged at 04a153f6 | `git status`: `docs/claude/diataxis/**` [M] ×5, `docs/cro/CYCLE-LOG.md` [M]; `plans/w984bz-docs-graphql-purge.md` on disk |
+| Register file (`w859-typed-gap-register.md`) | held by W984ba's gate | **UNBLOCKED — gate satisfied** | `plans/w984ao-graphql-removal.md` now EXISTS on disk (the exact absence W984ba's typed SKIP was waiting on); register file still [M] in working tree — register commit is lawful for the coordinator |

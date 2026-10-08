@@ -56,7 +56,8 @@ leg uses a fresh attendee on a shared unlimited-capacity session.
   identity), not a surface failure.
 - Run 2, warm `_build-laneW650y4`: `Result: 5 passed` (mix test, exit 0).
 - Run 3, fresh root `_build-laneW650y4-fresh2` (×2 fresh-root requirement):
-  see result line below, appended after completion.
+  `Result: 5 passed` (exit 0; full deps+app compile from empty root, resumed
+  across three 30-minute background windows — concurrent-lane compile load).
 
 ## Standing
 

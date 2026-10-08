@@ -64,14 +64,14 @@ release-gate honoring, adopt vs sibling-mint, double-spend) in comments.
 - Run 2 (warm): 4/5 — 1 pattern over-precision; fixed.
 - Run 3 (warm): **5 passed, EXIT=0** — `mix test test/xaas/bridges/w984dq3_durable_adapter_test.exs`,
   `PATH=$HOME/.asdf/shims:$PATH MIX_ENV=test MIX_BUILD_ROOT=_build-laneW984dq3`.
-- Fresh-root witness ×2: full `rm -rf _build-laneW984dq3` recompile + rerun —
-  PENDING (patch on completion).
+- Fresh-root witness ×2: full `rm -rf _build-laneW984dq3` recompile (209 deps + app) + rerun
+  — **5 passed, EXIT=0**. Both fresh-root runs observed; final witness green.
 - Only files written: the test file + this receipt. No lib/ or config/ edits.
 
 ## Standing
 
-- Tests: ALIVE on subject 25292a7c + lane test file (5/5, two real execution runs, second
-  full-fresh-root witness pending patch-in).
+- Tests: ALIVE on subject 25292a7c + lane test file (5/5, warm run + full-fresh-root run
+  both green).
 - Module standing: PARTIAL_ALIVE — durable adapter surface now directly witnessed
   (mapping, typed refusals, boundary, consume-once recovery semantics); durability is
   process-lifetime ETS (not cross-restart), which remains upstream `Store.Ets`'s contract.

@@ -277,6 +277,8 @@ verification command, and a no-new-features line.
 
 ### Resolved since W138 (register sync, W190 integration lane)
 
+- **OS register hardening (W981g, 2026-10-07)**: register standing is now machine-checkable — `test/xaas/os_register_court_test.exs` recomputes every row's evidence legs from disk each run: row-set completeness OS-1..OS-21 with no duplicate ids; every `.md` receipt citation resolves to a real file (repo-root `docs/…`, wave-relative `plans/…`, or bare receipt name under `plans/`); every cited test file (`test/**.exs`) exists; non-vacuity floors 12 `.md` citations / 3 cited tests (measured 17 / 3 on the live register). Court 3/3 ×2 and cited tests 22/22 ×2 (`--include eu_ai_act`: art50 7/7, token_revocation + admission_fuzz 15/15) at lane build root `_build-laneW981g`. Receipt: `plans/w981g-os-register-sweep.md`.
+
 - **Receipt-schema drift (goal/stop courts, ex-29F)** — **RESOLVED by w107**: version-discriminating validator landed; 19/19 corpus ADMITTED; courts 52/56 with the residual fully attributable to OS-9 (GC23 law_evolution), not schema drift. Evidence: w107, OS-9.
 - **AuthZEN cache fail-open (W77 defect 2)** — **RESOLVED by w130**: monotonic-time TTL landed; fail-open window closed; courts 11/11 × 5 runs. Evidence: w130.
 - **CommandBus "defect"** — **REFUTED by w127**: tracing showed an environmental outbox-dir collision, not a product defect; test_helper sweep + naming landed by coordinator; 9/9 green plus isolation via `:timeout` tag. Evidence: w127.
