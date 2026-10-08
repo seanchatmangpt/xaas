@@ -8,7 +8,7 @@ import { z } from "zod";
  * emitted, or consumed.
  */
 
-export const SURFACE_RUNTIME_VERSION = "26.10.6";
+export const SURFACE_RUNTIME_VERSION = "26.10.7";
 const SUPPORTED_SURFACE_MAJORS = [0, 26];
 const KNOWN_TRANSPORTS = Object.freeze(["http", "phoenix_channel"]);
 const REFUSAL_PREFIX = "REFUSED_";
@@ -18,7 +18,7 @@ const DISPATCH_OUTCOMES = Object.freeze(["SUCCESS", "UNKNOWN_AFTER_DISPATCH"]);
 // SHA-256 rendered as lowercase hex (request digests, derived idempotency keys).
 const DIGEST_HEX_LENGTH = 64;
 export const IDEMPOTENCY_PROTOCOL = "ash_surface.idempotency/1";
-// v26.10.6 F6 selection-frontier vocabulary: delegated per-transport dimension
+// v26.10.7 F6 selection-frontier vocabulary: delegated per-transport dimension
 // facts (cost/latency lower is better; privacy higher is better). Twin of
 // lib/ash_surface/transport.ex (@dimensions / @dimension_classes).
 const KNOWN_DIMENSIONS = Object.freeze(["cost", "latency", "privacy"]);
@@ -80,7 +80,7 @@ const refusalCodeSchema = z.string().regex(REFUSAL_CODE_PATTERN);
 export const surfaceActionSchema = z
   .object({
     id: z.string().min(1),
-    // v26.10.6 delegation: semanticId, authorityBoundary, doAuthority, and
+    // v26.10.7 delegation: semanticId, authorityBoundary, doAuthority, and
     // receiptRequired are delegated facts. They arrive from the manifest's
     // custom.ash_surface metadata or are null — an absent key means "not
     // delegated" and surfaces as null; values are never defaulted or
@@ -180,7 +180,7 @@ export const ashSurfaceContractSchema = z
 /**
  * @typedef {Object} SurfaceAction
  * @property {string} id Stable Ash action identity.
- * @property {string|null} semanticId Delegated semantic URI; null when not delegated (v26.10.6 delegation).
+ * @property {string|null} semanticId Delegated semantic URI; null when not delegated (v26.10.7 delegation).
  * @property {string} resource Fully-qualified Ash resource module name.
  * @property {string} action Ash action name.
  * @property {"OBSERVE"|"SELECT"|"CONSTRUCT"|"DO"|null} authorityBoundary Delegated; null when not delegated.

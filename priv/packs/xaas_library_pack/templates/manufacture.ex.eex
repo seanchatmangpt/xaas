@@ -89,7 +89,7 @@ defmodule Xaas.Library do
   \"\"\"
   use Ash.Domain,
     otp_app: :xaas,
-    extensions: [AshJsonApi.Domain, AshGraphql.Domain, AshAdmin.Domain]
+    extensions: [AshJsonApi.Domain, AshAdmin.Domain]
 
   admin do
     show? true
@@ -225,7 +225,7 @@ defmodule Xaas.Library.Book do
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
     notifiers: [Ash.Notifier.PubSub],
-    extensions: [AshJsonApi.Resource, AshGraphql.Resource]
+    extensions: [AshJsonApi.Resource]
 
   postgres do
     table \"library_books\"
@@ -257,9 +257,6 @@ defmodule Xaas.Library.Book do
     end
   end
 
-  graphql do
-    type :library_book
-  end
 
   actions do
     defaults [:read, :destroy]
@@ -451,7 +448,7 @@ defmodule Xaas.Library.Checkout do
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
     notifiers: [Ash.Notifier.PubSub],
-    extensions: [AshJsonApi.Resource, AshGraphql.Resource]
+    extensions: [AshJsonApi.Resource]
 
   postgres do
     table \"library_checkouts\"
@@ -483,9 +480,6 @@ defmodule Xaas.Library.Checkout do
     end
   end
 
-  graphql do
-    type :library_checkout
-  end
 
   actions do
     defaults [:read, :destroy]
@@ -606,7 +600,7 @@ defmodule Xaas.Library.HoldRequest do
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
     notifiers: [Ash.Notifier.PubSub],
-    extensions: [AshJsonApi.Resource, AshGraphql.Resource]
+    extensions: [AshJsonApi.Resource]
 
   @hold_expires_after_days 7
 
@@ -641,9 +635,6 @@ defmodule Xaas.Library.HoldRequest do
     end
   end
 
-  graphql do
-    type :library_hold
-  end
 
   actions do
     defaults [:read, :destroy]
@@ -835,7 +826,7 @@ defmodule Xaas.Library.Curation do
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
     notifiers: [Ash.Notifier.PubSub],
-    extensions: [AshJsonApi.Resource, AshGraphql.Resource]
+    extensions: [AshJsonApi.Resource]
 
   postgres do
     table \"library_curations\"
@@ -865,9 +856,6 @@ defmodule Xaas.Library.Curation do
     end
   end
 
-  graphql do
-    type :library_curation
-  end
 
   actions do
     defaults [:read, :destroy]
@@ -971,7 +959,7 @@ defmodule Xaas.Library.RecommendationLog do
     domain: Xaas.Library,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
-    extensions: [AshJsonApi.Resource, AshGraphql.Resource]
+    extensions: [AshJsonApi.Resource]
 
   postgres do
     table \"library_recommendation_logs\"
@@ -988,9 +976,6 @@ defmodule Xaas.Library.RecommendationLog do
     end
   end
 
-  graphql do
-    type :library_recommendation_log
-  end
 
   actions do
     defaults [:read, :destroy]
