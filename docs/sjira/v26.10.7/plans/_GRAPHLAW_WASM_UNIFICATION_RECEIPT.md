@@ -1,4 +1,9 @@
-# GRAPHLAW WASM UNIFICATION RECEIPT — **DRAFT-pending-final-runs**
+# GRAPHLAW WASM UNIFICATION RECEIPT — §4/§5 DRAFT flags cleared 2026-10-08 (w638 landed); §6/§7 legs remain pending-final
+
+**Update (2026-10-08, seam-deploy lane)**: §4 and §5 were stale — `w638-wasmex-host.md`
+and `w640-differential-shacl.md` are now landed at `docs/sjira/v26.10.7/plans/`
+(disk-checked this session), so §4/§5 are asserted from landed receipts. §6 (strict
+compile) and §7 (agreement matrix rows C1–C4) remain pending-final as written.
 
 Wasmex directive Phase 3 deliverable. Compiled by lane W643, v26.10.7 fleet seal, 2026-10-07.
 Repo: `/Users/sac/xaas` (branch `feat/playwright-surface`). Every claim cites its landed
@@ -33,23 +38,30 @@ zero `js_sys`/`wasm_bindgen` strings; MVP header verified via file(1)+xxd; expor
 ABI 1, 16 MiB request limit, 256 MiB outstanding cap). Source:
 [w637-graphlaw-wasm-build.md](w637-graphlaw-wasm-build.md) §§(1)-(4).
 
-## 4. Wasmex host adapter — **DRAFT-PENDING: receipt does not exist**
+## 4. Wasmex host adapter — ALIVE (DRAFT flag cleared 2026-10-08)
 
-The host adapter lane (W638, `Xaas.Semantics.GraphlawWasm` via Wasmex) was reported
-running, but **no receipt file `w638-wasmex-host.md` exists at
-`docs/sjira/v26.10.7/plans/` as of 2026-10-07** (disk check this session).
-Per no-overclaiming: load/execute of `gl_call` through Wasmex is **NOT witnessed**
-and is **not asserted**. W637's build receipt itself scopes behavioral courts out of
-Phase 1. Consequence: unification standing cannot exceed **ALIVE(build-surface)**.
+The host adapter lane (W638, `Xaas.Semantics.GraphlawWasm` via Wasmex) landed its
+receipt: [w638-wasmex-host.md](w638-wasmex-host.md) (on disk this session). Witnessed:
+real `gl_call` execution through wasmex 0.15.1 on the digest-pinned artifact, 8-leg
+court **8/8 ×2 fresh roots** (`_build-laneW638`, `_build-laneW638b`), installed pin
+re-derived from bytes. Standing: ALIVE (host-transport surface). The seam-deploy lane
+(2026-10-08, [../v26.10.8/plans/seam-deploy.md](../v26.10.8/plans/seam-deploy.md)) has
+since retired the zero-value WASI stubs (real `Wasmex.Store.new_wasi/1` instantiation)
+and closed the zero-production-caller gap (see §5 update).
 
-## 5. Court counts (graphlaw_wasm_test legs) — **DRAFT-PENDING**
+## 5. Court counts (graphlaw_wasm_test legs) — ALIVE (DRAFT flag cleared 2026-10-08)
 
-`DRAFT-PENDING: w638-wasmex-host.md absent; court counts cannot be read from any
-landed receipt and are not asserted.` The five superseded-sidecar falsifier cases
-(timeout shim, SIGKILL crash, malformed response, lease absent, digest mismatch)
-transfer to the Wasmex court per
-[w638b-sidecar-superseded.md](w638b-sidecar-superseded.md); until W638's receipt
-lands, the court has no witnessed firing.
+Court counts now read from the landed [w638-wasmex-host.md](w638-wasmex-host.md):
+**8/8 passed, twice (fresh roots `_build-laneW638` and `_build-laneW638b`)** —
+statutory round trip, zero-leak ×100 invokes, digest-mismatch, digest-unpinned,
+installed pin == receipt digest, import judge admit/refuse, watchdog `:call_timeout`
+on a real compiled spin guest, missing-export. The five superseded-sidecar falsifier
+cases (timeout shim, SIGKILL crash, malformed response, lease absent, digest mismatch)
+transfer to the Wasmex court per [w638b-sidecar-superseded.md](w638b-sidecar-superseded.md);
+the digest-mismatch and timeout cases are witnessed firing in the 8 legs. The
+seam-deploy lane (2026-10-08) added a second 8/8 court
+(`test/xaas/semantics/graphlaw_wasm_seam_test.exs`) covering the raise/exit leak-fix
+legs and the product-path wiring discriminator (pinned fc23a292 vs dep 7bb2a7e5).
 
 ## 6. Strict compile output — **DRAFT-PENDING-FINAL**
 
