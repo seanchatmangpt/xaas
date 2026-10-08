@@ -1,0 +1,132 @@
+@prefix sj: <https://ggen-igniter.dev/ontology/semantic-jira#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+# Canonical RDF for the v26.10.8 campaign (xaas-hosted): one sj:WorkOrder per
+# campaign work order, grounded in landed receipts on main. Shape follows the
+# archived canonical graph docs/archive/sjira/v26.9.22/work-orders.ttl.
+# Standing is NOT asserted here: it is observed state, projected from lane
+# receipts (docs/sjira/v26.10.8/plans/seam-deploy.md and the per-commit court
+# evidence named in each order). Projections noted per order; edit this file,
+# never a projection.
+
+sj:WorkOrder a rdfs:Class .
+sj:Court a rdfs:Class .
+sj:EvidenceRequirement a rdfs:Class .
+sj:AcceptanceCriterion a rdfs:Class .
+sj:Falsifier a rdfs:Class .
+sj:DependencyEdge a rdfs:Class .
+
+sj:local-execution-evidence a sj:EvidenceRequirement ;
+    rdfs:label "Local execution evidence" ;
+    dcterms:description "Observed repository-local exact-subject execution evidence." .
+sj:receipt-evidence a sj:EvidenceRequirement ;
+    rdfs:label "Receipt evidence" ;
+    dcterms:description "Durable receipt evidence for the exact subject and transition." .
+sj:replay-evidence a sj:EvidenceRequirement ;
+    rdfs:label "Replay evidence" ;
+    dcterms:description "Fresh replay over pack, dependency, graph, consequence, toolchain, and environment identities." .
+sj:authority-evidence a sj:EvidenceRequirement ;
+    rdfs:label "Authority evidence" ;
+    dcterms:description "Prepared authority evidence for a consequential transition." .
+
+<#WO-XAAS-26108-1> a sj:WorkOrder ;
+    sj:identity "XAAS-26108-1" ;
+    dcterms:title "Deploy the GraphlawWasm seam onto the product assess path" ;
+    dcterms:description "Land the W638 leak-window fix (dealloc input buffer on raise/exit paths in with_buffer/3), real-WASI instantiation, the GraphlawPool singleton, and Bridges.Graphlaw dispatch wiring with pinned-engine provenance (fc23a292 vs dep 7bb2a7e5), retiring the vendored-engine-only product path." ;
+    sj:subject "graphlaw-wasm-seam-deploy" ;
+    sj:repository "seanchatmangpt/xaas" ;
+    sj:baseSha "7593a062bf6c350b56df4987c9e5847f0a1223e6" ;
+    sj:landedCommit "26e3ced0600eee87cfbe10db88d8ec8d3c3b185f", "cfed243e1c797f69933944794593a149becc9401" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:promotionRule "verified_by_required_courts_then_receipted" ;
+    sj:replayIdentity "sjira-v26.10.8-XAAS-26108-1" ;
+    sj:authorityRequirement "NONE" ;
+    sj:requiredCourt "compile", "tests", "chicago_no_mocks" ;
+    sj:requiredEvidence "command_exit_codes", "real_output", "receipt" ;
+    sj:acceptanceItem [ a sj:AcceptanceCriterion ; sj:index 0 ; dcterms:description "mix test test/xaas/semantics/graphlaw_wasm_test.exs prints 8 passed; mix test test/xaas/semantics/graphlaw_wasm_seam_test.exs prints 8 passed; graphlaw bridge courts print 35 passed; scan_mock_usage([\"test\",\"lib\"]) prints []" ] ;
+    sj:falsifierItem [ a sj:Falsifier ; sj:index 0 ; dcterms:description "standing promoted without observing the acceptance commands' exit 0 against the exact subject 26e3ced0/cfed243e" ], [ a sj:Falsifier ; sj:index 1 ; dcterms:description "provenance.engine_sha256 names a different engine than the pin file digest on the admitted path" ] ;
+    sj:projection "jira", "verification", "receipt" ;
+    sj:pathScope "lib/xaas/semantics/graphlaw_wasm.ex lib/xaas/semantics/graphlaw_pool.ex lib/xaas/bridges/graphlaw.ex test/xaas/semantics/graphlaw_wasm_seam_test.exs" ;
+    sj:receipt "docs/sjira/v26.10.8/plans/seam-deploy.md" .
+
+<#WO-XAAS-26108-2> a sj:WorkOrder ;
+    sj:identity "XAAS-26108-2" ;
+    dcterms:title "Land W984 landing batch A (#16) courts and receipts" ;
+    dcterms:description "Commit the w984 sweep's paired court tests with lane receipts (2f474e73), then the leftover depth/manifest courts witnessed green (86752b3b): 24 passed in batch, 30/30 stray courts dispositioned." ;
+    sj:subject "w984-landing-batch-a" ;
+    sj:repository "seanchatmangpt/xaas" ;
+    sj:baseSha "0ae701b7e7821b7e7134574052fcf17127e7a224" ;
+    sj:landedCommit "2f474e73c3029070ce56e02267050ca5197a4f08", "86752b3bd0d2f36ae5405ce08a7e0be3affea240" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:promotionRule "verified_by_required_courts_then_receipted" ;
+    sj:replayIdentity "sjira-v26.10.8-XAAS-26108-2" ;
+    sj:authorityRequirement "NONE" ;
+    sj:requiredCourt "tests", "chicago_no_mocks" ;
+    sj:requiredEvidence "command_exit_codes", "real_output" ;
+    sj:acceptanceItem [ a sj:AcceptanceCriterion ; sj:index 0 ; dcterms:description "mix test over the batch A court files prints 24 passed; the stray-court census prints 30/30 dispositioned" ] ;
+    sj:falsifierItem [ a sj:Falsifier ; sj:index 0 ; dcterms:description "a landed court file fails on the exact subject 86752b3bd0d2f36ae5405ce08a7e0be3affea240" ], [ a sj:Falsifier ; sj:index 1 ; dcterms:description "a stray court remains undispositioned after the batch landing" ] ;
+    sj:projection "jira", "verification" ;
+    sj:pathScope "test/** docs/sjira/**" ;
+    sj:dependency [ a sj:DependencyEdge ; sj:upstream "XAAS-26108-1" ; sj:dependencyType "requiresReceipt" ] .
+
+<#WO-XAAS-26108-3> a sj:WorkOrder ;
+    sj:identity "XAAS-26108-3" ;
+    dcterms:title "Witness the Playwright surface falsifier" ;
+    dcterms:description "Run the e2e Playwright harness (W984fw config/global-setup fixes landed in batch #14, harness reference at af2b7730) to falsify the zero-rows hypothesis: 6/6 legs pass with zero-rows ALIVE, proving the e2e surface reads real data end to end." ;
+    sj:subject "playwright-falsifier-alive" ;
+    sj:repository "seanchatmangpt/xaas" ;
+    sj:baseSha "86752b3bd0d2f36ae5405ce08a7e0be3affea240" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:promotionRule "verified_by_required_courts_then_receipted" ;
+    sj:replayIdentity "sjira-v26.10.8-XAAS-26108-3" ;
+    sj:authorityRequirement "NONE" ;
+    sj:requiredCourt "e2e", "tests" ;
+    sj:requiredEvidence "command_exit_codes", "real_output" ;
+    sj:acceptanceItem [ a sj:AcceptanceCriterion ; sj:index 0 ; dcterms:description "npx playwright test prints 6 passed (6/6 legs), zero-rows case observed ALIVE against the served surface" ] ;
+    sj:falsifierItem [ a sj:Falsifier ; sj:index 0 ; dcterms:description "a leg passes without observing real served data (fixture-only pass)" ], [ a sj:Falsifier ; sj:index 1 ; dcterms:description "the 6/6 result is claimed without an exit 0 witness on the exact subject" ] ;
+    sj:projection "jira", "verification" ;
+    sj:pathScope "test/e2e/** playwright.config.ts" ;
+    sj:dependency [ a sj:DependencyEdge ; sj:upstream "XAAS-26108-2" ; sj:dependencyType "requiresReceipt" ] .
+
+<#WO-XAAS-26108-4> a sj:WorkOrder ;
+    sj:identity "XAAS-26108-4" ;
+    dcterms:title "Land the v26.10.8 doc wave and archive superseded records" ;
+    dcterms:description "Diataxis doc wave: graphlaw WASM seam how-to + playwright harness reference (af2b7730), fleet-campaign cross-references (819c116f, 5a6c64dc), nav-coverage court binding diataxis READMEs to disk 4/4 (c6060c5b), changelog release mark (572c6f4e), and archive relocation of superseded campaign records (53512b84, 599ad105 — 440 files archived, history preserved via git mv)." ;
+    sj:subject "v26108-doc-wave" ;
+    sj:repository "seanchatmangpt/xaas" ;
+    sj:baseSha "86752b3bd0d2f36ae5405ce08a7e0be3affea240" ;
+    sj:landedCommit "af2b7730", "819c116f", "5a6c64dc", "c6060c5b", "572c6f4e", "53512b84", "599ad105" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:promotionRule "verified_by_required_courts_then_receipted" ;
+    sj:replayIdentity "sjira-v26.10.8-XAAS-26108-4" ;
+    sj:authorityRequirement "NONE" ;
+    sj:requiredCourt "tests", "compile" ;
+    sj:requiredEvidence "command_exit_codes", "real_output" ;
+    sj:acceptanceItem [ a sj:AcceptanceCriterion ; sj:index 0 ; dcterms:description "the nav-coverage court prints 4/4 passed binding each diataxis README to a real disk path; git log --diff-filter=A -- docs/archive prints no new non-archived duplicates; archived file count is 440" ] ;
+    sj:falsifierItem [ a sj:Falsifier ; sj:index 0 ; dcterms:description "a diataxis README references a path that does not exist on disk" ], [ a sj:Falsifier ; sj:index 1 ; dcterms:description "an archived record still exists at its pre-archive path (copy instead of git mv)" ] ;
+    sj:projection "jira", "verification" ;
+    sj:pathScope "docs/** CHANGELOG*" ;
+    sj:dependency [ a sj:DependencyEdge ; sj:upstream "XAAS-26108-1" ; sj:dependencyType "requiresReceipt" ] .
+
+<#WO-XAAS-26108-5> a sj:WorkOrder ;
+    sj:identity "XAAS-26108-5" ;
+    dcterms:title "Release v26.10.8: tag, compile-gate fix-forward, version sync" ;
+    dcterms:description "Tag v26.10.8 at 86752b3b; fix the --warnings-as-errors compile gate forward (1c5be2e8); sync version carriers to 26.10.8 post-tag (d5dd780a, VERSION fix-forward v26.10.8-1)." ;
+    sj:subject "v26108-release-tag-and-version" ;
+    sj:repository "seanchatmangpt/xaas" ;
+    sj:baseSha "86752b3bd0d2f36ae5405ce08a7e0be3affea240" ;
+    sj:landedCommit "1c5be2e8", "d5dd780a0be4012839363e0cb047180676fc5fa7" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:promotionRule "verified_by_required_courts_then_receipted" ;
+    sj:replayIdentity "sjira-v26.10.8-XAAS-26108-5" ;
+    sj:authorityRequirement "NONE" ;
+    sj:requiredCourt "compile", "tests" ;
+    sj:requiredEvidence "command_exit_codes", "real_output" ;
+    sj:acceptanceItem [ a sj:AcceptanceCriterion ; sj:index 0 ; dcterms:description "git tag --points-at 86752b3b prints v26.10.8; VERSION prints 26.10.8; MIX_ENV=test mix compile --warnings-as-errors exits 0 at 1c5be2e8" ] ;
+    sj:falsifierItem [ a sj:Falsifier ; sj:index 0 ; dcterms:description "the tag names a SHA other than 86752b3bd0d2f36ae5405ce08a7e0be3affea240" ], [ a sj:Falsifier ; sj:index 1 ; dcterms:description "a version carrier still names a pre-26.10.8 version on HEAD" ] ;
+    sj:projection "jira", "receipt" ;
+    sj:pathScope "VERSION mix.exs" ;
+    sj:dependency [ a sj:DependencyEdge ; sj:upstream "XAAS-26108-2" ; sj:dependencyType "requiresReceipt" ] .
