@@ -160,4 +160,37 @@ defmodule Xaas.Semantics.AiroRiskMappingDepthTest do
 
     assert MapSet.size(MapSet.new(concepts)) == length(concepts)
   end
+
+  @tag w984ed: true
+  test "6. W984ed provider-lifecycle RiskControl entry is wired, cited, and emitted" do
+    controls = AiroRiskMapping.risk_controls()
+
+    entry =
+      Enum.find(controls, &(&1.module == "Xaas.Marketplace.Changes.ApplyProviderStatusChange"))
+
+    assert entry != nil, "provider lifecycle surface must be mapped as a RiskControl"
+
+    # cited enforcing module exists on disk at the declared path (real file)
+    repo_root = Path.expand("../../..", __DIR__)
+    assert File.exists?(Path.join(repo_root, entry.path))
+
+    # typed: detects/mitigates are non-empty string lists over the closed concept
+    assert entry.detects == ["UNRECEIPTED_PROVIDER_STATUS_TRANSITION"]
+    assert entry.mitigates == ["UNRECEIPTED_PROVIDER_STATUS_TRANSITION"]
+    assert is_binary(entry.scope) and entry.scope != ""
+
+    # risk_controls stays sorted by module (deterministic emission order)
+    assert controls == Enum.sort_by(controls, & &1.module)
+
+    graph = AiroRiskMapping.risk_graph()
+    local = "ex:riskControl-Xaas.Marketplace.Changes.ApplyProviderStatusChange"
+
+    # emitted exactly twice: once as the control subject, once in the
+    # system block's airo:hasRiskControl list — never a third time
+    assert Enum.count(String.split(graph, local)) - 1 == 2
+    assert Enum.count(String.split(graph, local <> " a airo:RiskControl ;")) - 1 == 1
+    assert String.contains?(graph, "airo:detectsRiskConcept ex:UNRECEIPTED_PROVIDER_STATUS_TRANSITION")
+    assert String.contains?(graph, "airo:mitigatesRiskConcept ex:UNRECEIPTED_PROVIDER_STATUS_TRANSITION")
+    assert String.contains?(graph, "airo:isRiskControlFor ex:xaas-system .")
+  end
 end

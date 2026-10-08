@@ -130,6 +130,14 @@ defmodule Xaas.Semantics.AiroRiskMapping do
         detects: ["UNAUTHENTICATED_API_ACCESS"],
         mitigates: ["UNAUTHENTICATED_API_ACCESS"],
         scope: "API token floor (fail-closed auth floor before content negotiation)"
+      },
+      %{
+        module: "Xaas.Marketplace.Changes.ApplyProviderStatusChange",
+        path: "lib/xaas/marketplace/changes/apply_provider_status_change.ex",
+        detects: ["UNRECEIPTED_PROVIDER_STATUS_TRANSITION"],
+        mitigates: ["UNRECEIPTED_PROVIDER_STATUS_TRANSITION"],
+        scope:
+          "provider lifecycle maker-checker bridge (approved status changes route through receipted Xaas.Actuation.run/4)"
       }
     ]
     |> Enum.sort_by(& &1.module)
@@ -246,8 +254,19 @@ defmodule Xaas.Semantics.AiroRiskMapping do
         ]
       end)
 
+    # Dedupe by RDF subject (W984ce, fixing the W984bj pinned defect): a
+    # EUAIA atom that is also a ledger variant would otherwise emit a second
+    # riskSource node + hasRisk edge under the same subject. The ledger
+    # emission is the superset (it carries `ex:enforcingModule`); the atom
+    # emission is merged by skipping it when the ledger already covered that
+    # subject, so each RDF subject appears exactly once.
+    ledger_locals = MapSet.new(vs, &safe_local(&1.variant))
+
     euaia_nodes =
       @euaia_atoms
+      |> Enum.reject(fn {atom_string, _concept} ->
+        MapSet.member?(ledger_locals, safe_local(atom_string))
+      end)
       |> Enum.map(fn {atom_string, concept} ->
         local = safe_local(atom_string)
 
@@ -279,13 +298,22 @@ defmodule Xaas.Semantics.AiroRiskMapping do
       end)
 
     risk_edges =
-      (vs ++ Enum.map(@euaia_atoms, &{:euaia, elem(&1, 0)}))
+      (Enum.map(vs, &{:variant, &1.variant}) ++
+         Enum.map(@euaia_atoms, &{:euaia, elem(&1, 0)}))
+      |> Enum.reject(fn
+        # dedupe by subject: ledger variant already emitted this edge
+        {:euaia, atom_string} ->
+          MapSet.member?(ledger_locals, safe_local(atom_string))
+
+        _ ->
+          false
+      end)
       |> Enum.map(fn
         {:euaia, atom_string} ->
           "ex:xaas-system airo:hasRisk ex:riskSource-#{safe_local(atom_string)} .\n"
 
-        v ->
-          "ex:xaas-system airo:hasRisk ex:riskSource-#{safe_local(v.variant)} .\n"
+        {_, variant} ->
+          "ex:xaas-system airo:hasRisk ex:riskSource-#{safe_local(variant)} .\n"
       end)
 
     system_block = [

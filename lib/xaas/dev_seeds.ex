@@ -193,7 +193,9 @@ defmodule Xaas.DevSeeds do
   Runs the real fixture chain, returning the four real persisted records
   as a map: `%{org:, subscription:, ledger_account:, pending_approval:}`.
   """
-  def run do
+  def run(opts \\ []) do
+    :ok = refute_non_dev_target!(opts)
+
     org = get_or_create_org()
     subscription = get_or_create_subscription(org)
     ledger_account = get_or_open_ledger_account(org)
@@ -230,6 +232,71 @@ defmodule Xaas.DevSeeds do
       tenant: org.slug
     )
     |> Ash.update!(authorize?: false)
+  end
+
+  # Environment guard (lane W983f, closing W982r's "open guard" residual):
+  # dev-seed fixture rows must never target a test/prod database. A plain
+  # `mix run` (even `MIX_ENV=test mix run`) bypasses test_helper.exs, so the
+  # SQL sandbox is never switched to :manual and every write below commits
+  # straight to the configured database -- the exact mechanism that
+  # polluted `xaas_test` with 10 `library_books`/2 `library_checkouts`/1
+  # curation (cleaned by W982r). Refusal is typed per house convention.
+  #
+  # Allowed paths:
+  #   * `Mix.env() == :dev` -- the lawful `mix run priv/repo/seeds.exs`
+  #     path (`mix ecto.setup`, mix.exs:288).
+  #   * `Mix.env() == :test` AND the calling process holds a real
+  #     `Ecto.Adapters.SQL.Sandbox` ownership checkout -- i.e. a sandboxed
+  #     connection whose teardown rollback guarantees nothing commits.
+  #     This is what keeps `test/xaas/dev_seeds_test.exs`'s three
+  #     pre-existing real-DB courts green (they run `run/0` in :test env
+  #     under `Sandbox.checkout/1` in their setup). Probed via the
+  #     DBConnection.Ownership.Manager GenServer state (mode + checkouts):
+  #     under a bare `mix run` the manager is in :auto mode with no
+  #     checkout for the caller, so the probe is false and the call is
+  #     refused.
+  #   * `Mix.env() == :test` AND the caller passes the explicit
+  #     `e2e: true` opt-in (lane W984bs) -- the sanctioned committed-write
+  #     path for the Playwright e2e boot seed (`e2e/seed-library.exs`,
+  #     W823): that script deliberately flips the sandbox to :auto and
+  #     commits the fixture chain to the test database the e2e webServer
+  #     serves from, which is the whole point of the W823 seed. The opt-in
+  #     must be spelled in the call itself, never ambient, so an
+  #     accidental bare `mix run` stays refused.
+  # Any other env (:prod et al.) is refused unconditionally.
+  defp refute_non_dev_target!(opts) do
+    env = Mix.env()
+
+    cond do
+      env == :dev -> :ok
+      env == :test and (opts[:e2e] == true or sandbox_owner?()) -> :ok
+
+      true ->
+        Mix.raise(
+          "REFUSED(dev_seeds, env=#{env}) -- dev seeds must never target a test/prod " <>
+            "database: an unsandboxed call would commit dev fixture rows straight to the " <>
+            "configured DB (this exact leak polluted xaas_test; cleaned by W982r). " <>
+            "Run via `mix run priv/repo/seeds.exs` in :dev, under the SQL sandbox, or -- " <>
+            "for the committed e2e boot seed (e2e/seed-library.exs, W823/W984bs) -- call " <>
+            "`Xaas.DevSeeds.run(e2e: true)` explicitly in :test env."
+        )
+    end
+  end
+
+  # True iff the calling process is a registered DBConnection.Ownership
+  # owner for Xaas.Repo while the sandbox manager is in :manual mode (a
+  # real checked-out sandboxed connection, whose teardown rollback is the
+  # pollution-prevention mechanism itself). False (-> refusal) when the
+  # repo runs a plain pool (:dev), when the manager is in :auto mode (any
+  # bare `mix run`, including `MIX_ENV=test mix run`), or when the caller
+  # has no checkout. The manager pid comes from the repo's adapter meta --
+  # the same resolution `Ecto.Adapters.SQL.Sandbox.mode/2` itself uses.
+  defp sandbox_owner? do
+    state = Xaas.Repo |> Ecto.Adapter.lookup_meta() |> Map.fetch!(:pid) |> :sys.get_state()
+
+    state.mode == :manual and Map.has_key?(state.checkouts, self())
+  catch
+    _kind, _reason -> false
   end
 
   defp get_or_create_org do

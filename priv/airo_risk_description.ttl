@@ -1,0 +1,194 @@
+# AIRo risk description for xaas (lane W982m, AIRo wiring wave).
+# Vocabulary: https://w3id.org/airo# (AIRo 1.0, DelaramGlp/airo@6c67de4, CC-BY-4.0).
+# Vendored canonical vocab bytes: priv/semantic/airo/airo.ttl
+#   sha256 6274d2d8711e046cf38f1b5b2980188094d4aa87b5af79804005a06468fd8469
+#   (same pin as docs/airo/pin-court-vocab.md and the ledger byte-verbatim table).
+#
+# Subject: the xaas refusal-engine control plane — the BRCE-admitted actuation
+# path, the fail-closed API auth floor, the EU AI Act admission gate on /a2a,
+# and governance freeze-window gating over consequential mutations.
+#
+# Every file:// seeAlso path below is a real path in this repository at
+# authoring time (filesystem-verified by lane W982m, 2026-10-07).
+#
+# Convention: AIRo 1.0 is a structural vocabulary with no concrete risk
+# individuals; this repo mints w982m:-qualified individuals (w601 convention).
+
+@prefix airo: <https://w3id.org/airo#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix w982m: <https://xaas.chatman-ecosystem.dev/airo/xaas#> .
+
+#################################################################
+# The AI system
+#################################################################
+
+w982m:XaasRefusalEngine a airo:AISystem ;
+    rdfs:label "xaas refusal-engine control plane"@en ;
+    dcterms:description """Consequential-mutation control plane: public semantic projection
+    grants no authority; consequential DO flows only through the admitted
+    ontology->admission->receipt->Ash.Reactor path with idempotency keys, gated by a
+    fail-closed internal-API token floor, an EU AI Act admission gate on the /a2a intake,
+    and governance freeze-window checks."""@en ;
+    airo:hasPurpose "Zero unreceipted actuation; every consequential mutation behind an admitted, receipted path with typed refusals."@en ;
+    airo:hasComponent
+        w982m:ActuationKernel ,
+        w982m:TypedRefusalCourt ,
+        w982m:InternalApiAuthFloor ,
+        w982m:EuAiActAdmissionGate ,
+        w982m:FreezeWindowGate ;
+    airo:hasAIUser w982m:InternalApiClient ;
+    airo:hasLifecyclePhase w982m:OperationPhase .
+
+w982m:OperationPhase a airo:AILifecyclePhase ;
+    rdfs:label "Runtime operation of the xaas control plane"@en .
+
+w982m:InternalApiClient a airo:AIUser ;
+    rdfs:label "Internal API / A2A agent caller holding an internal API token"@en .
+
+w982m:ActuationKernel a airo:AIComponent ;
+    rdfs:label "Xaas.Actuation — exclusive control-plane API for consequential Ash actions"@en ;
+    dcterms:description """Single-transaction path (ontology projection -> admission ->
+    intent/prepared receipt -> synchronous Ash.Reactor DO -> sealed receipt -> replay) and
+    three-commit external protocol (prepare_external/4, checkpoint_external/2,
+    seal_external/2). VIA file://lib/xaas/actuation.ex"""@en ;
+    rdfs:seeAlso <file://lib/xaas/actuation.ex> .
+
+w982m:TypedRefusalCourt a airo:AIComponent ;
+    rdfs:label "Actuation refusal negative court (typed refusal classes)"@en ;
+    dcterms:description """Real adversarial court proving forged artifacts are refused typed:
+    :subject_id_required, :external_projection_mismatch, :external_receipt_intent_mismatch,
+    :external_checkpoint_conflict, :external_admission_identity_mismatch,
+    :external_input_mismatch. VIA file://test/xaas/actuation_refusal_negative_test.exs"""@en ;
+    rdfs:seeAlso <file://test/xaas/actuation_refusal_negative_test.exs> .
+
+w982m:InternalApiAuthFloor a airo:AIComponent ;
+    rdfs:label "RequireInternalApiToken fail-closed auth floor"@en ;
+    dcterms:description """Gates /internal-api and /api via INTERNAL_API_TOKEN and fails
+    closed when configuration is absent. VIA file://lib/xaas_web/plugs/require_internal_api_token.ex"""@en ;
+    rdfs:seeAlso <file://lib/xaas_web/plugs/require_internal_api_token.ex> .
+
+w982m:EuAiActAdmissionGate a airo:AIComponent ;
+    rdfs:label "EU AI Act admission gate on the /a2a intake"@en ;
+    dcterms:description """Runs Xaas.Semantics.EuAiActAdmission.admit/1 over JSON-RPC params
+    before agent dispatch; refuses with typed refusal atoms in error.data (-32600).
+    VIA file://lib/xaas_web/plugs/eu_ai_act_admission_plug.ex and
+    file://lib/xaas/semantics/eu_ai_act_admission.ex"""@en ;
+    rdfs:seeAlso
+        <file://lib/xaas_web/plugs/eu_ai_act_admission_plug.ex> ,
+        <file://lib/xaas/semantics/eu_ai_act_admission.ex> .
+
+w982m:FreezeWindowGate a airo:AIComponent ;
+    rdfs:label "Governance freeze-window gate"@en ;
+    dcterms:description """Refuses consequential mutations inside declared freeze windows.
+    VIA file://lib/xaas/governance/freeze_window.ex"""@en ;
+    rdfs:seeAlso <file://lib/xaas/governance/freeze_window.ex> .
+
+#################################################################
+# Risk sources (real, documented hazards)
+#################################################################
+
+# RS-1: forged actuation/admission artifacts — a caller forges a projection
+# hash, receipt binding, checkpoint, or admission identity to smuggle an
+# unreceipted consequence through the control plane.
+w982m:ForgedActuationArtifact a airo:Hazard ;
+    rdfs:label "Forged projection/receipt/checkpoint/admission artifact smuggles an unreceipted consequence"@en ;
+    dcterms:description """Documented hazard class with six typed refusal witnesses in the
+    actuation refusal negative court: :external_projection_mismatch,
+    :external_receipt_intent_mismatch, :external_checkpoint_conflict,
+    :external_admission_identity_mismatch, :external_input_mismatch, :subject_id_required.
+    VIA file://test/xaas/actuation_refusal_negative_test.exs"""@en ;
+    airo:isRiskSourceFor w982m:XaasRefusalEngine .
+
+# RS-2: unauthenticated or mis-scoped internal-API access — a missing or absent
+# token configuration must refuse, never serve.
+w982m:UnauthenticatedInternalAccess a airo:Hazard ;
+    rdfs:label "Unauthenticated or mis-scoped internal-API access to consequential mutations"@en ;
+    dcterms:description """The /internal-api and /api surfaces gate on INTERNAL_API_TOKEN and
+    fail closed when the configuration is absent; an unauthenticated sibling route would be
+    a recurrence. VIA file://lib/xaas_web/plugs/require_internal_api_token.ex"""@en ;
+    airo:isRiskSourceFor w982m:XaasRefusalEngine .
+
+# RS-3: prohibited-practice AI intake — /a2a requests encoding manipulative or
+# prohibited AI practices reach agent dispatch unrefused.
+w982m:ProhibitedPracticeIntake a airo:Hazard ;
+    rdfs:label "Prohibited-practice AI intake reaches agent dispatch unrefused"@en ;
+    dcterms:description """The EU AI Act refusal-engine mandate: unrepresentability +
+    zero-config compliance on the /a2a intake surface; nine declared schema fields admit,
+    everything else refuses typed. VIA file://lib/xaas/semantics/eu_ai_act_admission.ex and
+    file://lib/xaas_web/plugs/eu_ai_act_admission_plug.ex"""@en ;
+    airo:isRiskSourceFor w982m:XaasRefusalEngine .
+
+# RS-4: actuation during a declared freeze window — consequential mutation
+# landing while governance has frozen the window.
+w982m:FreezeWindowViolation a airo:Hazard ;
+    rdfs:label "Consequential mutation lands during a declared governance freeze window"@en ;
+    dcterms:description """Governance freeze-window gate refuses mutations inside the window.
+    VIA file://lib/xaas/governance/freeze_window.ex"""@en ;
+    airo:isRiskSourceFor w982m:XaasRefusalEngine .
+
+#################################################################
+# Risks, consequences, impacts
+#################################################################
+
+w982m:UnreceiptedActuationRisk a airo:Risk ;
+    rdfs:label "A consequential DO lands without an admitted, replayable receipt"@en .
+
+w982m:XaasRefusalEngine airo:hasRisk w982m:UnreceiptedActuationRisk .
+
+w982m:UnreceiptedActuationRisk
+    airo:hasConsequence w982m:AuthorityBypassConsequence , w982m:ProhibitedOutputConsequence .
+
+w982m:AuthorityBypassConsequence a airo:Consequence ;
+    rdfs:label "Consequential mutation executes outside the admitted control-plane path"@en ;
+    airo:hasImpact w982m:ComplianceImpact .
+
+w982m:ProhibitedOutputConsequence a airo:Consequence ;
+    rdfs:label "Prohibited-practice output emitted from the /a2a surface"@en ;
+    airo:hasImpact w982m:ComplianceImpact .
+
+w982m:ComplianceImpact a airo:Impact ;
+    rdfs:label "Loss of EU AI Act compliance posture and receipted-authority integrity"@en ;
+    airo:hasImpactOnStakeholder w982m:InternalApiClient .
+
+w982m:XaasRefusalEngine
+    airo:hasLikelihood w982m:LowLikelihood ;
+    airo:hasSeverity w982m:HighSeverity .
+
+w982m:LowLikelihood a airo:Likelihood ;
+    rdfs:label "Low (qualitative; typed courts witness the refusals)"@en .
+
+w982m:HighSeverity a airo:Severity ;
+    rdfs:label "High (consequential DO authority + EU AI Act exposure)"@en .
+
+#################################################################
+# Risk controls (the real gates)
+#################################################################
+
+w982m:XaasRefusalEngine airo:hasRiskControl
+    w982m:ActuationKernel , w982m:TypedRefusalCourt , w982m:InternalApiAuthFloor ,
+    w982m:EuAiActAdmissionGate , w982m:FreezeWindowGate .
+
+w982m:ActuationKernel a airo:RiskControl .
+w982m:TypedRefusalCourt a airo:RiskControl .
+w982m:InternalApiAuthFloor a airo:RiskControl .
+w982m:EuAiActAdmissionGate a airo:RiskControl .
+w982m:FreezeWindowGate a airo:RiskControl .
+
+w982m:ActuationKernel airo:mitigatesRiskConcept w982m:UnreceiptedActuationRisk , w982m:ForgedActuationArtifact .
+
+w982m:TypedRefusalCourt airo:detectsRiskConcept w982m:ForgedActuationArtifact ;
+    airo:mitigatesRiskConcept w982m:ForgedActuationArtifact , w982m:UnreceiptedActuationRisk .
+
+w982m:InternalApiAuthFloor
+    airo:mitigatesRiskConcept w982m:UnauthenticatedInternalAccess , w982m:UnreceiptedActuationRisk ;
+    airo:detectsRiskConcept w982m:UnauthenticatedInternalAccess .
+
+w982m:EuAiActAdmissionGate
+    airo:mitigatesRiskConcept w982m:ProhibitedPracticeIntake , w982m:ProhibitedOutputConsequence .
+
+w982m:FreezeWindowGate airo:mitigatesRiskConcept w982m:FreezeWindowViolation ;
+    airo:detectsRiskConcept w982m:FreezeWindowViolation .
+
+w982m:XaasRefusalEngine airo:hasResidualRisk w982m:UnreceiptedActuationRisk .

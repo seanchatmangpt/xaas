@@ -284,8 +284,8 @@ defmodule Xaas.ConferenceDeepeningTest do
     assert ok.capacity == 1
   end
 
-  # (d) determinism of reads after writes
-  test "reads are deterministic after writes: repeated reads return identical row sets" do
+  # (d) determinism of reads after writes — W983a/W981s contract
+  test "reads are deterministic after writes: duplicate active registration refuses typed, successful writes re-read identically" do
     %{session: session, attendee: attendee} = seed()
 
     create!(Registration, %{attendee_id: attendee.id, session_id: session.id})
@@ -307,15 +307,30 @@ defmodule Xaas.ConferenceDeepeningTest do
     assert length(first) == 3
     assert {b.id, :cancelled} in first
 
-    # A failed write leaves the projection untouched.
-    assert_raise Ash.Error.Invalid, fn ->
-      create!(Registration, %{attendee_id: b.id, session_id: session.id})
+    # W981s/W983a: a duplicate ACTIVE (attendee, session) write is refused
+    # typed (EnforceActiveRegistrationIdentity) and leaves the projection
+    # untouched — that typed refusal IS the deterministic behavior now.
+    assert_raise Ash.Error.Invalid, ~r/has already been taken/i, fn ->
+      create!(Registration, %{attendee_id: a.id, session_id: session.id})
     end
 
     for _ <- 1..5 do
       assert projection.() == first
     end
 
-    assert length(Ash.read!(Registration, authorize?: false)) == 3
+    # Cancelled re-registration remains legal (W981s scoped identity).
+    re_reg = create!(Registration, %{attendee_id: b.id, session_id: session.id})
+    assert re_reg.status == :registered
+
+    second = projection.()
+    assert length(second) == 4
+    assert {b.id, :registered} in second
+
+    # ... and every successful write stays deterministic on re-read.
+    for _ <- 1..5 do
+      assert projection.() == second
+    end
+
+    assert length(Ash.read!(Registration, authorize?: false)) == 4
   end
 end

@@ -20,7 +20,12 @@
 Ecto.Adapters.SQL.Sandbox.mode(Xaas.Repo, :auto)
 Ecto.Adapters.SQL.Sandbox.mode(Xaas.LegacyRepo, :auto)
 
-fixtures = Xaas.DevSeeds.run()
+# Explicit `e2e: true` opt-in (lane W984bs): DevSeeds' environment guard
+# (W983f) refuses unsandboxed :test-env calls with
+# `REFUSED(dev_seeds, env=test)`. This script IS the sanctioned committed
+# e2e boot seed -- it deliberately writes the fixture chain to the test
+# database the Playwright webServer serves from -- so it opts in by name.
+fixtures = Xaas.DevSeeds.run(e2e: true)
 
 # Determinism across runs: DevSeeds.get_or_create_library_curations/1 is
 # get-or-create by book_id, so if an earlier run's spec click UNPINNED the

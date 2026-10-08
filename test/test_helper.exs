@@ -65,7 +65,11 @@ ExUnit.configure(
     :castle_kernel,
     # EU AI Act compliance suite (test/eu_ai_act/, lane W526): structure gate +
     # per-title obligation tests. Runs via `mix test --include eu_ai_act`.
-    :eu_ai_act
+    :eu_ai_act,
+    # Smoke-perf rung (test/xaas/perf/, lane W982x): real latency tripwires
+    # (graphlaw assess path + library CRUD medians over real Postgres).
+    # Timing-sensitive; runs via `mix test --include perf_smoke`.
+    :perf_smoke
   ]
 )
 

@@ -6,7 +6,7 @@
 
 @prefix sh: <http://www.w3.org/ns/shacl#> .
 @prefix airo: <https://w3id.org/airo#> .
-@prefix airo-sh: <https://w3id.org/airo#shapes#> .
+@prefix airo-sh: <https://w3id.org/airo#shapes-> .
 
 airo-sh:airo-shape-AICapability a sh:NodeShape ;
   sh:targetClass airo:AICapability;    .

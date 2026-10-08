@@ -195,7 +195,7 @@ defmodule Mix.Tasks.Xaas.Airo.CompileShacl do
 
     @prefix sh: <#{@sh}> .
     @prefix airo: <#{@airo}> .
-    @prefix airo-sh: <#{@airo}shapes#> .
+    @prefix airo-sh: <#{@airo}shapes-> .
 
     """
 

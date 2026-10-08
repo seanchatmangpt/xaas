@@ -22,6 +22,14 @@ defmodule XaasWeb.Router do
     plug(:accepts, ["json"])
   end
 
+  # W605 (WP-1, OS-16 / Art. 50(2)): PROV-O artificial-origin provenance
+  # header on the public machine surfaces. See
+  # XaasWeb.Plugs.ProvOriginHeader's moduledoc for the exact header shape
+  # and the deliberate non-wiring of :browser/LiveView.
+  pipeline :prov_origin do
+    plug(XaasWeb.Plugs.ProvOriginHeader)
+  end
+
   # Real fix (adversarial review finding): neither /internal-api nor /api
   # had any auth plug at all -- both real 200'd for any anonymous client.
   pipeline :require_internal_api_token do
@@ -200,7 +208,9 @@ defmodule XaasWeb.Router do
   # A2A messages are plain text, not JSON:API requests `ResolveOrgActor`
   # inspects by path).
   scope "/a2a" do
-    pipe_through([:api, :require_internal_api_token])
+    # W605: :prov_origin first — before_send registration must survive any
+    # later halting plug, so refusal envelopes are provenance-marked too.
+    pipe_through([:prov_origin, :api, :require_internal_api_token])
 
     # ZOE event simulation is intentionally registered before the generic
     # Next Read catch-all. It exercises an authority-free SA2A-shaped event
@@ -308,6 +318,8 @@ defmodule XaasWeb.Router do
     # a POST-only workbench route falls through the workbench scope to this
     # /api forward, so the leak was reachable from the workbench surface.
     pipe_through([
+      # W605: first, same before_send-survival reason as the /a2a scope.
+      :prov_origin,
       :require_internal_api_token,
       :internal_api,
       :authenticate_org,
