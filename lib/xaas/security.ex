@@ -96,6 +96,12 @@ defmodule Xaas.Security do
 
   defp atomize(nil), do: nil
 
+  # wrong JSON type (integer/map/list where an enum string is expected):
+  # pass the value through so Ash's one_of constraint refuses it as a typed
+  # validation error (same convention as the ArgumentError arm), never a
+  # FunctionClauseError crash
+  defp atomize(v) when not is_binary(v) and not is_nil(v), do: v
+
   defp atomize(v) when is_binary(v) do
     String.to_existing_atom(v)
   rescue
@@ -105,6 +111,12 @@ defmodule Xaas.Security do
   end
 
   defp parse_dt(nil), do: nil
+
+  # wrong JSON type (integer/map/list where an ISO8601 string is expected):
+  # pass the value through so Ash's utc_datetime cast refuses it as a typed
+  # validation error (same convention as atomize/1), never a
+  # FunctionClauseError crash
+  defp parse_dt(v) when not is_binary(v) and not is_struct(v, DateTime), do: v
 
   defp parse_dt(%DateTime{} = dt), do: dt
 
