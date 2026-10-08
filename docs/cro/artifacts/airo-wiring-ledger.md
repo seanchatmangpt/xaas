@@ -131,6 +131,17 @@ surface (paths verified on disk at their SHAs). After this extension, the
 ledger covers 25 repos (16 + 3 W981e + 6 W981f); no on-disk `$HOME` fleet
 repo remains unwired to lane knowledge.
 
+## Extension — W984ed (2026-10-07): provider-lifecycle RiskControl surface
+
+One more in-repo fleet surface mapped onto the AIRo vocabulary via
+`lib/xaas/semantics/airo_risk_mapping.ex` `risk_controls/0` (no prior airo
+reference anywhere in the marketplace/provider-lifecycle domain; verified by
+tree grep). Additive entry only — no policy change, no variant-mapping change.
+
+| lane | repo | artifact | sha/parse proof | tests executed | receipt |
+|---|---|---|---|---|---|
+| w984ed | xaas | `lib/xaas/semantics/airo_risk_mapping.ex` `risk_controls/0` — new RiskControl `Xaas.Marketplace.Changes.ApplyProviderStatusChange` (`lib/xaas/marketplace/changes/apply_provider_status_change.ex`), detects/mitigates `UNRECEIPTED_PROVIDER_STATUS_TRANSITION`; maker-checker bridge routes approved provider status changes through receipted `Xaas.Actuation.run/4` | emitted `risk_graph/0` contains `ex:riskControl-Xaas.Marketplace.Changes.ApplyProviderStatusChange a airo:RiskControl` exactly once plus the `airo:hasRiskControl` system edge (exactly 2 occurrences of the local, court-pinned); `mix xaas.airo.compile_shacl` exit 0 (46 classes / 46 shapes / 130 triples, vocab sha `6274d2d8…`) | 6 passed (`test/xaas/semantics/airo_risk_mapping_depth_test.exs` test 6, new); 11 passed sibling courts (airo_shacl_court, airo_vendored_pin, airo_grounding); mock gate `[]` exit 0 | plans/w984ed-probe.md |
+
 ## Carry-forwards
 
 1. Nothing committed in any of the 14 repos; all lane work is uncommitted on
