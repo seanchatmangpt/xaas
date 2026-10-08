@@ -206,7 +206,12 @@ defmodule Xaas.Library.RankerTest do
       far_mismatch =
         create_book!(%{title: "Far Grade Mismatch", grade_level: 11, genres: ["Fiction"]})
 
-      {:ok, recs} = Ranker.rank_recommendations(user.id, 6, limit: 10)
+      # W984ly: the ranker ranks the WHOLE shared catalog -- ambient committed
+      # rows must never crowd the suite's own fixtures out of a bounded
+      # result, so bound the read by the real catalog, not a literal.
+      catalog_count = full_catalog_count!()
+
+      {:ok, recs} = Ranker.rank_recommendations(user.id, 6, limit: catalog_count + 3)
 
       exact_factors = factors_for(recs, exact_match)
       near_factors = factors_for(recs, near_match)
@@ -386,24 +391,51 @@ defmodule Xaas.Library.RankerTest do
     end
   end
 
-  describe "empty catalog edge case" do
-    test "returns an empty recommendation list when there are no candidate books" do
-      user = create_user!()
+  describe "empty candidate set edge case" do
+    # W984ly: `xaas_test` legitimately carries ambient committed Book rows,
+    # so a literally-empty catalog is not an observable state. The real
+    # invariant "zero unread candidates -> []" is preserved by making the
+    # reader have read the ENTIRE visible catalog, fixture and ambient alike.
 
-      {:ok, recs} = Ranker.rank_recommendations(user.id, 6, limit: 10)
+    # Reads the real visible catalog through the same surface the ranker
+    # uses (W984lh oracle idiom).
+    defp full_catalog_count! do
+      Book |> Ash.Query.select([]) |> Ash.read!(authorize?: false) |> length()
+    end
+
+    defp checkout_all_catalog_books!(user) do
+      Book
+      |> Ash.Query.select([:id])
+      |> Ash.read!(authorize?: false)
+      |> Enum.each(&create_checkout!(user, &1))
+    end
+
+    test "returns an empty list when the reader has already read every book in the catalog" do
+      user = create_user!()
+      checkout_all_catalog_books!(user)
+
+      {:ok, recs} =
+        Ranker.rank_recommendations(user.id, 6, exclude_read: true, limit: full_catalog_count!())
 
       assert recs == []
     end
 
-    test "returns an empty list when every catalog book has already been checked out and exclude_read is true" do
+    test "returns an empty list when the only unread candidates have zero available copies and exclude_read is true" do
       user = create_user!()
 
-      only_book =
-        create_book!(%{title: "Only Book In Catalog", grade_level: 6, genres: ["Fiction"]})
+      only_new_book =
+        create_book!(%{
+          title: "Unread But Unavailable #{System.unique_integer([:positive])}",
+          grade_level: 6,
+          genres: ["Fiction"],
+          available_copies: 0
+        })
 
-      create_checkout!(user, only_book)
+      checkout_all_catalog_books!(user)
+      create_checkout!(user, only_new_book)
 
-      {:ok, recs} = Ranker.rank_recommendations(user.id, 6, limit: 10)
+      {:ok, recs} =
+        Ranker.rank_recommendations(user.id, 6, exclude_read: true, limit: full_catalog_count!())
 
       assert recs == []
     end

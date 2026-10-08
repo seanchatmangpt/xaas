@@ -25,6 +25,16 @@ defmodule Xaas.Library.NextReadTest do
 
   defp create_book!(attrs), do: Xaas.Generator.create_book!(attrs)
 
+  # The shared test database legitimately carries ambient committed book rows
+  # (the sandbox wraps a test in a transaction; it does not hide rows
+  # committed before it). The ranker ranks the WHOLE catalog, so any
+  # find-by-fixture assertion must give the ranker a limit that covers the
+  # full catalog or a low-ranked fixture falls outside the window.
+  defp full_catalog_limit do
+    Book |> Ash.Query.select([]) |> Ash.read!(authorize?: false) |> length() |> Kernel.+(1)
+  end
+
+
   defp create_checkout!(user, book) do
     Checkout
     |> Ash.Changeset.for_create(:create, %{
@@ -192,7 +202,7 @@ defmodule Xaas.Library.NextReadTest do
           available_copies: 0
         })
 
-      {:ok, recommendations} = Ranker.rank_recommendations(user.id, 6, limit: 10)
+      {:ok, recommendations} = Ranker.rank_recommendations(user.id, 6, limit: full_catalog_limit())
 
       assert length(recommendations) >= 3
 
@@ -257,7 +267,13 @@ defmodule Xaas.Library.NextReadTest do
 
       explanation =
         Ranker.explain_recommendation(rec.book, rec.factors, [
-          hd(Checkout |> Ash.read!(authorize?: false))
+          # W984ly: scoped to this reader -- the shared table carries ambient
+          # committed Checkout rows this fixture does not own.
+          hd(
+            Checkout
+            |> Ash.Query.filter(user_id == ^user.id)
+            |> Ash.read!(authorize?: false)
+          )
         ])
 
       assert String.contains?(explanation.why, "Because you finished")
@@ -335,7 +351,7 @@ defmodule Xaas.Library.NextReadTest do
       })
       |> Ash.create!(authorize?: false)
 
-      {:ok, recs} = Ranker.rank_recommendations(user.id, 6, limit: 10)
+      {:ok, recs} = Ranker.rank_recommendations(user.id, 6, limit: full_catalog_limit())
 
       rec_candidate = Enum.find(recs, &(&1.book.id == candidate.id))
       rec_other = Enum.find(recs, &(&1.book.id == other.id))

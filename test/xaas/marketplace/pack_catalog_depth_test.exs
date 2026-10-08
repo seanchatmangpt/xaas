@@ -17,8 +17,10 @@ defmodule Xaas.Marketplace.PackCatalogDepthTest do
        catalog whose pack fields changed must really mutate the stored
        projection (not silently create a second row and not leave stale
        fields behind);
-    2. readiness normalization variants (binary passthrough, absent
-       readiness -> "", mixed-flag map ordering);
+    2. readiness normalization variants (binary passthrough, mixed-flag map
+       ordering); malformed readiness (nil/integer) is refused typed by
+       validate_packs/1 since the W984ln repair -- see
+       `catalog_court_w984kt_test.exs` leg 4;
     3. the `unique_name` identity on Pack via the real ETS pre-check;
     4. `Pack` destroy + `Catalog.get_pack!/1` raising on an absent name;
     5. `Catalog.search/1` matching on description substring
@@ -62,11 +64,14 @@ defmodule Xaas.Marketplace.PackCatalogDepthTest do
             "digest" => @digest,
             "download_url" => "https://example.com/#{name}.tar.gz",
             "description" => "depth court pack #{name}",
-            # KNOWN DEFECT (W984bo finding): omitting "readiness" entirely
-            # makes Catalog.ingest/1 raise Ash.Error.Invalid ("attribute
-            # readiness is required") instead of a typed
-            # {:error, %Catalog.Error{}} -- readiness_string(nil) -> "" and
-            # Ash's :string cast turns "" into nil. See lane receipt.
+            # W984bo finding, repaired (W984ln): a readiness that is neither a
+            # map nor a binary (nil from an omitted key, integer, list, ...)
+            # used to fall through readiness_string/1 to "" and raise a raw
+            # Ash.Error.Invalid out of the upsert. validate_packs/1 now refuses
+            # it typed BEFORE any upsert:
+            # {:error, %Catalog.Error{reason: :invalid_pack,
+            #  detail: {i, [:invalid_readiness], readiness}}}.
+            # See docs/sjira/v26.10.6/plans/w984ln-repair.md.
             "readiness" => %{"gates" => true}
           },
           overrides

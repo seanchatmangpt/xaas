@@ -80,12 +80,23 @@ defmodule XaasWeb.NextRead.ReaderLiveDeepeningTest do
     Enum.map(ranked, & &1.book.id)
   end
 
+  defp grade do
+    Xaas.Library.Config.default_grade()
+  end
+
+  # Real committed Book rows visible to the ranker (ambient test-DB rows
+  # included -- the sandbox wraps the test in a transaction, it does not
+  # isolate from rows committed before it).
+  defp catalog_book_count! do
+    Book |> Ash.Query.select([]) |> Ash.read!(authorize?: false) |> length()
+  end
+
   describe "W766 Next Read LiveView deepening" do
     test "(a) mount renders the real 6-factor ranker order for crafted fixtures", %{
       conn: conn,
       user: user
     } do
-      books = create_fixture_catalog!()
+      create_fixture_catalog!()
       grade = Xaas.Library.Config.default_grade()
 
       {:ok, _view, html} =
@@ -95,8 +106,12 @@ defmodule XaasWeb.NextRead.ReaderLiveDeepeningTest do
 
       rendered_ids = rendered_card_ids(html)
 
-      # All 5 fixture books must be ranked into the live render (limit 6).
-      assert length(rendered_ids) == length(books)
+      # Real limit-6 contract: the render is the top min(6, catalog) of the
+      # ranker's output over the WHOLE catalog -- the shared test database
+      # legitimately carries ambient committed book rows alongside these
+      # fixtures, so an exact fixture-count assertion is stale (the surface
+      # renders the full-catalog top 6, not "just my fixtures").
+      assert length(rendered_ids) == min(6, catalog_book_count!())
 
       # Order must equal the real ranker's output for the same inputs.
       assert rendered_ids == expected_ranking!(user, grade)
@@ -113,10 +128,13 @@ defmodule XaasWeb.NextRead.ReaderLiveDeepeningTest do
       conn: conn,
       user: user
     } do
-      books = create_fixture_catalog!()
+      create_fixture_catalog!()
 
-      # Pick an available book from the live ranking surface.
-      target = Enum.find(books, &(&1.available_copies > 0))
+      # The ranker is the oracle for the same inputs the LiveView uses. Pick
+      # the TOP-ranked available book from the real ranking surface (it has
+      # the largest margin to stay rendered after its copies drop to 0).
+      {:ok, ranked} = Ranker.rank_recommendations(user.id, grade(), limit: 6, exclude_read: false)
+      target = Enum.find(ranked, &(&1.book.available_copies > 0)).book
       assert target
 
       {:ok, view, html} =
@@ -140,10 +158,12 @@ defmodule XaasWeb.NextRead.ReaderLiveDeepeningTest do
 
       html_after = render(view)
 
-      assert html_after =~ "all copies checked out"
+      # The reload must reflect the new DB state: rendered order equals the
+      # real ranker's output recomputed AFTER the inventory change.
+      assert rendered_card_ids(html_after) == expected_ranking!(user, grade())
 
-      # Scoped to the target card: other fixture books legitimately still
-      # render their own on-shelf counts.
+      # Scoped to the target card: it dropped to "all copies checked out",
+      # and other books legitimately still render their own on-shelf counts.
       target_card_html =
         view
         |> element("[data-testid='book-card'][data-book-id='#{target.id}']")

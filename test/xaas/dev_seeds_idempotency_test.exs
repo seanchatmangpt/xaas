@@ -31,6 +31,15 @@ defmodule Xaas.DevSeedsIdempotencyTest do
   @org_slug "acme-dev"
   @dev_reader_email "dev-reader@example.com"
 
+  # W984ly: the seed chain's own natural-key slots. Scoping reads by these
+  # (instead of reading the whole shared catalog) is what keeps the
+  # uniqueness/dedupe courts from breaking when `xaas_test` carries ambient
+  # committed rows beyond this seed's own 10 Books / 2 Checkouts / 1 Curation.
+  @seeded_isbns ["978-0-000-00001-1", "978-0-000-00002-8", "978-0-000-00003-5",
+                 "978-0-000-00004-2", "978-0-000-00005-9", "978-0-000-00006-6",
+                 "978-0-000-00007-3", "978-0-000-00008-0", "978-0-000-00009-7",
+                 "978-0-000-00010-3"]
+
   setup do
     :ok = Ecto.Adapters.SQL.Sandbox.checkout(Xaas.Repo)
     :ok
@@ -112,9 +121,7 @@ defmodule Xaas.DevSeedsIdempotencyTest do
         |> length(),
       seeded_books:
         Book
-        |> Ash.Query.filter(isbn in ["978-0-000-00001-1", "978-0-000-00002-8", "978-0-000-00003-5",
-        "978-0-000-00004-2", "978-0-000-00005-9", "978-0-000-00006-6", "978-0-000-00007-3",
-        "978-0-000-00008-0", "978-0-000-00009-7", "978-0-000-00010-3"])
+        |> Ash.Query.filter(isbn in @seeded_isbns)
         |> Ash.read!(authorize?: false)
         |> length(),
       dev_reader_users:
@@ -185,7 +192,9 @@ defmodule Xaas.DevSeedsIdempotencyTest do
     subs = Subscription |> Ash.Query.filter(org_id: @org_slug) |> Ash.read!(authorize?: false)
     assert length(subs) == 1
 
-    books = Ash.read!(Book, authorize?: false)
+    # W984ly: scoped to the seed's own natural-key slots -- the shared
+    # catalog carries ambient committed rows this court does not own.
+    books = Book |> Ash.Query.filter(isbn in @seeded_isbns) |> Ash.read!(authorize?: false)
     assert length(books) == 10
     assert books |> Enum.map(& &1.isbn) |> Enum.uniq() |> length() == 10
     assert books |> Enum.map(&String.downcase(&1.title)) |> Enum.uniq() |> length() == 10
@@ -200,12 +209,27 @@ defmodule Xaas.DevSeedsIdempotencyTest do
 
     # One checkout per (user_id, book_id) pair and one curation spotlight
     # per book, per the seed's own lookup keys.
-    checkouts = Ash.read!(Checkout, authorize?: false)
+    # W984ly: scoped to the dev reader / the seed's own books -- the shared
+    # table carries ambient committed Checkout rows from other lanes.
+    reader_id = dev_reader_id()
+
+    checkouts =
+      Checkout |> Ash.Query.filter(user_id: reader_id) |> Ash.read!(authorize?: false)
+
     assert checkouts |> Enum.map(&{&1.user_id, &1.book_id}) |> Enum.uniq() |> length() ==
              length(checkouts)
     assert length(checkouts) == 2
 
-    curations = Ash.read!(Curation, authorize?: false)
+    seeded_book_ids =
+      Book
+      |> Ash.Query.filter(isbn in @seeded_isbns)
+      |> Ash.Query.select([:id])
+      |> Ash.read!(authorize?: false)
+      |> Enum.map(& &1.id)
+
+    curations =
+      Curation |> Ash.Query.filter(book_id in ^seeded_book_ids) |> Ash.read!(authorize?: false)
+
     assert curations |> Enum.map(& &1.book_id) |> Enum.uniq() |> length() == length(curations)
     assert length(curations) == 1
   end

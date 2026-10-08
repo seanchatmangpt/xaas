@@ -233,8 +233,11 @@ defmodule Xaas.Library.NextReadDeepeningTest do
 
       assert {:ok, scored} = Ranker.rank_recommendations(user.id, 5, limit: 10)
 
-      # Rank output shape: book, rounded score, 6 factors per entry, descending score.
-      assert length(scored) == 3
+      # W984ly: the ranker pools the WHOLE shared catalog, so both the
+      # returned list and the logged pool size are bounded by the real
+      # catalog size, never by the suite's 3 fixtures alone (W984lh idiom).
+      candidate_pool = Book |> Ash.Query.select([]) |> Ash.read!(authorize?: false) |> length()
+      assert length(scored) == min(10, candidate_pool)
 
       assert scored == Enum.sort_by(scored, & &1.score, :desc)
 
@@ -269,13 +272,18 @@ defmodule Xaas.Library.NextReadDeepeningTest do
       unavailable_entry = Enum.find(scored, &(&1.book.id == book_b.id))
       assert unavailable_entry.factors.available == 0.0
 
-      # Real persisted log row: exactly one, matching the computation inputs.
-      logs = RecommendationLog |> Ash.read!(authorize?: false)
+      # Real persisted log row: exactly one FOR THIS READER (W984ly: scoped —
+      # the shared table may carry committed rows from other runs).
+      logs =
+        RecommendationLog
+        |> Ash.Query.filter(user_id == ^user.id)
+        |> Ash.read!(authorize?: false)
+
       assert length(logs) == 1, "exactly one RecommendationLog row for one rank run"
 
       log = hd(logs)
       assert log.user_id == user.id
-      assert log.candidate_pool_size == 3
+      assert log.candidate_pool_size == candidate_pool
       assert log.accepted == false
 
       # Stored weights equal the weights actually used in the computation.
