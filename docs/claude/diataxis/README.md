@@ -17,6 +17,7 @@ Goal-oriented procedures:
 - [`how-to/add-a-real-json-api-route-to-an-ash-resource.md`](how-to/add-a-real-json-api-route-to-an-ash-resource.md) — safely add an Ash JSON:API route.
 - [`how-to/fix-ash-admin-and-use-ggen-for-codegen.md`](how-to/fix-ash-admin-and-use-ggen-for-codegen.md) — repository-specific Ash Admin/ggen procedure.
 - [`how-to/author-ggen-templates-safely.md`](how-to/author-ggen-templates-safely.md) — two real ggen/ggen_igniter template-authoring defects from the MCP/A2A dogfood run: macro bodies invalid only at a real call site, and multi-surface capability rows needing an explicit discriminator.
+- [`how-to/graphlaw-wasm-seam.md`](how-to/graphlaw-wasm-seam.md) — run purchase-policy assessment through the pinned GraphLaw WASM seam: assess path, GraphlawPool lazy boot, packed-u64 FFI, digest pin `fc23a292...`, watchdog, typed refusals.
 
 ## Reference
 
@@ -25,6 +26,7 @@ Exact factual contracts:
 - [`reference/actuation-and-semantics.md`](reference/actuation-and-semantics.md) — public-ontology projection, actuation, idempotency, receipts, provider lifecycle, and refusal contracts.
 - [`reference/ash-configuration.md`](reference/ash-configuration.md) — Ash domains/extensions/configuration.
 - [`reference/http-api-surface.md`](reference/http-api-surface.md) — current HTTP exposure and auth boundaries.
+- [`reference/playwright-harness.md`](reference/playwright-harness.md) — Playwright e2e harness: 23-spec suite, config self-boot (`webServer` BOOT, pinned `MIX_ENV=dev` per W984fw), `PW_PORT` lane leasing, seed scripts, witnessed results.
 - [`reference/ultracode-runtime-contract.md`](reference/ultracode-runtime-contract.md) — UltraCode two-port runtime law (sJira/SA2A/local/BRCE planes, worker env, falsifier).
 - [`reference/eu-ai-act-semantics.md`](reference/eu-ai-act-semantics.md) — `lib/xaas/semantics/` EU-AI-Act modules: signatures, typed refusal atoms, corpus line ids, AIRo mapping.
 - [`reference/standing-vocabulary.md`](reference/standing-vocabulary.md) — the closed standing-status set (ALIVE/REFUTED/BLOCKED/UNKNOWN/PARTIAL/PARTIAL_ALIVE/UNSUPPORTED/BUILD_BROKEN), ALIVE-requires-execution, standing-vs-state, `REFUSED_` refusal atoms; enforced by `CapabilityLivenessReceiptStatusGate`.
