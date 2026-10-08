@@ -41,3 +41,10 @@ hyphenated with the pre-fix form elided. Zero findings on re-run.
 
 See commit message (this file + lib fix + the two repaired receipt docs,
 pathspec commit, `-F` message file). Push: fetch-first fast-forward only.
+
+## Result
+
+- Commit: `4a3089500bc35b0a516d049ccf217789497e931c` (lib fix + 2 repaired
+  receipt docs + this receipt; 4 files, +73/−12)
+- Push: `b6fad269..4a308950 feat/playwright-surface` — fetch-first
+  fast-forward, origin == HEAD == `4a308950` verified post-push.
