@@ -96,13 +96,39 @@ defmodule Xaas.Sa2a.Changes.Execute do
 
   defp execute(verdict) do
     req = verdict.request
-    opts = if verdict.compiled_rules, do: [compiled_rules: verdict.compiled_rules], else: []
+
+    # `sa2a_execute` is `requires_authority?: true` in the generated MCP descriptor, so
+    # `Bridge.call/2` refuses pre-port with `:sa2a_authority_evidence_required` unless a
+    # non-empty evidence map rides with the DO call. The evidence is derived from THIS
+    # request's own just-admitted court verdict (the same shape `Xaas.Sa2a.Executor`
+    # attaches to the actuation context) -- never an ambient or hardcoded credential.
+    opts = [
+      compiled_rules: verdict.compiled_rules,
+      authority: authority(verdict, req)
+    ]
 
     case Court.bridge(fn -> Bridge.execute(req["query"], opts) end) do
       {:ok, %{"ok" => true, "result" => result} = resp} when is_binary(result) -> {:ok, resp}
       {:error, {:blocked, _} = blocked} -> {:error, blocked}
       other -> {:error, {:blocked, {:execute_unexpected_reply, other}}}
     end
+  end
+
+  # Mirrors `Xaas.Sa2a.Executor.authority/2`: the DO's authority evidence is the admitted
+  # court verdict itself (admit receipt standing, bound plan hash, work-order identity),
+  # so the port sees exactly the authority the court just granted -- nothing more.
+  defp authority(verdict, req) do
+    %{
+      kind: "machine_policy",
+      capability: "sa2a_executor",
+      policy: "Xaas.Sa2a.ExecutionPolicy",
+      policy_class: verdict.class_id,
+      work_order_id: req["work_order_id"],
+      work_order_digest: req["work_order_digest"],
+      admit_receipt_id: verdict.admit_receipt_id,
+      admit_candidate_hash: verdict.admit_candidate_hash,
+      plan_hash: verdict.plan_hash
+    }
   end
 
   defp llm_floor(%{"llm_avoidance_ratio" => ratio}, policy) when is_number(ratio) do
