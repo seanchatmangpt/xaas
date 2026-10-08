@@ -98,13 +98,16 @@ defmodule Xaas.Operations.AuthorityLedgerExport do
   """
   @spec recompute_root(map()) :: {:ok, String.t()} | {:error, :malformed_bundle}
   def recompute_root(%{"entries" => entries}) when is_list(entries) do
-    leaves =
-      entries
-      |> Enum.map(fn entry ->
-        entry |> Map.delete("leaf_hash") |> sha256_jcs()
-      end)
+    if Enum.all?(entries, &is_map/1) do
+      leaves =
+        Enum.map(entries, fn entry ->
+          entry |> Map.delete("leaf_hash") |> sha256_jcs()
+        end)
 
-    {:ok, merkle_root(leaves)}
+      {:ok, merkle_root(leaves)}
+    else
+      {:error, :malformed_bundle}
+    end
   end
 
   def recompute_root(_), do: {:error, :malformed_bundle}

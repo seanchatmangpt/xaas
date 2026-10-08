@@ -72,6 +72,10 @@ defmodule Xaas.Eds.Falsifier do
           {:ok, verdict()}
           | {:error,
              String.t() | %{phase: :predicate_execution, error: String.t(), message: String.t()}}
+  def run(%__MODULE__{}, evidence) when not is_map(evidence) do
+    {:error, "falsifier evidence must be a map"}
+  end
+
   def run(%__MODULE__{predicate: predicate}, evidence) when is_map(evidence) do
     case predicate.(evidence) do
       :survived ->

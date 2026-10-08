@@ -190,17 +190,26 @@ defmodule Xaas.Actuation.QuiescentStopDeepeningTest do
     assert lifecycle.state == :DETECTED
 
     # fria/0 consumes the post-halt world without contradiction: the
-    # structured assessment is intact, statuses remain typed, and the
-    # honestly-recorded OPEN_GAP materialisation channel is still open.
+    # structured assessment is intact and statuses remain typed. Since
+    # W984eb all five rights are :EVIDENCED — the authority channel over
+    # the real incident-reporting seam (incident_report.ex, transmit/1
+    # :PREPARED_NOT_TRANSMITTED).
     assert {:ok, fria} = OversightGovernance.fria()
     assert fria.assessment_class == :deployer
 
     assert Enum.all?(fria.rights, fn right ->
-             right.status in [:EVIDENCED, :OPEN_GAP] and is_binary(right.article) and
+             right.status == :EVIDENCED and is_binary(right.article) and
                right.evidence != []
            end)
 
-    assert Enum.any?(fria.rights, &(&1.status == :OPEN_GAP))
+    authority_entry =
+      Enum.find(fria.rights, &(&1.right == :access_to_effective_remedy_authority_channel))
+
+    assert authority_entry.status == :EVIDENCED
+
+    assert Enum.any?(authority_entry.evidence, fn e ->
+             e.path == "lib/xaas/semantics/incident_report.ex"
+           end)
 
     # No contradiction between the halt receipt and the FRIA: the echoed
     # authority and target agree with the post-halt subject state.

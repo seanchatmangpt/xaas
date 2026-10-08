@@ -99,8 +99,15 @@ defmodule Xaas.Eds.ExecutableResearchClaim do
 
   defp require_binary(attrs, key) do
     case Map.get(attrs, key) do
-      v when is_binary(v) and byte_size(v) > 0 -> {:ok, v}
-      _ -> {:error, "#{key} is required and must be a non-empty string"}
+      v when is_binary(v) ->
+        if String.trim(v) == "" do
+          {:error, "#{key} is required and must be a non-empty string"}
+        else
+          {:ok, v}
+        end
+
+      _ ->
+        {:error, "#{key} is required and must be a non-empty string"}
     end
   end
 

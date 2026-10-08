@@ -730,13 +730,18 @@ defmodule Xaas.Sjira.ArdCourtTest do
 
         _ ->
           # Pinned typed refusal (w68b failure 6): the real ~/ash_atlassian
-          # governance surface was hand-extended (6 new ontology shapes,
-          # 9 new lib/ash_atlassian governance modules) without a matching
+          # governance surface was hand-extended (8 new ontology shapes,
+          # 11 new lib/ash_atlassian governance modules) without a matching
           # ARD manifest regeneration in this court's manifest
           # (docs/sjira/v26.9.21/ash-atlassian-ard.md). The court refusing
           # the stale manifest IS the by-design behavior this test pins.
-          # When the manifest is regenerated (W73-class), failures becomes
-          # %{} and this branch retires.
+          # Drift repair (W984iq, 2026-10-07): ClosureResidual and
+          # MarketplaceCapabilityDelta (shapes + governance modules) landed in
+          # ~/ash_atlassian after the w68b pin, so the expected refusal
+          # inventory was refreshed to current truth — still 2 failed checks
+          # (ARD-005 + ARD-009), still REFUSED. When the manifest is
+          # regenerated (W73-class), failures becomes %{} and this branch
+          # retires.
           assert receipt["verdict"] == "REFUSED"
 
           assert failures["ARD-005"] ==
@@ -744,6 +749,8 @@ defmodule Xaas.Sjira.ArdCourtTest do
                      "ontology shape https://ggen.io/profile/ash-atlassian#ArchitectureDecision has no resource entry | " <>
                      "ontology shape https://ggen.io/profile/ash-atlassian#ArchitectureReceipt has no resource entry | " <>
                      "ontology shape https://ggen.io/profile/ash-atlassian#ArchitectureRequirement has no resource entry | " <>
+                     "ontology shape https://ggen.io/profile/ash-atlassian#ClosureResidual has no resource entry | " <>
+                     "ontology shape https://ggen.io/profile/ash-atlassian#MarketplaceCapabilityDelta has no resource entry | " <>
                      "ontology shape https://ggen.io/profile/ash-atlassian#SbbQualification has no resource entry | " <>
                      "ontology shape https://ggen.io/profile/ash-atlassian#TransitionObligation has no resource entry"
 
@@ -755,6 +762,8 @@ defmodule Xaas.Sjira.ArdCourtTest do
                      "undeclared hand-written file (neither generated nor listed): lib/ash_atlassian/governance/architecture_decision.ex | " <>
                      "undeclared hand-written file (neither generated nor listed): lib/ash_atlassian/governance/architecture_receipt.ex | " <>
                      "undeclared hand-written file (neither generated nor listed): lib/ash_atlassian/governance/architecture_requirement.ex | " <>
+                     "undeclared hand-written file (neither generated nor listed): lib/ash_atlassian/governance/closure_residual.ex | " <>
+                     "undeclared hand-written file (neither generated nor listed): lib/ash_atlassian/governance/marketplace_capability_delta.ex | " <>
                      "undeclared hand-written file (neither generated nor listed): lib/ash_atlassian/governance/sbb_qualification.ex | " <>
                      "undeclared hand-written file (neither generated nor listed): lib/ash_atlassian/governance/transition_obligation.ex"
 
