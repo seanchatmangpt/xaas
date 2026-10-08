@@ -40,7 +40,7 @@ Each resource gained `AshTypescript.Resource` in its `extensions:` list and a `t
 type_name "..." end` block, e.g. (from `lib/xaas/billing/subscription.ex`):
 
 ```elixir
-extensions: [AshJsonApi.Resource, AshGraphql.Resource, AshIam, AshTypescript.Resource]
+extensions: [AshJsonApi.Resource, AshIam, AshTypescript.Resource]
 
 typescript do
   type_name "BillingSubscription"
@@ -191,6 +191,55 @@ the paren spelling; see `docs/sjira/v26.10.6/plans/w636-rpc-repoint.md`).
 
 **Dependency**: `{:ash_typescript, "~> 0.17"}` (`mix.exs:137`); config requires the
 0.18-era mandatory `manifest:` module (`config/config.exs:186-187`).
+
+## Verified 2026-10-07 (W984hv truth-pass)
+
+Every load-bearing claim above re-checked against the working tree at `feat/playwright-surface`.
+All substantive claims hold; only line-number citations drifted. Corrections (disk-verified):
+
+- Router mount is at `lib/xaas_web/router.ex:109-110` (doc said 101-102) -- `post("/rpc/run",
+  AshTypescriptRpcController, :run)` / `post("/rpc/validate", AshTypescriptRpcController,
+  :validate)`, confirmed inside the token-gated `/internal-api` scope (`pipe_through`
+  includes `:require_internal_api_token`).
+- `run_endpoint`/`validate_endpoint` config is at `config/config.exs:180-181` (doc said
+  182-183); the mandatory `manifest: Xaas.AshTypescriptManifest` is at `config/config.exs:185`
+  (doc said 186-187).
+- `{:ash_typescript, "~> 0.17"}` is at `mix.exs:153` (doc said 137).
+- `check_rpc_alignment/1` now lives at `lib/mix/tasks/xaas.release_audit.ex:596` (doc said
+  313-349); behavior unchanged: fails-closed unless both canonical endpoint strings are in
+  `config/config.exs` and both controller routes are in `lib/xaas_web/router.ex`.
+
+Confirmed unchanged and real:
+
+- Generated artifacts: `assets/js/ash_rpc.ts` (400 lines) and `assets/js/ash_types.ts`
+  (939 lines) -- counts match the v26.10.6 Status block exactly.
+- All 4 generated RPC exports present in `assets/js/ash_rpc.ts`: `listAccountsOrgs` (:193),
+  `listBillingSubscriptions` (:268), `listMarketplaceProviders` (:343), `measureProject`
+  (:380).
+- Domain table exact: `Xaas.Accounts` (`lib/xaas/accounts.ex:10-14`, `:list_accounts_orgs,
+  :read`), `Xaas.Billing` (`lib/xaas/billing.ex:10-14`, `:list_billing_subscriptions, :read`),
+  `Xaas.Marketplace` (`lib/xaas/marketplace.ex:14-18`, `:list_marketplace_providers, :read`),
+  `Xaas.Operations` (`lib/xaas/operations.ex:21-25`, `:measure_project, :measure` --
+  a mutating-generic `bypass`-declared action, not a plain `:read`; still no
+  customer-facing mutating RPC beyond this).
+- `AshTypescript.Resource` extension present on all 4 resources (`subscription.ex:110`,
+  `provider.ex:22`, `org.ex:79`, `project_measure/measurement.ex:21`); `AshTypescript.Rpc`
+  on all 4 domains.
+- Court `test/xaas_web/rpc_surface_deepening_test.exs` exists and is real: W813 deepening
+  court, real ConnCase over the real router and sandboxed Postgres, no mocks; covers
+  success envelope, typed validation payload, unknown-action typed error, W723 auth floor,
+  W636 repoint, determinism.
+- Controller `lib/xaas_web/controllers/ash_typescript_rpc_controller.ex` present, delegates
+  to `AshTypescript.Rpc`.
+- **GraphQL status**: this doc makes no "typescript replaces graphql" claim and needs none --
+  graphql was excised (W984ao/W984et: `ash_graphql`/`absinthe*` unlocked from mix.lock,
+  no graphql scope in the router). The only live graphql-adjacent surface is
+  `lib/xaas/semantics/vkg.ex` `graphql/2` via `ash_r2rml`, unrelated to ash_typescript.
+  Excision trail: `docs/sjira/v26.10.6/plans/w984et-probe.md`.
+
+No `w984ho` RPC probe receipt file exists in `docs/sjira/v26.10.6/plans/` as of this pass
+(glob returned no matches), so the router/config/controller greps above are the
+verification of record for the RPC surface.
 
 ## See Also
 

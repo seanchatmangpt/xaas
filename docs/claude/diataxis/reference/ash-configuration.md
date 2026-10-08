@@ -23,7 +23,8 @@ why these choices were made, see the companion Explanation doc (`explanation/ash
 
 | Key | Value |
 |---|---|
-| `tracer` | `[OpentelemetryAsh]` |
+| `tracer` | `[OpentelemetryAsh, Xaas.Telemetry.OcelAshEmitter]` (`config/config.exs:67` — the OCEL emitter needs Ash.Tracer's set_handled_error/set_error callbacks to distinguish OCEL outcome ok/error) |
+| `default_string_length_count` | `:codepoints` (`config/config.exs:188`) |
 | `allow_forbidden_field_for_relationships_by_default` | `true` |
 | `include_embedded_source_by_default?` | `false` |
 | `show_keysets_for_all_actions?` | `false` |
@@ -45,9 +46,23 @@ why these choices were made, see the companion Explanation doc (`explanation/ash
 custom_types: [
   money: AshMoney.Types.Money,
   capability_class: Xaas.Governance.Types.CapabilityClass,
-  interface: Xaas.Governance.Types.Interface
+  interface: Xaas.Governance.Types.Interface,
+  # ... 26 further entries (see config/config.exs:202-233) ...
 ]
 ```
+
+The full registration is 29 entries (`config/config.exs:202-233`): the three
+above plus 26 more `Ash.Type.Enum` types across Governance (`project_tier`,
+`cmek_provider`, `pentest_finding_resolution`, `environment`,
+`change_of_control_event_type`, `export_subscription_cadence`,
+`export_subscription_scope`, `le_request_type`, `le_response_status`,
+`insurance_coverage_type`, `override_decision`, `subprocessor_category`,
+`subprocessor_change_action`, `org_role`, `deployment_quarantine_reason`,
+`pentest_finding_severity`, `pentest_finding_status`),
+Operations (`incident_severity`, `incident_status`,
+`incident_postmortem_status`), and Ultracode CapitalCensus (`frontier_outcome`,
+`gap_status`, `primitive_target`, `recurrence_class`, `resolution_outcome`,
+`work_order_status`).
 
 | Short type code | Module | Definition |
 |---|---|---|
@@ -62,45 +77,42 @@ All 19 domains live directly under `lib/xaas/*.ex` (one file per domain), each
 where extensions permit. Resource counts are read directly from each domain's real
 `resources do ... end` block (re-verified 2026-10-07 at HEAD `a0723bf6`; 116 resources total).
 Extension columns record which extensions a domain `use`s — that is code
-wiring, not proof the corresponding protocol is served over HTTP (see
-[GraphQL surface status](#graphql-surface-status) below for the AshGraphql
-case).
+wiring, not proof the corresponding protocol is served over HTTP.
 
 | Domain module | File | Extensions | Resource count |
 |---|---|---|---|
-| `Xaas.Library` | `lib/xaas/library.ex` | `AshJsonApi.Domain`, `AshGraphql.Domain`, `AshAdmin.Domain`, `AshAi` | 7 |
-| `Xaas.Accounts` | `lib/xaas/accounts.ex` | `AshJsonApi.Domain`, `AshGraphql.Domain`, `AshAdmin.Domain`, `AshTypescript.Rpc` | 5 |
+| `Xaas.Library` | `lib/xaas/library.ex` | `AshJsonApi.Domain`, `AshAdmin.Domain`, `AshAi` | 7 |
+| `Xaas.Accounts` | `lib/xaas/accounts.ex` | `AshJsonApi.Domain`, `AshAdmin.Domain`, `AshTypescript.Rpc` | 5 |
 | `Xaas.A2a` | `lib/xaas/a2a.ex` | `AshAdmin.Domain` | 2 (`Xaas.A2a.Agent`, `Xaas.A2a.Task`) |
-| `Xaas.Billing` | `lib/xaas/billing.ex` | `AshJsonApi.Domain`, `AshGraphql.Domain`, `AshAdmin.Domain`, `AshTypescript.Rpc` | 8 |
-| `Xaas.Conference` | `lib/xaas/conference.ex` | `AshJsonApi.Domain`, `AshGraphql.Domain`, `AshAdmin.Domain` | 7 (`Event`, `Track`, `Session`, `Speaker`, `Sponsor`, `Attendee`, `Registration` — all Ets-backed) |
+| `Xaas.Billing` | `lib/xaas/billing.ex` | `AshJsonApi.Domain`, `AshAdmin.Domain`, `AshTypescript.Rpc` | 8 |
+| `Xaas.Conference` | `lib/xaas/conference.ex` | `AshJsonApi.Domain`, `AshAdmin.Domain` | 7 (`Event`, `Track`, `Session`, `Speaker`, `Sponsor`, `Attendee`, `Registration` — all Ets-backed) |
 | `Xaas.Coupling` | `lib/xaas/coupling.ex` | `AshAdmin.Domain` | 1 |
 | `Xaas.Generation` | `lib/xaas/generation.ex` | (none) | 1 |
 | `Xaas.Graphlaw` | `lib/xaas/graphlaw.ex` | `AshAdmin.Domain` | 2 (`Xaas.Graphlaw.EngineLimit`, `Xaas.Graphlaw.Capability`) |
-| `Xaas.Governance` | `lib/xaas/governance.ex` | `AshJsonApi.Domain`, `AshGraphql.Domain`, `AshPaperTrail.Domain`, `AshAdmin.Domain` | 28 |
-| `Xaas.Igniter` | `lib/xaas/igniter.ex` | `AshJsonApi.Domain`, `AshGraphql.Domain`, `AshAdmin.Domain`, `AshTypescript.Rpc` | 2 (`Xaas.Igniter.PackManifest`, `Xaas.Igniter.RefusalCode`) |
-| `Xaas.Ledger` | `lib/xaas/ledger.ex` | `AshJsonApi.Domain`, `AshGraphql.Domain`, `AshAdmin.Domain` | 4 |
-| `Xaas.Marketplace` | `lib/xaas/marketplace.ex` | `AshJsonApi.Domain`, `AshGraphql.Domain`, `AshAdmin.Domain`, `AshTypescript.Rpc` | 3 |
+| `Xaas.Governance` | `lib/xaas/governance.ex` | `AshJsonApi.Domain`, `AshPaperTrail.Domain`, `AshAdmin.Domain` | 28 |
+| `Xaas.Igniter` | `lib/xaas/igniter.ex` | `AshJsonApi.Domain`, `AshAdmin.Domain`, `AshTypescript.Rpc` | 2 (`Xaas.Igniter.PackManifest`, `Xaas.Igniter.RefusalCode`) |
+| `Xaas.Ledger` | `lib/xaas/ledger.ex` | `AshJsonApi.Domain`, `AshAdmin.Domain` | 4 |
+| `Xaas.Marketplace` | `lib/xaas/marketplace.ex` | `AshJsonApi.Domain`, `AshAdmin.Domain`, `AshTypescript.Rpc` | 3 |
 | `Xaas.Ocel` | `lib/xaas/ocel.ex` | `AshAdmin.Domain` | 5 |
-| `Xaas.Operations` | `lib/xaas/operations.ex` | `AshJsonApi.Domain`, `AshGraphql.Domain`, `AshAdmin.Domain`, `AshTypescript.Rpc`, `Xaas.Operations.ProjectMeasure.Extension` | 21 |
-| `Xaas.Platform` | `lib/xaas/platform.ex` | `AshJsonApi.Domain`, `AshGraphql.Domain`, `AshAdmin.Domain` | 7 |
+| `Xaas.Operations` | `lib/xaas/operations.ex` | `AshJsonApi.Domain`, `AshAdmin.Domain`, `AshTypescript.Rpc`, `Xaas.Operations.ProjectMeasure.Extension` | 21 |
+| `Xaas.Platform` | `lib/xaas/platform.ex` | `AshJsonApi.Domain`, `AshAdmin.Domain` | 7 |
 | `Xaas.Security` | `lib/xaas/security.ex` | `AshAdmin.Domain` | 2 (`Xaas.Security.Finding`, `Xaas.Security.Posture`) |
 | `Xaas.TemporalMemory` | `lib/xaas/temporal_memory.ex` | (none) | 1 |
-| `Xaas.Ultracode` | `lib/xaas/ultracode.ex` | `AshJsonApi.Domain`, `AshGraphql.Domain`, `AshAdmin.Domain` | 8 |
+| `Xaas.Ultracode` | `lib/xaas/ultracode.ex` | `AshJsonApi.Domain`, `AshAdmin.Domain` | 8 |
 | `Xaas.Witness` | `lib/xaas/witness.ex` | `AshAdmin.Domain` | 2 (`Xaas.Witness.CertifiedReceipt`, `Xaas.Witness.VerificationKey`) |
 
-### GraphQL surface status
+### GraphQL removal status
 
-The `AshGraphql.Domain` entries in the table above record **extension
-presence only — they do not imply HTTP GraphQL exposure**. At v26.10.6:
-
-- `Xaas.GraphqlSchema` (`lib/xaas/graphql_schema.ex`) compiles, but is **not
-  mounted over any HTTP route**: no `Absinthe.Plug` forward exists in
-  `lib/xaas_web/router.ex`, the endpoint, or either JSON:API router.
-- Only **3 domains** are wired into the schema (`Xaas.Operations`,
-  `Xaas.Library`, `Xaas.Marketplace`) — not "most" of the 19 listed above.
-- Standing: `UNSUPPORTED(graphql-http-surface)` per
-  `docs/sjira/v26.10.6/plans/w802-graphql-surface.md` (verified 2026-10-07 at
-  HEAD `a0723bf6`).
+Removed by operator directive "no GraphQL" (2026-10-07). The AshGraphql
+extensions, resource `graphql do ... end` blocks, `Xaas.GraphqlSchema`,
+`Absinthe` deps, and the GraphQL-over-HTTP router scope were deleted
+fix-forward. Receipts: `plans/w984ao-graphql-removal.md` (repo may still be
+acquiring its receipt — verify with `test -f`), commit `12d5f6d3` +
+`c0ba9f20`; W984bu (e2e surface removal); W984bk (straggler sweep — no
+`AshGraphql.*` wiring, no schema, no router scope remains). No domain or
+resource carries
+`AshGraphql.*` wiring anymore; the table above reflects the post-removal
+extension lists.
 
 What the domains added since the original eight own:
 
@@ -220,3 +232,27 @@ E2E spec `e2e/witness.spec.cjs` (lane W1, v26.10.6) targets a read-only
 (`live("/witness", WitnessLive)`) and the LiveView is
 `lib/xaas_web/live/witness_live.ex`; the domain resources are real and
 AshAdmin-visible.
+
+> **Verified 2026-10-07** (lane W984hy truth-pass, HEAD `82f7f558`): re-checked
+> claim-by-claim against the tree. `ash_domains` is 19 domains
+> (`config/config.exs:13-33`); per-domain resource counts re-counted from each
+> `resources do` block (7/5/2/8/7/1/1/2/28/2/4/3/5/21/7/2/1/8/2 = 116 total) and
+> all extension columns match disk. `AshAdmin.Domain` in 17 domains, each with
+> `admin do show?(true) end`; the exceptions remain `Xaas.Generation` and
+> `Xaas.TemporalMemory` (no AshAdmin extension, no `admin` block). The `/admin`
+> mount is dev-only at `lib/xaas_web/router.ex:364-373`. AshTypescript RPC is
+> served at `POST /internal-api/rpc/run|validate` (`lib/xaas_web/router.ex:109-110`,
+> `XaasWeb.AshTypescriptRpcController`); JSON:API is mounted as
+> `forward("/internal-api", XaasWeb.InternalApiRouter)` (`router.ex:286`) and
+> `forward("/api", XaasWeb.ApiRouter)` (`router.ex:330`) — both `AshJsonApi.Router`
+> sub-routers. Policy-floor spot check holds (`lib/xaas/library/book.ex` read
+> policy, cited at `router.ex:170-172`). GraphQL remains excised: zero
+> `AshGraphql` wiring in lib/, no graphql router scope, `mix.lock` unlocked
+> (W984ao + `plans/w984et-probe.md`); the sole live exception is
+> `lib/xaas/semantics/vkg.ex:66-67` `graphql/2` via `AshR2RML.VKG.Consumer.GraphQL`
+> (ash_r2rml git dep) — not the removed AshGraphql surface. Three drift fixes
+> were applied this pass: (1) `config :ash, :tracer` is now
+> `[OpentelemetryAsh, Xaas.Telemetry.OcelAshEmitter]` (`config/config.exs:67`);
+> (2) `:ash` config also sets `default_string_length_count: :codepoints`
+> (`config/config.exs:188`); (3) `custom_types` carries 29 registrations, not 3
+> (`config/config.exs:202-233`).

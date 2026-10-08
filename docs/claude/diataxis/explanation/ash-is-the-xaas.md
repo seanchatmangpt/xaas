@@ -13,7 +13,7 @@ In conventional software architectures, "Everything-as-a-Service" (XaaS) platfor
 
 By modeling the entire application domain as structured, declarative data rather than procedural controller code, Ash Framework provides:
 1. **Single Source of Truth**: A single resource definition specifies data storage, validations, lifecycle changes, calculations, authorization policies, and database transactions.
-2. **Multi-Interface Convergence**: That single declaration automatically powers JSON:API endpoints, GraphQL schemas, Phoenix LiveView reactive UI bindings, Admin dashboards, and AI Agent MCP (Model Context Protocol) tool calls without glue code.
+2. **Multi-Interface Convergence**: That single declaration automatically powers JSON:API endpoints, Phoenix LiveView reactive UI bindings, Admin dashboards, and AI Agent MCP (Model Context Protocol) tool calls without glue code.
 3. **Atomic Concurrency & Invariants**: Concurrency guarantees (such as inventory decrementing and quota allocations) execute at the database row level via `change atomic_update` and expressions, preventing race conditions.
 4. **Governed Consequential Actuation**: Complex side-effecting operations (such as infrastructure provisioning and provider lifecycle transitions) run through Reactor workflows with automatic rollback and cryptographic audit receipts.
 
@@ -39,7 +39,6 @@ graph TD
 
     subgraph "4. Multi-Interface Exposure"
         JsonApi["JSON:API (/api, /internal-api)"]
-        GraphQL["GraphQL (/gql)"]
         LiveView["Phoenix LiveView (/next-read)"]
         McpServer["Ash AI MCP Server (/mcp)"]
         A2AServer["Agent-to-Agent Protocol (/a2a)"]
@@ -48,7 +47,7 @@ graph TD
     Ontology --> AshDomain
     AshDomain --> Library & Governance & Operations & Billing
     Library & Governance & Operations & Billing --> Reactor & AshPostgres & PubSubMesh
-    Reactor & AshPostgres & PubSubMesh --> JsonApi & GraphQL & LiveView & McpServer & A2AServer
+    Reactor & AshPostgres & PubSubMesh --> JsonApi & LiveView & McpServer & A2AServer
 ```
 
 ---
@@ -58,7 +57,6 @@ graph TD
 Consider the `Xaas.Library.Book` resource. In a traditional stack, exposing a book catalog requires:
 - An Ecto schema and migration.
 - Controller actions for REST and JSON rendering views.
-- Absinthe GraphQL object types and resolver functions.
 - Phoenix Channel / LiveView event handlers and broadcast triggers.
 - MCP / OpenAPI tool definitions for LLM agents.
 
@@ -67,12 +65,12 @@ In XaaS, all of these interfaces converge on a single declarative block:
 ```elixir
 defmodule Xaas.Library.Book do
   use Xaas.Resource,
-    otp_app: :kanban,
+    otp_app: :xaas,
     domain: Xaas.Library,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
     notifiers: [Ash.Notifier.PubSub],
-    extensions: [AshJsonApi.Resource, AshGraphql.Resource]
+    extensions: [AshJsonApi.Resource]
 
   json_api do
     type "library_book"
@@ -81,10 +79,6 @@ defmodule Xaas.Library.Book do
       get :read
       index :read
     end
-  end
-
-  graphql do
-    type :library_book
   end
 
   pub_sub do
@@ -113,10 +107,14 @@ end
 
 ### What This Produces Automatically:
 1. **JSON:API**: `GET /api/library/books` with standardized filtering, sparse fieldsets, and pagination.
-2. **GraphQL**: Query `library_book` with type-safe fields and loaded calculations.
-3. **Reactive PubSub**: Publishes `%Ash.Notifier.Notification{}` on `"library:books:events"` whenever a copy is borrowed.
-4. **Ash AI MCP Tool**: Exposing `:books_by_grade_band` in `Xaas.Library` makes it an instant tool for Claude, Zed, and Cursor at `/mcp`.
-5. **A2A Persona Simulation**: Simulated student agents at `/a2a` interact with the same authorization policies and inventory actions.
+2. **Reactive PubSub**: Publishes `%Ash.Notifier.Notification{}` on `"library:books:events"` whenever a copy is borrowed.
+3. **Ash AI MCP Tool**: Exposing `:books_by_grade_band` in `Xaas.Library` makes it an instant tool for Claude, Zed, and Cursor at `/mcp`.
+4. **A2A Persona Simulation**: Simulated student agents at `/a2a` interact with the same authorization policies and inventory actions.
+
+> Note: the GraphQL interface was removed by operator directive 2026-10-07
+> ("no GraphQL") — AshGraphql extensions, schema, and HTTP surface deleted
+> fix-forward. See `docs/sjira/v26.10.6/plans/w984ao-graphql-removal.md`
+> and `docs/claude/diataxis/reference/ash-configuration.md`.
 
 ---
 
@@ -163,7 +161,7 @@ Next Read serves as the end-to-end demonstration of the XaaS architectural model
    $$\text{Score} = w_{\text{collab}}\cdot \text{collab} + w_{\text{semantic}}\cdot \text{semantic} + w_{\text{grade}}\cdot \text{gradeFit} + w_{\text{avail}}\cdot \text{available} + w_{\text{div}}\cdot \text{diversity} + w_{\text{cur}}\cdot \text{curation}$$
    Backed by local Nx/Bumblebee sentence embeddings.
 3. **Reactive Phoenix LiveView**: The student UI at `/next-read` maintains zero mutable state in controller memory, instead subscribing directly to Ash PubSub channels and re-rendering on notification broadcasts.
-4. **End-to-End Browser Automation**: Verified with Playwright (`e2e/next-read-ml.spec.js`) validating match percentage displays, live grade switching, and real-time checkout state transitions.
+4. **End-to-End Browser Automation**: Verified with Playwright (`e2e/next-read-ml.spec.cjs`) validating match percentage displays, live grade switching, and real-time checkout state transitions.
 
 ---
 
@@ -184,3 +182,60 @@ The platform comprises 8 Ash domains spanning 74 declarative resources:
 | **Platform** | `Xaas.Platform` | 7 | Outbound HMAC webhooks, delivery logs, and platform policies. |
 | **Governance** | `Xaas.Governance` | 27 | Maker-checker approval gates (CMEK, DR failover, legal hold releases, freeze windows). |
 | **Library** | `Xaas.Library` | 5 | Books, Checkouts, Holds, Curations, and RecommendationLogs (Next Read case study). |
+
+---
+
+## Verified 2026-10-07
+
+> **Verified 2026-10-07** (lane W984ik, truth-pass; sibling-modified file, disk state
+> read first, append/patch-only, no sibling edits reverted). Claim-by-claim against
+> the current tree:
+>
+> - **Domain/resource architecture**: `config/config.exs:13-33` lists 19
+>   `ash_domains` (Library, Accounts, A2a, Billing, Conference, Coupling, Generation,
+>   Graphlaw, Governance, Igniter, Ledger, Marketplace, Ocel, Operations, Platform,
+>   Security, TemporalMemory, Ultracode, Witness); 115 files under `lib/xaas` declare
+>   `use Xaas.Resource`. The Section 5 census (8 domains / 74 resources) and its
+>   2026-09-26 VERIFY note (13 domains / 92 resources) are both stale point-in-time
+>   snapshots; the live counts above are current truth.
+> - **Book resource**: `lib/xaas/library/book.ex` matches the Section 2 sample except
+>   as patched — real `otp_app: :xaas` (was misstated `:kanban`), extensions are
+>   `[AshJsonApi.Resource, AshAdmin.Resource, AshAi]`, and the real resource carries
+>   a BLOCKED-at-infrastructure pgvector/ash_ai `vectorize` block (see its
+>   moduledoc) not shown in the illustrative sample. `:borrow_copy` with
+>   `validate compare(:available_copies, greater_than: 0)` +
+>   `change atomic_update(:available_copies, expr(available_copies - 1))` verified at
+>   `book.ex:144-151`; `calculate :is_available` at `book.ex:259`; `json_api` block at
+>   `book.ex:95`.
+> - **Checkout orchestration (Section 3)**: `Checkout.borrow` +
+>   `Xaas.Library.Changes.DecrementBookInventory` calling `Book.borrow_copy` in one DB
+>   transaction verified in `lib/xaas/library/reactors/circulation_borrow_reactor.ex`
+>   (transaction `:borrow_transaction`, lines 44-81) — the narrative is current.
+> - **ggen/Ash manufacture path**: this doc makes no ggen-pack claim; verified
+>   separately that `ggen.toml` binds `[ontology] ontology.ttl`,
+>   `[templates] templates-hooks`, and locked pack `xaas_castle_bridge`
+>   (pinned `b58d7854142bacbd3aeffb83501646cae56c858a`,
+>   `packs/xaas-castle-bridge-pack`) — consistent with the CLAUDE.md
+>   single-normal-profile doctrine; no marketplace `ash-*` sibling binding exists.
+> - **GraphQL reflection**: the Section 2 note is current-truth: AshGraphql
+>   extensions/schema/router surface removed fix-forward (receipt
+>   `docs/sjira/v26.10.6/plans/w984ao-graphql-removal.md`; residue sweep
+>   `docs/sjira/v26.10.6/plans/w984et-probe.md`); sole live residue is
+>   `lib/xaas/semantics/vkg.ex:66-67` (`graphql/2` via the `ash_r2rml` consumer,
+>   not an HTTP surface); `lib/xaas/operations/audit_log_entry.ex:20` states "no
+>   GraphQL surface remains in this codebase". Cross-confirmed at
+>   `docs/claude/diataxis/reference/ash-configuration.md:104-109`.
+> - **Actuation/authority narrative**: Section 1(4) keeps the governed framing
+>   ("Consequential Actuation ... through Reactor workflows") and makes no
+>   projection-grants-authority claim; consistent with CLAUDE.md consequential-DO
+>   doctrine.
+> - **Multi-interface surface**: `/next-read` Live
+>   (`lib/xaas_web/router.ex:65`), `/mcp` scope (`router.ex:190`),
+>   `/a2a` scope (`router.ex:210`), `/internal-api` forward (`router.ex:286`),
+>   `/api` forward (`router.ex:330`); MCP tool `books_by_grade_band` at
+>   `lib/xaas/library.ex:20`. E2E spec is `e2e/next-read-ml.spec.cjs` (was
+>   misstated `.js`; patched). Ontology file `priv/packs/xaas_library_pack/ontology.ttl`
+>   exists.
+> - Receipt: `docs/sjira/v26.10.6/plans/w984ik-probe.md`.
+> - Note: `docs/sjira/v26.10.6/plans/w650h22-commit.md` does not exist on disk
+>   (checked `ls`); no citation to it was added.
