@@ -5,6 +5,24 @@
 > `docs/sjira/v26.10.6/plans/w841-ashadmin-howto-verify.md`. Corrections made in place
 > are cited per claim in that receipt.
 
+> **Verified 2026-10-07** (lane W984gz, re-check of the W841 pass): all actionable
+> claims below re-verified against the current tree — 19 domains in
+> `config :xaas, ash_domains` (`config/config.exs`), 17 carry `AshAdmin.Domain` +
+> `admin do show?(true) end` (exceptions still `Xaas.Generation`,
+> `Xaas.TemporalMemory`); `accounts.ex` excerpt matches disk; `/admin` mount at
+> `lib/xaas_web/router.ex:364-373` (dev-only); `ggen.toml` still binds
+> `ontology.ttl` + `templates-hooks` + locked pack `xaas_castle_bridge`; 55
+> `xar:RenderTarget` individuals; `.ash-gen-receipts/` populated (88 files). No
+> "generate admin/graphql" steps exist in this guide to correct — GraphQL was
+> excised this campaign (91 lib files, W984ao; residue sweep receipt
+> `docs/sjira/v26.10.6/plans/w984et-probe.md`; `mix.lock` unlocked of
+> `ash_graphql`/`absinthe*`); the sole live exception is
+> `lib/xaas/semantics/vkg.ex:66-67` `graphql/2` via the `ash_r2rml` consumer,
+> which is not the AshGraphql surface this guide never referenced. The guide's
+> JSON:API (`AshJsonApi.Domain`, `/internal-api`) assertions remain live. No
+> SpgGate/actuation-path or ggen_igniter `ash-manufacture-pack` claims appear in
+> this guide; nothing to correct on those axes.
+
 This guide covers two real, related tasks in this repo: getting `ash_admin` working for a
 new `Ash.Domain`, and using `ggen sync` + `templates-hooks/ash-gen-resource.txt.tmpl` to
 drive `mix ash.gen.resource` from the project ontology instead of hand-invoking it.
@@ -26,7 +44,7 @@ consolidation-wave formatting):
 defmodule Xaas.Accounts do
   use Ash.Domain,
     otp_app: :xaas,
-    extensions: [AshJsonApi.Domain, AshGraphql.Domain, AshAdmin.Domain, AshTypescript.Rpc]
+    extensions: [AshJsonApi.Domain, AshAdmin.Domain, AshTypescript.Rpc]
 
   admin do
     show?(true)

@@ -190,7 +190,7 @@ replay, not fixed by W633/W641.
 | 11 | xaas seal commit `56325fa5` not reachable from `origin/main` — seal is branch-local until coordinator merges `feat/playwright-surface` → main | OPEN (BLOCKED-class, coordinator) — **re-verified 2026-10-07 (W984ge)**: `git merge-base --is-ancestor 56325fa5 origin/main` fails; still NOT reachable | `plans/w650k3-tag-verdict.md` (W650k4) |
 | 12 | ash_pplan post-tag `847f487b` (W650j version-companion fix) is arguably release content — cut v26.10.8 or accept per W628b | OPEN (operator decision) — **re-verified 2026-10-07 (W984ge)**: `~/ash_pplan` HEAD still `847f487`, `v26.10.7-2-g847f487` (2 commits ahead of tag); untouched | `plans/w650k3-tag-verdict.md`, `plans/w650j-pplan-pins.md` |
 | 13 | idempotency-deepening 3F (`run_idempotency_deepening_test.exs`) | **CLOSED (W650h23, 2026-10-07)** — real cause: unscoped global reads vs committed foreign rows in shared `xaas_test` (READ COMMITTED leak); scope fix, zero lib/ changes; repair + commit receipts landed | `~/xaas/docs/sjira/v26.10.6/plans/w650h23-repair.md`, `plans/w650h23-commit.md` (commit `8a5f7ea7`) |
-| 14 | W984ee court file (`test/xaas/compat/otp29_map_update_court_test.exs`) loss → W984fo restoration | **STILL OPEN — restoration in flight, NOT closed (W984ge, 2026-10-07)**: file present on disk (92 lines, W984ee/OS-20 guard + census court) but **untracked** (`git status` = `??`; never committed per `git log --all`); no `w984fo` receipt in either plans corpus. Owed: commit of the court file + landed W984fo receipt | evidence: `git log --all -- test/xaas/compat/otp29_map_update_court_test.exs` empty; file on disk 2026-10-07 |
+| 14 | W984ee court file (`test/xaas/compat/otp29_map_update_court_test.exs`) loss → W984fo restoration | **CLOSED (W984gr, 2026-10-07)** — court file and receipt both landed by W984gi in commit `e49d7033` (landing batch #5): `git log --all` shows `e49d7033` touching both the file and `plans/w984fo-restoration.md`; both tracked clean at HEAD (`git ls-files` confirms). Court re-run green at HEAD: `MIX_ENV=test MIX_BUILD_ROOT=_build-laneW984gr mix test test/xaas/compat/otp29_map_update_court_test.exs` → **7 passed, exit 0**. Receipt: `docs/sjira/v26.10.6/plans/w984gr-item14.md` | commit `e49d7033` (W984gi); court run 2026-10-07; `plans/w984fo-restoration.md`, `plans/w984gr-item14.md` |
 
 ## Standing summary
 
@@ -204,8 +204,10 @@ replay, not fixed by W633/W641.
 
 - Census gate: **ALIVE at HEAD `56325fa5`** (W650b confirming witness,
   1352/0/1, exit 0 — item 1 closed; W984dj superseded). Remaining DRAFT
-  blockers after W984ge truthing: item 14 (W984ee court file untracked,
-  W984fo receipt absent) and the coordinator/operator items 11 and 12.
+  blockers after W984gr closure of item 14 (W984gi commit `e49d7033`,
+  court 7/0 exit 0): **exactly two** — coordinator merge (item 11: seal
+  `56325fa5` still not reachable from `origin/main`) and operator
+  ash_pplan call (item 12: `~/ash_pplan` at `847f487`, post-tag).
 - OS-18: ALIVE (`579454be`). Refusal ledger: ALIVE (`d95defa2`,
   digest `203fee7c…`). Playwright: ALIVE (371/371 + 6/6). WASM artifact:
   ALIVE (`1869a16`, digest `b7664a5e…`); Wasmex host committed
@@ -218,7 +220,6 @@ replay, not fixed by W633/W641.
   HEAD not tag (42 ahead), seal branch-local until main merge (item 11),
   ash_pplan post-tag operator item (item 12). a2a doc fix: ALIVE
   (`13dd1a57`, tag rides at `e0fb769e`, W628b). Shared DB: ALIVE at head.
-- Seal verdict: **DRAFT — items 1, 1b, 2, 3, and 13 closed (W650b, W984ge,
-  W650h23); not final until item 14 (W984ee court file commit + W984fo
-  receipt) closes, coordinator/operator items 11 and 12 resolve, and this
-  receipt is re-read against them.**
+- Seal verdict: **DRAFT — items 1, 1b, 2, 3, 13, and 14 closed (W650b, W984ge,
+  W650h23, W984gr); not final until coordinator/operator items 11 and 12
+  resolve and this receipt is re-read against them.**
