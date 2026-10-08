@@ -20,9 +20,10 @@ defmodule Xaas.Semantics.GraphlawWasm do
   * Return mode: `packed_u64` — `gl_call(in_ptr, in_len) -> packed`, one u64
     holding `(out_ptr <<< 32) | out_len`.
   * Imports: `wasi_snapshot_preview1` only, judged against a hard allowlist
-    (`@wasi_allowlist`); instantiation stubs are derived from the SAME list so
-    judge and stubs cannot drift. Anything outside the namespace or the list
-    is an `:import_surface_mismatch` refusal.
+    (`@wasi_allowlist`); instantiation runs on wasmex's REAL WASI store
+    (`Wasmex.Store.new_wasi/1`), never zero-value stubs (stubs trap on real
+    op:"law"/op:"shacl" workloads — W640 finding (c)). Anything outside the
+    namespace or the list is an `:import_surface_mismatch` refusal.
 
   ## Receipt identity
 
@@ -93,6 +94,10 @@ defmodule Xaas.Semantics.GraphlawWasm do
           artifact_path: String.t()
         }
 
+  @doc "The default artifact path (`priv/graphlaw.wasm`) this module boots from."
+  @spec artifact_path() :: String.t()
+  def artifact_path, do: @artifact_path
+
   @doc "Boots an instance from `priv/graphlaw.wasm` under the digest pin."
   @spec start() :: {:ok, instance()} | {:error, Refusal.t()}
   def start, do: start(@artifact_path)
@@ -103,11 +108,13 @@ defmodule Xaas.Semantics.GraphlawWasm do
 
   @doc """
   Admits (digest pin -> compile -> WASI-allowlist import surface -> required
-  exports) and boots the artifact at `path`. The W637 artifact imports exactly
-  7 `wasi_snapshot_preview1` functions (clock_time_get, environ_get,
-  environ_sizes_get, fd_write, proc_exit, random_get, sched_yield — witnessed
-  in W644/W984dh); admission judges against `@wasi_allowlist`, which is a
-  disclosed superset of those 7 (upstream-tolerant hardening).
+  exports) and boots the artifact at `path` on a REAL WASI store
+  (`Wasmex.Store.new_wasi/1` — wasmex's native `wasi_snapshot_preview1`
+  implementation, not zero-value stubs). Instantiating on zero-value stubs
+  TRAPS on real op:"shacl"/op:"law" workloads (witnessed by the W640
+  differential court, receipt finding (c)); the stubs path is retired. The
+  import judge still judges the module's real import surface against
+  `@wasi_allowlist` before boot.
 
   Options:
 
@@ -120,10 +127,12 @@ defmodule Xaas.Semantics.GraphlawWasm do
   @spec start(String.t(), keyword()) :: {:ok, instance()} | {:error, Refusal.t()}
   def start(path, opts) when is_binary(path) and is_list(opts) do
     with {:ok, bytes} <- read_bytes(path),
-         {:ok, engine, module} <- admit(bytes, opts),
-         {:ok, imports} <- instantiation_imports(module, opts),
-         {:ok, store} <- Wasmex.Store.new(nil, engine),
-         {:ok, pid} <- Wasmex.start_link(%{store: store, module: module, imports: imports}) do
+         :ok <- verify_digest(bytes, pin_for(opts)),
+         {:ok, store} <- wasi_store(),
+         {:ok, module} <- module_compile(store, bytes),
+         :ok <- judge_imports(Wasmex.Module.imports(module), opts),
+         :ok <- judge_exports(module, opts),
+         {:ok, pid} <- Wasmex.start_link(%{store: store, module: module, imports: %{}}) do
       {:ok, %{pid: pid, artifact_digest: digest(bytes), artifact_path: path}}
     end
   end
@@ -224,6 +233,19 @@ defmodule Xaas.Semantics.GraphlawWasm do
     end)
   end
 
+  @doc """
+  Input-buffer ownership contract, exposed as a public seam so courts can drive
+  the raise/exit cleanup paths with real collaborators (no mocks): allocates
+  `len` bytes in the guest via `gl_alloc`, runs `fun.(ptr)`, and guarantees the
+  input buffer is deallocated on every non-consumed exit path (pre-call
+  failure, raise, exit) while a guest-consumed buffer is never double-freed.
+  `fun` must return `{:consumed, result} | {:not_consumed, result}`.
+  """
+  @spec with_input_buffer(instance(), pos_integer(), (integer() -> {:consumed, term()} | {:not_consumed, term()})) ::
+          term()
+  def with_input_buffer(%{pid: pid}, len, fun) when is_integer(len) and len >= 0,
+    do: with_buffer(pid, len, fun)
+
   # -- admission -----------------------------------------------------------
 
   defp read_bytes(path) do
@@ -237,16 +259,17 @@ defmodule Xaas.Semantics.GraphlawWasm do
     end
   end
 
-  defp admit(bytes, opts) do
-    pin = pin_for(opts)
+  # Real WASI implementation (wasmex native wasi_snapshot_preview1), not
+  # zero-value stubs — see start/2 doc. Real wasi store is required for the
+  # op:"law"/op:"shacl" workloads the product path runs.
+  defp wasi_store do
+    case Wasmex.Store.new_wasi(%Wasmex.Wasi.WasiOptions{}) do
+      {:ok, store} ->
+        {:ok, store}
 
-    with :ok <- verify_digest(bytes, pin),
-         {:ok, engine} <- engine_new(),
-         {:ok, store} <- Wasmex.Store.new(nil, engine),
-         {:ok, module} <- module_compile(store, bytes),
-         :ok <- judge_imports(Wasmex.Module.imports(module), opts),
-         :ok <- judge_exports(module, opts) do
-      {:ok, engine, module}
+      {:error, reason} ->
+        {:error,
+         refuse(:invalid_wasm, "wasi store unavailable", %{reason: inspect(reason, limit: 5)})}
     end
   end
 
@@ -257,17 +280,6 @@ defmodule Xaas.Semantics.GraphlawWasm do
 
       :error ->
         Application.get_env(:xaas, :graphlaw_wasm_sha256) || @compile_time_pin
-    end
-  end
-
-  defp engine_new do
-    case Wasmex.Engine.new(%Wasmex.EngineConfig{}) do
-      {:ok, engine} ->
-        {:ok, engine}
-
-      {:error, reason} ->
-        {:error,
-         refuse(:invalid_wasm, "wasm engine unavailable", %{reason: inspect(reason, limit: 5)})}
     end
   end
 
@@ -308,48 +320,6 @@ defmodule Xaas.Semantics.GraphlawWasm do
 
   defp wasmex_type_atom(t) when t in [:i32, :i64, :f32, :f64], do: t
   defp wasmex_type_atom(_), do: :i32
-
-  # Instantiation stubs are derived from the SAME allowlist the judge used,
-  # so the judge and the stubs cannot drift.
-  defp instantiation_imports(module, opts) do
-    imports = Wasmex.Module.imports(module)
-    allow = Map.new(wasi_allowlist(opts), fn {ns, name, params, results} -> {{ns, name}, {params, results}} end)
-
-    stubs =
-      Enum.reduce(imports, %{}, fn {ns, functions}, acc ->
-        ns_stubs =
-          for {name, _type} <- functions,
-              spec = Map.get(allow, {to_string(ns), to_string(name)}),
-              into: %{} do
-            {params, results} = spec
-            {to_string(name), {:fn, params, results, stub_body(length(params), zero_results(results))}}
-          end
-
-        case ns_stubs do
-          empty when empty == %{} -> acc
-          _ -> Map.put(acc, to_string(ns), ns_stubs)
-        end
-      end)
-
-    {:ok, stubs}
-  end
-
-  defp zero_results([]), do: []
-
-  defp zero_results([t | rest]) do
-    case t do
-      :f32 -> [0.0 | zero_results(rest)]
-      :f64 -> [0.0 | zero_results(rest)]
-      _ -> [0 | zero_results(rest)]
-    end
-  end
-
-  # Admitted imports are bounded at 0-4 params, 0-1 results.
-  defp stub_body(0, ret), do: fn _ctx -> ret end
-  defp stub_body(1, ret), do: fn _ctx, _a -> ret end
-  defp stub_body(2, ret), do: fn _ctx, _a, _b -> ret end
-  defp stub_body(3, ret), do: fn _ctx, _a, _b, _c -> ret end
-  defp stub_body(4, ret), do: fn _ctx, _a, _b, _c, _d -> ret end
 
   defp judge_exports(module, opts) do
     exports = Wasmex.Module.exports(module)
@@ -459,18 +429,31 @@ defmodule Xaas.Semantics.GraphlawWasm do
   end
 
   # Allocates `len` bytes, runs `fun.(ptr) -> {:consumed, result} |
-  # {:not_consumed, result}`, and deallocs the input buffer only on the
-  # not-consumed path. The graphlaw guest frees the request buffer itself
-  # inside `gl_call`, so a host gl_free after a completed call would be a
-  # double free. Pre-call failures (e.g. write failure) still dealloc.
+  # {:not_consumed, result}`, and deallocs the input buffer on EVERY
+  # non-consumed exit path: pre-call failure, raise, or host-side exit. The
+  # graphlaw guest frees the request buffer itself inside `gl_call`, so a host
+  # gl_free after a completed call would be a double free.
+  #
+  # Leak-window fix (seam-deploy lane, 2026-10-08): before this change only the
+  # returned-{:not_consumed,_} path deallocated; a raise (or exit) out of
+  # `fun.(ptr)` propagated with the input buffer still allocated. The cleanup
+  # is now exception-safe and re-raises/re-exits with the original payload so
+  # the outer `guard/1` still classifies exits (`:call_timeout`/`:call_trapped`)
+  # unchanged.
   defp with_buffer(pid, len, fun) do
     case alloc(pid, len) do
       {:ok, ptr} ->
         {ownership, result} =
           try do
             fun.(ptr)
-          after
-            :noop
+          rescue
+            exception ->
+              safe_dealloc(pid, ptr, len)
+              reraise exception, __STACKTRACE__
+          catch
+            :exit, reason ->
+              safe_dealloc(pid, ptr, len)
+              exit(reason)
           end
 
         if ownership == :not_consumed do
