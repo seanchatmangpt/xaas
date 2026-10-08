@@ -93,3 +93,23 @@ That test file exercises the same production resources and Reactor path against 
 ## What you learned
 
 The public ontology projection identifies what the resource means; admission and authority decide whether a consequence may proceed; Reactor is the exclusive consequential DO path; and the sealed receipt makes replay deterministic. Those roles are intentionally separate.
+
+## Verified 2026-10-08 (W984ky truth-pass)
+
+All walkthrough claims re-checked against live code at branch
+`feat/playwright-surface`, HEAD `7d9968d0` + working tree:
+
+- `Xaas.Marketplace.Provider` (`lib/xaas/marketplace/provider.ex`): `:create`
+  accepts `[:name, :slug, :description, :org_id]` (`:69`); `status` defaults
+  `:pending` (`:104-107`); `:actuate_status` is `public?(false)` and validates
+  `Xaas.Actuation.Validations.ReactorContext` (`:79-84`) — the step-3
+  direct-path refusal claim holds.
+- `Xaas.Actuation.run/4` (`lib/xaas/actuation.ex:26`): opts are exactly
+  `:subject_id`, `:idempotency_key` (required, `:177`), `:authorize?`
+  (default `true`), `:authority` (default `%{}`) — the step-4/6 calls are
+  valid.
+- `intent.ontology_projection_hash` rides the returned intent
+  (`actuation.ex:155`), matching the step-4 note.
+- Falsifier `mix test test/xaas/actuation_test.exs` exists on disk.
+
+No drift found; no corrections required.

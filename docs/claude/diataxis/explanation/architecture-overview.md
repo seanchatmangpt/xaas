@@ -139,6 +139,20 @@ behind `Application.compile_env(:xaas, :dev_routes)` and never mounted outside d
   state and refuses with typed atoms (`:spg_identity_required`, `:spg_not_admitted`);
   the gate grants no authority — the BRCE actuation path stays exclusive
   (`lib/xaas/actuation.ex:639-660`, `f0321df2`).
+
+  > **Verified 2026-10-08** (lane W984kg, receipt
+  > `docs/sjira/v26.10.6/plans/w984kg-probe.md`): the lease kernel's
+  > `record_provider_event/2` (`lib/xaas/ultracode/lease.ex:956-962`) now
+  > returns the documented typed refusal `{:error, {:no_lease, token}}` for
+  > an unknown lease token. Previously `Ash.read_one`'s `{:ok, nil}` fell
+  > through to the generic `{:ok, %Epoch{}}` clause and crashed with a
+  > BadMapError (`epoch.id` on nil) — invisible at the wire boundary because
+  > the fabric court only saw the wrapped tool-error path. The W984kg court
+  > (`test/xaas/ultracode/lease_court_w984kg_test.exs`, 4 tests) pins the
+  > typed refusal plus three further uncovered branches (non-binary
+  > `lease_context/1`, option-shaped `subject_drift` stale-subject refusal,
+  > non-map `actuate/2` input coercion); 4/4 court + 81/81 family regression,
+  > mock gate `[]`.
 - **External capability bridges** (v26.10.6) — read/admit-shaped edges to sibling systems,
   in three distinct mechanisms:
   - **Registry rows** — `Xaas.Bridges.Registry` (`lib/xaas/bridges/registry.ex`) is a

@@ -31,7 +31,7 @@ The real fix (visible in the shipped `lib/xaas_web/mcp_scope.ex`) was to not gen
 tools: [...], ...)`, and the moduledoc documents the real requirement instead — the consumer
 must define their own `pipeline :audit_mcp_tool_call do plug
 XaasWeb.Plugs.AuditMcpToolCall end` in their own `router.ex` (this repo's real one is wired at
-`lib/xaas_web/router.ex:49-50`) and reference it via `pipe_through`, rather than the template
+`lib/xaas_web/router.ex:57`; was `49-50` before sibling edits shifted it) and reference it via `pipe_through`, rather than the template
 generating invalid code that pretends a macro body can inject a pipeline declaration from a
 `scope` call site.
 
@@ -62,7 +62,8 @@ purely-generated-file gate can see across the macro-expansion boundary.
 correct. Manually wire the generated macro into a real call site (a real router, a real
 module) and run `mix compile --warnings-as-errors` on **that** call site, not just on the
 generated file in isolation, before trusting the template. `XaasWeb.McpScope.mount/0` being
-actually `require`d and `import`ed at `lib/xaas_web/router.ex:180-181` and invoked inside a
+actually `require`d and `import`ed at `lib/xaas_web/router.ex:187-188` (was `180-181` before
+sibling edits shifted it) and invoked inside a
 real `scope "/mcp" do ... end` block is the concrete verification step that caught this
 exact defect class for this template.
 
@@ -119,7 +120,7 @@ capability row, not a one-off fix scoped only to this pack.
   `plug`-inside-`scope` limitation, and the real tool list.
 - `lib/xaas_web/a2a/next_read_user_agent_skills.ex` — the real generated A2A skills list and
   its regeneration command.
-- `lib/xaas_web/router.ex:49-50,180-181` — the real `pipeline :audit_mcp_tool_call` definition
+- `lib/xaas_web/router.ex:57,187-188` — the real `pipeline :audit_mcp_tool_call` definition
   and the real macro call site that verifies `mcp_scope.eex`'s output.
 - `~/ggen_igniter/lib/ggen_igniter/reactors/reconcile_reactor.ex` (`format_generated_content/2`,
   called from `render_target/3`) — the real in-process `Code.format_string!/1` auto-format
@@ -128,3 +129,18 @@ capability row, not a one-off fix scoped only to this pack.
   and `ema:capabilityTag` discriminator properties and their falsifying-evidence comments.
 - Commit `a0ee306` ("feat(mcp/a2a): rewrite generated pieces via real ggen_igniter dogfood
   run") — the real source commit for every defect and fix cited in this guide.
+
+> **Verified 2026-10-08** (lane W984kx): all actionable claims re-verified against
+> the current tree — `lib/xaas_web/mcp_scope.ex` real tool list still
+> `[:list_books, :books_by_grade_band, :active_curations_for_grade]` (lines 26, 52);
+> `lib/xaas_web/a2a/next_read_user_agent_skills.ex` real skills still
+> `["browse", "checkout", "hddl-plan"]`; `scope "/mcp"` still present
+> (`router.ex:190`); `pipeline :audit_mcp_tool_call` now at `router.ex:57` and
+> `require`/`import` at `187-188` (line refs corrected in place from stale
+> `49-50`/`180-181`); `format_generated_content/2` still defined at
+> `~/ggen_igniter/lib/ggen_igniter/reactors/reconcile_reactor.ex:1744`, called from
+> `render_target/3` at line 1717; `ema:exposedVia` at
+> `~/ggen-marketplace/packs/elixir-mcp-a2a-pack/ontology.ttl:65` with the
+> closed `"mcp"|"a2a"|"both"` vocabulary; `priv/ggen_igniter/mcp_a2a/` templates and
+> both `.rq` queries present; commit `a0ee306` resolves (`a0ee3069`). No graphql,
+> SpgGate, or `ash-manufacture-pack` claims in this guide.

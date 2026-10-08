@@ -161,3 +161,19 @@ router being hit, or the route block wasn't added.
 - `lib/xaas_web/plugs/require_internal_api_token.ex` — the real auth gate
 - `docs/archive/ASH-MIGRATION-PLAN.md` (historical) — Phase 5 deny-by-default floor and the still-open
   customer-facing mutation-surface decision (Phase 5 item 2)
+
+> **Verified 2026-10-08** (lane W984kx): all actionable claims re-verified against
+> the current tree — `lib/xaas_web/api_router.ex` still mounts the same 7 domains
+> (lines 13-19) guarded by `XaasWeb.Plugs.RequireInternalApiToken`;
+> `lib/xaas_web/internal_api_router.ex` still mounts only `Xaas.Operations` with
+> the plug at line 36; the plug fail-closes 503 (unset token) / 401 (missing or
+> wrong token); the `capability_liveness_receipt.ex` example block matches disk
+> (lines 114-129, `base`/`get(:read)`/`index(:read)` — the real file uses the
+> repo-wide paren-call convention); all 5 sensitive resources
+> (`Ledger.Balance`/`Account`/`Transfer`, `Accounts.User`/`Token`) still have no
+> `routes do` block; `/internal-api` explicit routes still precede the catch-all
+> `forward`. One stale figure, left as historical context: the "44 mechanically
+> migrated resources" count has grown (a grep counts ~71 files now carrying a
+> `json_api do routes do` block; the resource comment itself references a
+> "then-49-resource surface"). No graphql, SpgGate, or `ash-manufacture-pack`
+> claims in this guide.

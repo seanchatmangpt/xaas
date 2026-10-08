@@ -23,6 +23,21 @@
 > SpgGate/actuation-path or ggen_igniter `ash-manufacture-pack` claims appear in
 > this guide; nothing to correct on those axes.
 
+> **Verified 2026-10-08** (lane W984kx): all actionable claims re-verified against the
+> current tree — 19 `ash_domains`, 17 with `AshAdmin.Domain` + `show?(true)`,
+> exceptions still `Xaas.Generation`/`Xaas.TemporalMemory`; `/admin` mount still at
+> `lib/xaas_web/router.ex:364-373`; 55 `xar:RenderTarget` individuals;
+> `.ash-gen-receipts/` still 88 files; `templates-hooks/ash-gen-resource.txt.tmpl`
+> `sh_after` present; `deps/ash_admin` `show?/1` default `false` at
+> `domain.ex:47-49`; `e2e/ash-admin-state-change.spec.cjs` present. One correction:
+> the `xaas_castle_bridge` pack pin moved from `518572b6` to `b58d7854`
+> (`ggen.toml` `[packs.xaas_castle_bridge] version`), corrected in place below.
+> GraphQL excision state unchanged from the W984gz note (`mix.lock` has no
+> `ash_graphql`/`absinthe` lock entries; the two grep hits are optional-dep
+> declarations inside `ash_money`/`prom_ex` upstream metadata, not locked deps;
+> `lib/xaas/semantics/vkg.ex:66-67` remains the sole live `graphql/2`).
+> No SpgGate or `ash-manufacture-pack` claims in this guide.
+
 This guide covers two real, related tasks in this repo: getting `ash_admin` working for a
 new `Ash.Domain`, and using `ggen sync` + `templates-hooks/ash-gen-resource.txt.tmpl` to
 drive `mix ash.gen.resource` from the project ontology instead of hand-invoking it.
@@ -238,7 +253,8 @@ cd ~/xaas && ggen sync
 
 (Status at v26.10.6: `ggen.toml` binds `[ontology] source = "ontology.ttl"` and
 `[templates] dir = "templates-hooks"` — the procedure below is unchanged — and additionally
-carries the locked `xaas_castle_bridge` marketplace pack (`518572b6`), whose templates are
+carries the locked `xaas_castle_bridge` marketplace pack (`518572b6`, now `b58d7854` per the
+2026-10-08 note above), whose templates are
 unioned into the same sync; the `xar:RenderTarget` projection is unaffected. The ontology
 currently declares 55 `xar:RenderTarget` individuals, and `.ash-gen-receipts/` is populated
 from prior syncs.)
@@ -264,6 +280,7 @@ and `xar:domainModule`, then re-run `ggen sync` — no template or hook code nee
   domains (`config/config.exs:13-33`).
 - `ggen.toml` — the sync entry point: `[ontology] source = "ontology.ttl"`,
   `[templates] dir = "templates-hooks"`, plus the locked marketplace pack
-  `xaas_castle_bridge` pinned to ggen-marketplace `518572b6` (W636-era lock-closure
+  `xaas_castle_bridge` pinned to ggen-marketplace (was `518572b6`, now `b58d7854` —
+  see the 2026-10-08 note above; W636-era lock-closure
   state; new reusable capabilities must prefer locked marketplace packs over new vendored
   copies, per the ggen.toml header).

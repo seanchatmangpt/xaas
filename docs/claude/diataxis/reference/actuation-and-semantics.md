@@ -43,6 +43,27 @@ public ontology projection
 
 The Reactor executes synchronously (`async?: false`) within `Ash.DataLayer.transaction/4` over the target resource plus the intent/receipt resources. Reactor failure/halt rolls the transaction back.
 
+> **Verified 2026-10-08** (lane W984ip, receipt
+> `docs/sjira/v26.10.6/plans/w984ip-probe.md`): the undo arm is witnessed at
+> reactor level, not just unit level. The `:do` ash_step carries
+> `undo: &Xaas.Actuation.Kernel.undo_actuate/3` (`lib/xaas/actuation.ex:309`;
+> clauses at `lib/xaas/actuation.ex:448-450` — replay no-op vs cancellation),
+> and Reactor invokes it when `:do` succeeds but the later `:receipt` step
+> fails and the run rolls back. Court
+> `test/xaas/actuation/reactor_undo_court_w984ip_test.exs` (2 tests, zero
+> mocks) triggers this with a real boolean-seal failure: a
+> registry-admitted generic action (`Xaas.Accounts.Token` `:is_revoked`)
+> returns a bare boolean; `json_safe/1` preserves it and `Kernel.seal/2`'s
+> `Ash.update ... :seal` fails with a real `InvalidAttribute{field: :result}`
+> (the receipt `:result` attribute is typed `:map`), failing `:receipt`,
+> firing `undo_actuate/3` -> a real OCEL cancellation event
+> (`forward_cancellation/1`) captured on a real Bandit loopback server, and
+> rolling back the enclosing `Ash.DataLayer.transaction` (intent + receipt
+> rows absent afterwards; the idempotency key then admits a fresh run as
+> `replay? == false`). Boundary: if `Kernel.seal/2` ever normalizes non-map
+> results before the `:result` cast, this trigger disappears — the court
+> fails and the arm needs a new trigger (stated falsifier).
+
 ## SPG identity gate (fail-closed, opt-in)
 
 `Xaas.Actuation.SpgGate` (`lib/xaas/actuation/spg_gate.ex`; landed `f0321df2`,
@@ -570,6 +591,15 @@ killing mutation, receipt. Receipts live under `docs/sjira/v26.10.6/plans/`.
   `REFUSED(dev_seeds, env=test)`, zero rows; `:test` callers admitted only
   under a live SQL sandbox ownership checkout.
 - Receipt: w983f. Sanctioned :test exception is disclosed in the receipt.
+- Verified 2026-10-08 (post-W984fw, receipt
+  `docs/sjira/v26.10.6/plans/w984fw-seed-writer.md`): the Playwright e2e
+  path is PINNED to `MIX_ENV=dev` — `playwright.config.cjs` boots the
+  webServer with `MIX_ENV=dev` and `e2e/global-setup.cjs` runs both seed
+  scripts (`seed-witness.exs`, `seed-library.exs`) under `MIX_ENV=dev` —
+  so the sanctioned e2e boot seed (`e2e/seed-library.exs`) writes its
+  fixtures to `xaas_dev`, the same database the webServer serves. The
+  guard's `:test` branches (`e2e: true` opt-in, sandbox owner) remain as
+  fallbacks for the dev_seeds_test.exs courts, not for the e2e pipeline.
 
 Mutation-kill status: the OCEL determinism, OCEL destroy floor, reverse
 sufficiency, and SPEC-27 rows are KILL-verified by W984au's real mutation runs

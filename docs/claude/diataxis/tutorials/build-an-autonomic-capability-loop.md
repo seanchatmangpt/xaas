@@ -108,7 +108,7 @@ blocks and a status-vocabulary gate, each with file:line anchors in
   still refuses every other actor.
 - The `:ingest` action validates status through
   `Xaas.Operations.Validations.CapabilityLivenessReceiptStatusGate`
-  (`capability_liveness_receipt.ex:179`, added by W768 G1) — the mechanical
+  (`capability_liveness_receipt.ex:175`, added by W768 G1) — the mechanical
   ALIVE-requires-execution gate over the standing status vocabulary.
 
 **Every attribute is a straight copy of a receipt field** — `capability`,
@@ -269,7 +269,7 @@ customer-facing `XaasWeb.ApiRouter` at `/api`
 including `Xaas.Accounts` and `Xaas.Ledger`) but serves only resource-declared
 routes: the sensitive `Xaas.Ledger` and `Xaas.Accounts.User`/`Token` resources
 declare no JSON:API routes and remain unserved there, while `Xaas.Accounts.Org`
-is the exception that declares routes (`lib/xaas/accounts/org.ex:178-188`,
+is the exception that declares routes (`lib/xaas/accounts/org.ex:175-181`,
 read + create + update under `/api/orgs`).
 
 ## Step 7: Verify it worked
@@ -361,7 +361,7 @@ pins the claim and the wave receipt that witnessed it.
   `docs/sjira/v26.10.6/plans/w817-negotiation-court.md`.
 - **Status vocabulary gate on `:ingest` (step 2)** — W768 G1:
   `Xaas.Operations.Validations.CapabilityLivenessReceiptStatusGate`
-  (`capability_liveness_receipt.ex:179`); receipt
+  (`capability_liveness_receipt.ex:175`); receipt
   `docs/sjira/v26.10.6/plans/w768-liveness-alive-gate.md`.
 - **Lease kernel clock seam (the loop's wider ultracode capacity/lease
   sensing)** — W840: `live_leases/1` and `renew/1` in
@@ -389,6 +389,22 @@ pins the claim and the wave receipt that witnessed it.
   real emitter -> real ndjson bytes -> `Xaas.Ultracode.Ocel.Validator`
   path (correlation replayed from disk, rotation bound, no-fabricated-record
   law); receipt `docs/sjira/v26.10.6/plans/w666-ocel-egress-deepening.md`.
+
+**Verified 2026-10-08 (W984ky truth-pass, branch `feat/playwright-surface`,
+HEAD `7d9968d0` + working tree).** All referenced modules/tasks/tests/receipt
+paths re-checked on disk: `Xaas.Actuation.run/4` (`lib/xaas/actuation.ex:26`),
+`capability_liveness_receipt.ex` oban block `:45-59`, read bypass `:80`,
+`:ingest` bypass `:100-102`, status gate `:175`, `renew/1` (`lease.ex:513`),
+`live_leases/1` (`lease.ex:372`), 10 MCP verbs at
+`execution_fabric_controller.ex:72-220` (line anchors still exact after the
+lane's controller edits; `mcp/2` action at `:323`), `detect/1` defaults
+`authorize?: true`, api_router 7 domains `:12-20`, org routes `:175-181`.
+Two stale anchors corrected fix-forward this pass: StatusGate `:179`->`:175`,
+`org.ex:178-188`->`:175-181`. Note: the step-2 `:ingest` DSL excerpt above now
+also carries a `change {Xaas.Operations.Changes.SetPreviousStatus, []}`
+(W968c/SPEC-14, prior-status preservation for same-subject regression
+detection) that the excerpt predates; the excerpt remains representative of
+the upsert-identity and gate claims.
 
 ## See Also
 

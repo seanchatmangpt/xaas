@@ -37,8 +37,9 @@ Do not reuse a key for a different target consequence. The control plane refuses
 ## Diagnose refusals
 
 - `{:error, :idempotency_key_required}` — supply a non-empty key.
-- `{:error, :delegated_actuation_requires_authority_evidence}` — when `authorize?: false`, a non-empty `authority:` map is required (`Xaas.Actuation.run/4` admits authority at `lib/xaas/actuation.ex:576-582`).
-- `{:error, {:idempotency_not_replayable, key, status}}` — the key matches an intent that is not `:succeeded` (e.g. still `:executing`); retry only after the intent reaches a terminal status (`lib/xaas/actuation.ex:677`).
+- `{:error, :delegated_actuation_requires_authority_evidence}` — when `authorize?: false`, a non-empty `authority:` map is required (`Xaas.Actuation.run/4` admits authority at `lib/xaas/actuation.ex:635-664`).
+- `{:error, {:idempotency_not_replayable, key, status}}` — the key matches an intent that is not `:succeeded` (e.g. still `:executing`); retry only after the intent reaches a terminal status (`lib/xaas/actuation.ex:753`).
+- `{:error, {:spg_gate_refused, reason}}` — when the authority map carries the opt-in `:spg` key, `Xaas.Actuation.SpgGate.admit/1` (`lib/xaas/actuation/spg_gate.ex`) fail-closes on missing/ill-typed graph identity keys or non-`ADMITTED` state; opening the gate grants no authority.
 - Direct `Ash.update` of `:actuate_status` fails — expected; the action is `public?(false)` and guarded by the `Xaas.Actuation.Validations.ReactorContext` validation; only `Xaas.Actuation.Reactor` manufactures the required context.
 - Projection/admission failure — inspect `Xaas.Semantics.Registry` output; public-ontology admission must succeed before consequential DO.
 - Reactor failure/halt — treat the operation as failed; the transaction is rolled back rather than committing an unreceipted mutation.
@@ -59,3 +60,15 @@ For repository-level standing, follow `CLAUDE.md` and expand to the required com
 - expose `:actuate_status` as a JSON:API route without a separately admitted authority design;
 - bypass the Reactor-context validation;
 - treat ontology identity as execution authority.
+
+> **Verified 2026-10-08** (lane W984kx): all actionable claims re-verified against
+> the current tree — `Xaas.Actuation.run/4` at `lib/xaas/actuation.ex:26`;
+> `:idempotency_key_required` at line 177, `{:idempotency_conflict, key}` unwrap
+> path at lines 241-252, `delegated_actuation_requires_authority_evidence` at
+> lines 635-664 (line refs corrected in place from stale 576-582/677);
+> `:actuate_status` at `lib/xaas/marketplace/provider.ex:79` is `public?(false)`
+> with the `ReactorContext` validation (line 83); `test/xaas/actuation_test.exs`
+> present. SpgGate landed this campaign (commit `f0321df2`, W650h22) and is now
+> part of the `run/4` refusal surface — a `{:spg_gate_refused, reason}` bullet was
+> added above (opt-in only; absent `:spg` key is a no-op). No graphql or
+> `ash-manufacture-pack` claims in this guide.
