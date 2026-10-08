@@ -39,8 +39,8 @@ w984gu/w984hc receipts on the lib/ side (verified: commit 226803b8).
 
 ## Push
 
-Fetch-first fast-forward push of feat/playwright-surface (SHA recorded below
-after push).
+Fetch-first fast-forward push: `16a7bfa5..3674159f` — pushed head
+`3674159f` on origin/feat/playwright-surface.
 
 ## Cleanup
 
