@@ -104,6 +104,16 @@ jobs:
       - name: Check unused dependencies
         run: mix deps.unlock --check-unused
 
+      # SPEC-34 (W849-backlog-2): regen-based drift leg for generated surfaces.
+      # Re-runs each in-repo generator (--check --json via GgenIgniter.TaskContract,
+      # byte-compare for ash_typescript) and fails the job on drift (exit 4).
+      # Surfaces whose regen toolchain is external are disclosed-skipped with
+      # typed UNSUPPORTED reasons; see lib/xaas/generated/regen_check.ex.
+      - name: Generated-surface regen drift check
+        run: mix xaas.generated.regen_check
+        env:
+          MIX_BUILD_ROOT: _build
+
   # ------------------------------------------------------------------
   # Oracle/differential test lane (vector-3 CI closure, v26.10.6)
   #

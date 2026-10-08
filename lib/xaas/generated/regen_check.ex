@@ -100,7 +100,18 @@ defmodule Xaas.Generated.RegenCheck do
       %{
         path: "lib/mix/tasks/xaas.library.manufacture.ex",
         kind: :disclosed_skip,
-        regen_command: "mix ggen_igniter.sync --pack-dir priv/packs/xaas_library_pack",
+        # W984md (owner decision W984le): gates/014_ranker_factor_weights.rq's
+        # `FILTER ( NOT EXISTS {..} || NOT EXISTS {..} )` is a false-negative
+        # gate under the sparql hex engine (GgenIgniter.Query.run/2) — the
+        # `||`-joined NOT EXISTS silently evaluates false, so the gate can
+        # never fire there. The regen path's real default engine is oxigraph
+        # (`ggen_igniter.sync.ex`: `opts[:engine] || "oxigraph"` since
+        # v26.8.27), where the gate fires correctly (witnessed by W984le's
+        # mutation test); the pin below makes that reliance explicit instead
+        # of trusting the default. sparql remains a disclosed-buggy,
+        # non-default legacy engine — the gate is NOT rewritten for it.
+        regen_command:
+          "mix ggen_igniter.sync --pack-dir priv/packs/xaas_library_pack --engine oxigraph",
         skip_reason:
           "BLOCKED(policy-floor-upgrade-pending): witnessed 2026-10-07 (W983c triage, " <>
             "W984g correction) — there is NO renderer escape bug; the tracked file has " <>
@@ -108,7 +119,7 @@ defmodule Xaas.Generated.RegenCheck do
             "authorize_if always() write policies; the ontology-backed render emits the " <>
             "deny-by-default authorize_if actor_present() floor at 4 sites — regen would " <>
             "STRENGTHEN policy). Actuation is an owner decision: " <>
-            "mix ggen_igniter.sync --pack-dir priv/packs/xaas_library_pack " <>
+            "mix ggen_igniter.sync --pack-dir priv/packs/xaas_library_pack --engine oxigraph " <>
             "(use an explicit in-repo scratch --out during any trial), then re-pin " <>
             "@expected_sha256 and retire this skip. sha256 pin remains authoritative"
       },
