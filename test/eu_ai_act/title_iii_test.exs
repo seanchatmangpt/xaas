@@ -6,9 +6,9 @@ defmodule Xaas.EUAIAct.TitleIII.Lines do
 
   Substrate: `docs/eu_ai_act/corpus.json` (W520). The corpus is loaded directly
   as JSON at compile time (typed error if absent: `EUAIA_CORPUS_MISSING_W520`);
-  the W526 `CorpusLoader` contract expects a flat `{"lines": [...]}` shape while
-  the landed corpus is `{"titles": [...]}` — lane isolation keeps this off
-  W526's loader.
+  the W526 `CorpusLoader` decodes the landed `{"titles": [...]}` shape,
+  flattening titles -> articles -> lines (W984ke: earlier note claiming a flat
+  `{"lines": [...]}` contract was stale).
 
   Three-state verdict per line (rules checked in order):
 
