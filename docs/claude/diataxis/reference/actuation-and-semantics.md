@@ -2,6 +2,11 @@
 
 This page defines the current contract implemented by `Xaas.Semantics.Registry`, `Xaas.Actuation`, `Xaas.Marketplace.Provider`, and the Ash-native intent/receipt resources.
 
+Landed 2026-10-07: the SPG identity gate (`f0321df2`, receipts
+`docs/sjira/v26.10.7/plans/w650h22-commit.md`, `w650h33c-commit.md`) and the
+graphlaw WASM host (`2f2748b3`, `781f7d53`; W638/W644) are now part of this
+contract — see "SPG identity gate" and "Graphlaw WASM host" below.
+
 ## Public-ontology projection
 
 `Xaas.Semantics.Registry` admits public namespaces including RDF/RDFS/OWL/XSD, PROV-O, DCTERMS, DCAT, SKOS, ODRL, W3C ORG, SOSA, Schema.org, and FOAF. An application-local `xaas.local` namespace is not sufficient semantic standing.
@@ -37,6 +42,33 @@ public ontology projection
 ```
 
 The Reactor executes synchronously (`async?: false`) within `Ash.DataLayer.transaction/4` over the target resource plus the intent/receipt resources. Reactor failure/halt rolls the transaction back.
+
+## SPG identity gate (fail-closed, opt-in)
+
+`Xaas.Actuation.SpgGate` (`lib/xaas/actuation/spg_gate.ex`; landed `f0321df2`,
+W650h22 / W984dq5–dq6) validates Semantic Procedural Graph identity at the
+admission funnel. The gate validates identity and admission state only — it
+grants no authority; the `Xaas.Actuation`/BRCE authority path remains exclusive.
+
+- Seam: `admit_spg/1` in `Xaas.Actuation.Kernel.do_admit/2`, ordered AFTER
+  `admit_authority/2`, so an authority-refused call never observes the SPG
+  gate. Opt-in via the atom key `:spg` in the authority map; the absent key is
+  a no-op (behavior identical to pre-gate). Deliberately NO string-key
+  fallback: a string `"spg"` key in the authority map is IGNORED
+  (fail-closed-by-absence).
+- `SpgGate.admit/1` requires non-empty `graph_id`, `graph_version`, `node_id`,
+  `edge_id` and state `:admitted`/`"ADMITTED"`; anything else is a typed
+  refusal (`:spg_identity_required`, `:spg_not_admitted`). A gate refusal at
+  the seam surfaces as `{:error, {:spg_gate_refused, reason}}` from `run/4`.
+- Fingerprint guard (F2): `SpgGate.fingerprint_token/1` accepts ONLY the
+  atom-keyed map `admit/1` returns; a string-keyed input — the shape `admit/1`
+  itself accepts — gets the typed refusal
+  `{:error, :spg_fingerprint_atom_keyed}` instead of an untyped `KeyError`.
+  Fail-closed: a `Map.get`-with-default alternative was rejected because nil
+  components would silently fingerprint (fail-OPEN).
+- Courts: `test/xaas/actuation/spg_gate_test.exs` (unit; string-keyed input
+  pinned) and `test/xaas/actuation/spg_integration_test.exs` (8 cases: 7
+  work-order cases plus a string-`"spg"`-key fail-closed pin).
 
 ## Provider lifecycle contract
 
@@ -137,7 +169,7 @@ authorization and before the insert. It must not be `before_action`: `Actuation.
 already holds the Postgres transaction, and an error inside the action's joined
 transaction would roll the OUTER transaction back and destroy the `:refused` receipt.
 
-The resource has no HTTP/GraphQL/RPC surface. The only caller of `Bridge.execute/2` in
+The resource has no HTTP/RPC surface. The only caller of `Bridge.execute/2` in
 `lib/` is the `:execute` change (asserted by `test/xaas/sa2a/execute_test.exs`).
 Worker use: `export PATH=$HOME/autofde-lab/.venv/bin:$PATH; mix xaas.sa2a.execute req.json`
 (exit 0 for `succeeded`/`replayed`; non-zero with a JSON `status` of `refused`, `blocked`,
@@ -170,6 +202,30 @@ sibling checkout. The registry lists it as a `:bridge` with standing `UNKNOWN`
   `metadata/0` (digest-verified metadata, no invocation), `validate/1` (the registry's
   own `fond_validate` example as a smoke call), `invoke/1` (arbitrary op), each returning
   a `Xaas.Bridges` envelope with `engine_sha256` provenance and an `evidence_ref`.
+
+## Graphlaw WASM host (`Xaas.Semantics.GraphlawWasm`)
+
+`Xaas.Semantics.GraphlawWasm` (`lib/xaas/semantics/graphlaw_wasm.ex`; landed
+`2f2748b3` W650g + `781f7d53` W650q) is the Wasmex host transport for the
+graphlaw WASM kernel (wasm32-wasip1) at `priv/graphlaw.wasm`.
+
+- Digest pin: sha256
+  `fc23a2927187029ade92a4a64abd2de2cd15147be0cd95c70d89504a1aadcb38`, pinned
+  by `priv/graphlaw.wasm.sha256` (resolution order: `:expected_sha256` opt,
+  Application env `:xaas, :graphlaw_wasm_sha256`, then the pin file). A
+  missing, unreadable, or mutated artifact is a fail-closed typed refusal —
+  never a degraded pass.
+- Admission pipeline: digest pin -> compile -> WASI-allowlist import surface ->
+  required exports -> boot. The W637 artifact imports exactly 7
+  `wasi_snapshot_preview1` functions (`clock_time_get`, `environ_get`,
+  `environ_sizes_get`, `fd_write`, `proc_exit`, `random_get`, `sched_yield` —
+  witnessed in W644/W984dh); admission judges against `@wasi_allowlist`, a
+  disclosed 12-entry superset (upstream-tolerant hardening). Any import
+  outside the allowlist refuses.
+- Watchdog: every invocation must answer within 15ms
+  (`@call_timeout_ms 15`) or be refused — a hung kernel cannot hold the host.
+- Authority: the host admits and runs the kernel but grants no authority;
+  consequential DO remains exclusively behind `Xaas.Actuation.run/4`.
 
 ## Graphlaw bridge admission gate (`Xaas.Graphlaw.LimitGate`)
 
@@ -421,3 +477,102 @@ WHICH fields the snapshot digests cover is a property of the producer version, s
 - `"sjira-digest/1"` (historical, pre ggen_igniter `33c8e86`) — no embedded `definition_digest`; the definition digest is the snapshot minus `standing`, `dimensions` and the digest fields. Kept verifiable only for committed historical artifacts that declare it.
 
 A snapshot whose shape is not its declared form's (an embedded `definition_digest` under `/1`, none or a malformed one under `/2`) is refused as `{:digest_form_mismatch, form, :definition_digest}` before any digest is recomputed; an unknown form is `{:unknown_digest_form, value}`. Source of truth: the `Xaas.Ultracode.SemanticWork.AdmissionBinding` moduledoc.
+
+## Safety-property invariants
+
+One record per safety invariant: module (source of truth), pinning court,
+killing mutation, receipt. Receipts live under `docs/sjira/v26.10.6/plans/`.
+
+### LimitGate registry disposition (4/15 enforced)
+
+- Module: `Xaas.Graphlaw.LimitGate`, `Xaas.Bridges.Registry`
+- Court: `test/xaas/graphlaw_limit_gate_test.exs` (13),
+  `test/xaas/graphlaw_limit_seams_test.exs` (9)
+- Kill: delete `gate_engine_limits/3` → all 3 byte-exceedance courts red;
+  depth-65 claim refuses typed (`:mu_on_O`).
+- Receipts: w976, w981k. Detail: the "Graphlaw bridge admission gate" section
+  above.
+
+### Audit-chain tamper evidence
+
+- Module: `Xaas.Witness.AuditChain` (`lib/xaas/witness/audit_chain.ex`)
+- Court: `test/xaas/deepening/art_26_1_governed_actuation_stop_chain_test.exs`
+  (3; payloads bound to real `input_hash`/`result_hash`)
+- Kill: swap a mid-chain payload digest → `{:error, {:tampered, n}}`;
+  omit `expected_head` → a rebuilt-tampered chain verifies `:ok`.
+- Receipts: w984p; `expected_head` law from w984al's correction. `append/2`
+  accepts any binary payload digest, so binding real receipt hashes is what
+  makes the chain a real-receipt witness.
+
+### Art. 13 information sufficiency
+
+- Module: `Xaas.Semantics.AdmissionAttribution`,
+  `Xaas.Semantics.Counterfactual`
+- Court: `test/xaas/deepening/art_26_9_art13_information_use_test.exs` (3)
+- Kill: attribution stops summing to the efficiency identity
+  Σφ = v(N)−v(∅), or `evaluate/3` stops verifying the recorded outcome
+  (`{:record_outcome_mismatch, _}` is the typed refusal).
+- Receipt: w984p.
+
+### OCEL determinism
+
+- Module: `Xaas.Ocel.CaseView.derive_for_object/2`
+  (`lib/xaas/ocel/case_view.ex`)
+- Court: `test/xaas/ocel/w983e_ocel_log_courts_test.exs` court 5
+- Kill: remove the `{occurred_at, id}` total-order `sort_by` → court 5 red.
+  KILL-verified (w984au).
+- Receipts: w984h (fix 1), w984au (mutation).
+
+### OCEL destroy floor
+
+- Module: `Xaas.Ocel.Event` — `defaults([:read])`, no destroy action
+  (`lib/xaas/ocel/event.ex`)
+- Court: `test/xaas/ocel/w983e_ocel_log_courts_test.exs` court 6
+- Kill: re-add `:destroy` to `defaults/1` → court 6 red. KILL-verified
+  (w984au).
+- Receipts: w984h (fix 2), w984au (mutation).
+
+### Reverse sufficiency
+
+- Module: `Xaas.Ledger.Changes.ReverseTransfer` (`run_sufficiency/2`)
+- Court: `test/xaas/ledger/transfer_reverse_adverse_court_test.exs` (7)
+- Kill: neutralize `run_sufficiency/2` → exactly the two sufficiency legs red.
+  KILL-verified (w984au).
+- Receipts: w983j, w984au. W785 `allow_overdraft`/`skip_balance_updates`
+  contexts remain real exemptions.
+
+### SPEC-27 reversal guard
+
+- Module: `Xaas.Ledger.Changes.ReverseTransfer.already_reversed?/1`
+- Court: `test/xaas/ledger/reversal_deepening_test.exs` (9)
+- Kill: stub `already_reversed?/1` to `false` → the SPEC-27 double-reverse leg
+  red, even with fresh funds. KILL-verified (w984au).
+- Receipt: w984au.
+
+### Re-approve guards
+
+- Module: `change(filter(expr(is_nil(approved_by))))` on `:approve` in
+  `Xaas.Billing.ApprovalPricingOverride`, `ApprovalQuotaOverride`,
+  `ApprovalInvoiceReconciliationApprove`, `ApprovalPatchSlaCreditApply`
+  (W746 idiom, `approval_sla_credit_apply.ex:151`)
+- Court: `test/xaas/billing/approval_lifecycle_deepening_court_test.exs` (9)
+- Kill: delete any of the 4 guards → legs 1b (re-approve) and 3b (race)
+  fail; second approve is typed zero-row refusal, race loser
+  `{:refused, :invalid_zero_row}`.
+- Receipts: w984k; landed in `32487e08` (w984u). Closes the
+  double-ledger-credit channel on `approval_patch_sla_credit_apply`.
+
+### DevSeeds env gate
+
+- Module: `Xaas.DevSeeds.refute_non_dev_target!/0` (`lib/xaas/dev_seeds.ex`)
+- Court: `test/xaas/dev_seeds_env_guard_test.exs` (2)
+- Kill: bare `mix run -e 'Xaas.DevSeeds.run()'` in :test → typed
+  `REFUSED(dev_seeds, env=test)`, zero rows; `:test` callers admitted only
+  under a live SQL sandbox ownership checkout.
+- Receipt: w983f. Sanctioned :test exception is disclosed in the receipt.
+
+Mutation-kill status: the OCEL determinism, OCEL destroy floor, reverse
+sufficiency, and SPEC-27 rows are KILL-verified by W984au's real mutation runs
+(baseline 25 passed → each mutated run red on exactly its own leg → restored
+md5-identical, 25 passed). The remaining rows' killing mutations are the
+receipts' stated falsifiers, not yet mutation-executed.
