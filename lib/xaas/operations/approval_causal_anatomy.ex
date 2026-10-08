@@ -141,7 +141,7 @@ defmodule Xaas.Operations.ApprovalCausalAnatomy do
     end
   end
 
-  def anatomy(intent), do: {:error, {:missing_intent, [:not_a_map]}}
+  def anatomy(_intent), do: {:error, {:missing_intent, [:not_a_map]}}
 
   defp compute_briefing(intent) do
     checks = checks()

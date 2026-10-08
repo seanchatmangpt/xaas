@@ -270,12 +270,6 @@ defmodule Mix.Tasks.Xaas.Airo.CompileShacl do
     |> Enum.map(&RDF.Description.subject/1)
   end
 
-  defp descriptions_with_predicate(graph, predicate) do
-    graph
-    |> RDF.Graph.descriptions()
-    |> Enum.filter(&(RDF.Description.get(&1, predicate) != nil))
-  end
-
   defp has_object?(description, predicate, object) do
     description
     |> RDF.Description.get(predicate, [])
