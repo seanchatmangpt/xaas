@@ -135,6 +135,27 @@ at HEAD** (final, DRAFT flag cleared).
 - BLOCKED noted: **ash_surface** and **ggen-marketplace** — version bumps
   uncommitted (W618-era), `BLOCKED(version-commit-pending)` per W648 item 2
   and W635 table.
+- **Tag-truth verdict (W650k4, recording W650k3,
+  `plans/w650k3-tag-verdict.md`, 2026-10-07)**: standing of the tag
+  surface is **PARTIAL_ALIVE — truthful with disclosures, no re-point
+  required**:
+  1. 8/8 tags peel to ancestors of their repo's local HEAD (W650k3 §3
+     table) — tag ancestry truthful.
+  2. xaas: the audited tree ≠ tagged subject. Local HEAD `1b14ec1e` is
+     **42 commits ahead** of the tag peel `56325fa5`, including the
+     audit remediation `428ae270` (plus `5997a4a9` graphlaw courts,
+     `bae6bdc1`, `ea886c6a`). Audit-green is at HEAD, not at tag; the
+     seal claim must read "tagged at `56325fa5`; audit-green at HEAD
+     (42 ahead, remediation rides the branch)". W628b convention
+     applies; re-pointing the pushed tag is NOT required.
+  3. **New transport finding**: `56325fa5` is NOT reachable from
+     `origin/main` (`5fc56da2`, behind the tag). The seal is
+     **branch-local** to `feat/playwright-surface` until the
+     coordinator merges to main (open item 11).
+  4. Post-tag sibling drift: ash_pplan `847f487b` (W650j
+     version-companion fix — arguably release content; v26.10.8 vs
+     W628b is an operator call, open item 12); ash_a2a `13dd1a57`
+     docs-only (W628b, already recorded above).
 
 ## 7. Shared DB migrated to head
 
@@ -164,6 +185,8 @@ replay, not fixed by W633/W641.
 | 8 | affidavit pack migration | BLOCKED(pack-contract-divergence), tree restored byte-identical to `1056fc69` | `plans/w641a-affidavit-migration.md` |
 | 9 | ferroplan pack migration | BLOCKED(pack-capability-missing) — new pack ships no `queries/`, registry projection absent; falsifier + unblock condition written | `plans/w641b-ferroplan-migration.md` |
 | 10 | xaas_dev migration-ordering defect (dedup after index-create) | OPEN (typed, pre-existing) | `w633` §1, `w641` |
+| 11 | xaas seal commit `56325fa5` not reachable from `origin/main` — seal is branch-local until coordinator merges `feat/playwright-surface` → main | OPEN (BLOCKED-class, coordinator) | `plans/w650k3-tag-verdict.md` (W650k4) |
+| 12 | ash_pplan post-tag `847f487b` (W650j version-companion fix) is arguably release content — cut v26.10.8 or accept per W628b | OPEN (operator decision) | `plans/w650k3-tag-verdict.md`, `plans/w650j-pplan-pins.md` |
 
 ## Standing summary
 
@@ -173,8 +196,11 @@ replay, not fixed by W633/W641.
 - OS-18: ALIVE (`579454be`). Refusal ledger: ALIVE (`d95defa2`,
   digest `203fee7c…`). Playwright: ALIVE (371/371 + 6/6). WASM artifact:
   ALIVE (`1869a16`, digest `b7664a5e…`); Wasmex host + differential:
-  PARTIAL/DRAFT. Fleet tags: 8/8 ALIVE, re-verified fresh at v2 (W650c
-  ls-remote table above; 2 repos BLOCKED noted). a2a doc fix: ALIVE
+  PARTIAL/DRAFT. Fleet tags: **PARTIAL_ALIVE per W650k3/W650k4** — 8/8
+  ancestry-truthful and re-verified fresh at v2 (W650c ls-remote table
+  above; 2 repos BLOCKED noted), with disclosures: xaas audit-green at
+  HEAD not tag (42 ahead), seal branch-local until main merge (item 11),
+  ash_pplan post-tag operator item (item 12). a2a doc fix: ALIVE
   (`13dd1a57`, tag rides at `e0fb769e`, W628b). Shared DB: ALIVE at head.
 - Seal verdict: **DRAFT — items 1 and 1b closed by W650b; not final until
   items 2 (W638 host commit) and 3 (W640 differential court) close and

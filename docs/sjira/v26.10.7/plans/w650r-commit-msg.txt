@@ -1,0 +1,18 @@
+fix(security): W984dj3 parse_dt/1 typed refusal — pass through unparseable datetimes to Ash cast
+
+lib/xaas/security.ex parse_dt/1: replace bare
+`{:ok, dt, 0} = DateTime.from_iso8601(bin)` with a case —
+{:ok, dt, _offset} -> dt; {:error, _} -> bin pass-through so Ash's
+utc_datetime cast raises Ash.Error.Invalid (typed refusal) instead of
+MatchError. Also fixes latent offset!=0 MatchError.
+
+New court leg in test/xaas/security/finding_lifecycle_depth_test.exs
+(test 6): malformed discovered_at ingest asserts Ash.Error.Invalid with
+zero Finding/Posture row leakage.
+
+Gates (fresh root _build-laneW650r, pinned asdf toolchain, MIX_ENV=test):
+- mix compile --force EXIT=0
+- finding_lifecycle_depth_test + security_test: 10 passed, 0 failures
+
+Receipt: docs/sjira/v26.10.6/plans/w984dj3-parse-dt.md
+Lane: W650r, v26.10.7 fleet seal

@@ -66,6 +66,19 @@ in-tree hand-rolled `violations/1` vs guest-side `op:"shacl"` with
 agreement = ALIVE, disagreement = typed REFUSED (C14 differential-admission
 falsifier). **No agreement rows are asserted.**
 
+### 7.1 C0 row — dual-digest witness (W650f2 update, 2026-10-07)
+
+| Case | Digest witnessed | Guest behavior | Receipt |
+|---|---|---|---|
+| C0 profile-bytes | `b7664a5e` (W637, pre-repair) | TYPED REFUSAL of raw profile bytes (`EngineRejected / Turtle / iri-disallowed-char`) | [w640-differential-shacl.md](w640-differential-shacl.md) (5/5 ×2 on b7664a5e) |
+| C0 profile-bytes | `fc23a292` (post-rotation, post-repair) | ADMISSION of the repaired profile bytes, host/guest conforms-boolean agreement | [w650f-unification-verify.md](w650f-unification-verify.md) (stale-court witness) + [w650f2-c0-flip.md](w650f2-c0-flip.md) (5/5 ×2 on fc23a292) |
+
+C0 flipped in W650f2: the W615 generator owner repaired finding (b) (the
+illegal `airo#shapes#` IRI → `airo#shapes-`; w650i's profile repair, repair
+witnessed on-disk in `priv/airo/profile.shacl.ttl`; w650i receipt not on disk
+as of this lane), so the guest now admits the bytes. C1–C4 rows unchanged
+(AGREE on both digests: w640 on b7664a5e, w650f on fc23a292).
+
 Disclosed boundary from W615 (carried forward): no SHACL validator exists in the
 Elixir dependency tree; the in-tree checker implements exactly the three compiled
 constraints, not a conformant engine. Source:
