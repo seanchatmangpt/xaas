@@ -111,18 +111,31 @@ defmodule Mix.Tasks.Xaas.Doctor do
   end
 
   # 3. Lane-lease census — informational.
+  #    W984gk: the walk used to be unbounded; with >100 orphaned _build-lane*/
+  #    roots (measured 127 × ~426MB, >600s of synchronous File.stat calls)
+  #    the census made the task unusable. Capped per lane; truncation is
+  #    disclosed in the detail string. W984il re-tightening: even capped at
+  #    2k files/lane, 127 orphaned roots × synchronous File.lstat overran the
+  #    doctor court's 120s timeout on the landing host — cap is 200/lane.
+  @lane_walk_file_cap 200
+
   defp lane_lease_check do
     lanes = Path.wildcard("_build-lane*")
 
     {sizes, total_bytes} =
       Enum.map_reduce(lanes, 0, fn lane, acc ->
-        bytes = dir_size(lane)
-        {{lane, bytes}, acc + bytes}
+        {bytes, files_seen, truncated?} = dir_size(lane)
+        {{lane, bytes, files_seen, truncated?}, acc + bytes}
       end)
 
     %{name: "lane_leases", status: "pass",
-      detail: "#{length(lanes)} _build-lane*/ dir(s), #{total_bytes} total bytes: " <>
-                Enum.map_join(sizes, ", ", fn {k, v} -> "#{k}=#{v}B" end)}
+      detail:
+        "#{length(lanes)} _build-lane*/ dir(s), #{total_bytes} total bytes " <>
+          "(per-lane walk capped at #{@lane_walk_file_cap} files; " <>
+          "#{Enum.count(sizes, fn {_l, _b, _n, t} -> t end)} lane(s) truncated): " <>
+          Enum.map_join(sizes, ", ", fn {k, v, n, t} ->
+            "#{k}=#{v}B/#{n}files#{if t, do: "+", else: ""}"
+          end)}
   end
 
   # 4. eu_ai_act test file count — expected ~16 files (band against FILES).
@@ -202,25 +215,36 @@ defmodule Mix.Tasks.Xaas.Doctor do
 
   defp count_exs(dir), do: length(Path.wildcard(Path.join(dir, "**/*.exs")))
 
-  defp dir_size(dir) do
+  # Returns {bytes, files_seen, truncated?} — stops descending once the
+  # per-lane file cap is reached (W984gk: orphaned lane roots made the
+  # unbounded walk exceed 600s).
+  defp dir_size(dir, cap \\ @lane_walk_file_cap)
+
+  defp dir_size(dir, cap) do
     case File.ls(dir) do
       {:ok, entries} ->
-        Enum.reduce(entries, 0, fn entry, acc ->
-          path = Path.join(dir, entry)
+        Enum.reduce_while(entries, {0, 0, false}, fn entry, {bytes, files, _trunc} ->
+          if files >= cap do
+            {:halt, {bytes, files, true}}
+          else
+            path = Path.join(dir, entry)
 
-          acc +
-            if File.dir?(path) do
-              dir_size(path)
-            else
-              case File.stat(path) do
-                {:ok, %{size: s}} -> s
-                _ -> 0
-              end
+            case File.lstat(path) do
+              {:ok, %{type: :directory, size: s}} ->
+                {sub_bytes, sub_files, sub_trunc} = dir_size(path, cap - files)
+                {:cont, {bytes + sub_bytes + s, files + sub_files + 1, sub_trunc}}
+
+              {:ok, %{size: s}} ->
+                {:cont, {bytes + s, files + 1, false}}
+
+              _ ->
+                {:cont, {bytes, files, false}}
             end
+          end
         end)
 
       _ ->
-        0
+        {0, 0, false}
     end
   end
 end
