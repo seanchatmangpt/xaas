@@ -616,3 +616,14 @@ sufficiency, and SPEC-27 rows are KILL-verified by W984au's real mutation runs
 (baseline 25 passed → each mutated run red on exactly its own leg → restored
 md5-identical, 25 passed). The remaining rows' killing mutations are the
 receipts' stated falsifiers, not yet mutation-executed.
+
+## See Also
+
+- `../ash_pplan/docs/diataxis/how-to/a2a-facade.md` (external) — the
+  ash_pplan A2A facade over the same durable-run surface this repo consumes
+  via `Xaas.Bridges.PPlan` / `Xaas.Bridges.PPlan.Store`
+  (`lib/xaas/bridges/pplan.ex`, ETS-backed `AshPPlan.Reactor.Durable.Store.Ets`
+  started in `lib/xaas/application.ex`).
+- `../ash_pplan/docs/diataxis/explanation/standing-receipts-and-the-ladder.md`
+  (external) — the standing/receipt ladder behind the durable receipts the
+  pplan adapter seals.
