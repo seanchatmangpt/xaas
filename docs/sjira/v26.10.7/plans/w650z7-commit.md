@@ -65,7 +65,7 @@ None required (receipts-only commit; no code, no mix runs).
 ## Receipt
 
 - Commands: `git fetch origin` (ff-check); `git add <explicit pathspecs>`;
-  `git commit -F docs/sjira/v26.10.7/plans/w650z7-commit-msg.txt`;
+  `git commit -F /tmp/w650z7-msg.txt`;
   `git push` (ff only). Exits recorded in commit + push output.
 - Standing: ALIVE for the receipts landing itself (commit + push witnessed).
   Content standing of each staged receipt is its own lane's standing, unchanged.
