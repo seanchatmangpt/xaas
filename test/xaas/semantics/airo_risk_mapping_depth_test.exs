@@ -193,4 +193,46 @@ defmodule Xaas.Semantics.AiroRiskMappingDepthTest do
     assert String.contains?(graph, "airo:mitigatesRiskConcept ex:UNRECEIPTED_PROVIDER_STATUS_TRANSITION")
     assert String.contains?(graph, "airo:isRiskControlFor ex:xaas-system .")
   end
+
+  @tag w984fx: true
+  test "7. W984fx library-circulation RiskControl entry is wired, cited, and emitted" do
+    controls = AiroRiskMapping.risk_controls()
+
+    entry = Enum.find(controls, &(&1.module == "Xaas.Library.Changes.EnforceBorrowCap"))
+
+    assert entry != nil, "library circulation surface must be mapped as a RiskControl"
+
+    # cited enforcing module exists on disk at the declared path (real file)
+    repo_root = Path.expand("../../..", __DIR__)
+    assert File.exists?(Path.join(repo_root, entry.path))
+
+    # typed: detects/mitigates are non-empty string lists over the closed concept
+    assert entry.detects == ["UNRECEIPTED_OVER_CAP_LENDING"]
+    assert entry.mitigates == ["UNRECEIPTED_OVER_CAP_LENDING"]
+    assert is_binary(entry.scope) and entry.scope != ""
+
+    # risk_controls stays sorted by module (deterministic emission order)
+    assert controls == Enum.sort_by(controls, & &1.module)
+
+    # count assertions read length(controls) dynamically, never hardcode
+    assert length(controls) >= 10
+
+    graph = AiroRiskMapping.risk_graph()
+    local = "ex:riskControl-Xaas.Library.Changes.EnforceBorrowCap"
+
+    # emitted exactly twice: once as the control subject, once in the
+    # system block's airo:hasRiskControl list — never a third time
+    assert Enum.count(String.split(graph, local)) - 1 == 2
+    assert Enum.count(String.split(graph, local <> " a airo:RiskControl ;")) - 1 == 1
+
+    # every risk_controls entry appears exactly twice in the graph
+    # (subject + hasRiskControl list membership) — dynamic over the real count
+    for c <- controls do
+      control_local = "ex:riskControl-#{c.module}"
+      assert Enum.count(String.split(graph, control_local)) - 1 == 2
+    end
+
+    assert String.contains?(graph, "airo:detectsRiskConcept ex:UNRECEIPTED_OVER_CAP_LENDING")
+    assert String.contains?(graph, "airo:mitigatesRiskConcept ex:UNRECEIPTED_OVER_CAP_LENDING")
+  end
 end

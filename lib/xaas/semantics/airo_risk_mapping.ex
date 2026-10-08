@@ -138,6 +138,14 @@ defmodule Xaas.Semantics.AiroRiskMapping do
         mitigates: ["UNRECEIPTED_PROVIDER_STATUS_TRANSITION"],
         scope:
           "provider lifecycle maker-checker bridge (approved status changes route through receipted Xaas.Actuation.run/4)"
+      },
+      %{
+        module: "Xaas.Library.Changes.EnforceBorrowCap",
+        path: "lib/xaas/library/changes/enforce_borrow_cap.ex",
+        detects: ["UNRECEIPTED_OVER_CAP_LENDING"],
+        mitigates: ["UNRECEIPTED_OVER_CAP_LENDING"],
+        scope:
+          "library circulation borrow cap (typed refusal when a patron exceeds the open-checkout limit; guards both the borrow path and the hold-fulfillment hand-off)"
       }
     ]
     |> Enum.sort_by(& &1.module)
