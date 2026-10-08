@@ -5,8 +5,9 @@ Campaign v26.10.6 CRO-loop, honest-numbers directive. Subject: branch
 W711 refresh at head `a0723bf6` 2026-10-07; W855 refresh (rows 33–58) at
 head `a0723bf6` 2026-10-07; W984fp refresh (rows 59–76) at head
 `43265cb1` 2026-10-07; W984lg refresh (rows 77–92) at head `52ce8236`
-2026-10-08; W984lz refresh (rows 93–95) at head `1ba31a97` 2026-10-08.
-Repo `/Users/sac/xaas`.
+2026-10-08; W984lz refresh (rows 93–95) at head `1ba31a97` 2026-10-08;
+W984mg refresh (rows 96–102) at head `567ab1f5` 2026-10-08 (origin ==
+HEAD verified by rev-parse). Repo `/Users/sac/xaas`.
 
 Method: every pitch number checked against the on-disk artifact named in the
 table. "Real" = number as stated in the receipt file, not the pitch copy.
@@ -228,7 +229,7 @@ Receipt-absent lanes skipped, not invented: **W840-check** (no
 from its claim outright — one cross-row divergence (row 32's 116 vs W756's
 117 resources) recorded as DRIFT above.
 
-Total rows: 12 → 32 → 58 → 76 → 92 (W984lg, 2026-10-08).
+Total rows: 12 → 32 → 58 → 76 → 92 → 102 (W984mg, 2026-10-08).
 
 ## Claims table — W984lg refresh (rows added 2026-10-08, batches #9–#11)
 
@@ -322,3 +323,61 @@ as-is (fcef478b's 14-file pre-landing by caf91669; kn's PromEx
 All 3 wave SHAs grep-verified against `docs/sjira/v26.10.{6,7}/plans/`;
 3/3 have an on-disk receipt citing or carrying them. Cumulative index:
 **95 rows** (rows 1–92 unchanged from W984lg; 93–95 appended).
+
+## Claims table — W984mg refresh (rows added 2026-10-08, batch #13)
+
+One row per wave commit, d3189b40 → 567ab1f5 (7 commits), in landing
+order. Refresh at head `567ab1f5` 2026-10-08 (origin == HEAD). Each
+commit's receipt read in full (`w984lo-commit.md`); gate numbers re-read
+from the receipt, not the commit subject. All 7 SHAs grep-verified
+against `docs/sjira/v26.10.{6,7}/plans/`.
+
+| # | Claim | Evidence artifact | What the receipt actually witnesses | Grade |
+|---|---|---|---|---|
+| 96 | Disclosed lib repairs W984kk/W984jz/W984kg (batch #13 lib) | `docs/sjira/v26.10.7/plans/w984lo-commit.md` | `d3189b40`: 3 files — W984kk notifications 204 silence (repaired from the tree's known-broken else-clause first attempt to the receipt's do-branch `case`), W984jz `:approved_by` accept-list removal, W984kg lease `{:ok, nil}` arm. Batch gate (14 court files, fresh lane root `_build-laneW984lo`, pinned asdf toolchain): compile EXIT=0, **88 passed, exit 0**; mock `[]`. ALIVE | witnessed |
+| 97 | 11 new court files + title_iii M (batch #13 courts) | `docs/sjira/v26.10.7/plans/w984lo-commit.md` | `be2591bd`: title_iii excluded by `@moduletag :eu_ai_act` from the 88-pass gate, re-run `--include eu_ai_act` → **391 passed** (matches w984ke receipt). jv/ju/jk courts already taken by kn batch #12. ALIVE | witnessed |
+| 98 | W984ks orphan-change retirement (batch #13 lib) | `docs/sjira/v26.10.7/plans/w984lo-commit.md` | `4371fcff`: 2 billing change modules deleted, w984ea court rows dropped, w984er register RETIRED flips + `w984ks-retirement.md`. Dedicated gate re-run `mix test test/xaas/billing` → **80 passed, exit 0** (matches the retirement receipt exactly; receipt verified TODO-free before landing). ALIVE | witnessed |
+| 99 | Lane probe/repair receipts w984* (batch #13 docs) | `docs/sjira/v26.10.7/plans/w984lo-commit.md` | `9ba3a44f`: 19 w984 probe/repair receipt files + km-wave-receipt + kw-burndown, docs-only. LANDED (docs) | grep |
+| 100 | Diataxis truth-pass edits kx/ky/kz/kv/lb (batch #13 docs) | `docs/sjira/v26.10.7/plans/w984lo-commit.md` | `dc125c8c`: 8 diataxis files, docs-only. LANDED (docs) | grep |
+| 101 | Registers: closure regen, runbook 10th addendum, W850 manifest, w650y4 + w984dq3 flips, evidence index (batch #13 docs) | `docs/sjira/v26.10.7/plans/w984lo-commit.md` | `038fd867`: docs-only (closure receipt/plan, `_COMMIT_MANIFEST_W850.md`, `_INTEGRATION_RUNBOOK.md` addendum, evidence-claims-index rows 77–95 content). Self-referential note: this commit landed the index rows for batches #9–#12, not #13. LANDED (docs) | grep |
+| 102 | W984lo landing-batch commit receipt | `docs/sjira/v26.10.7/plans/w984lo-commit.md` | `567ab1f5` (HEAD at refresh) carries the receipt itself; no other on-disk artifact cites it as a tested subject yet. Self-referential-limits class | grep |
+
+### DRIFT summary (W984mg)
+
+- No prior row contradicted. Rows 1–95 re-skimmed at `567ab1f5`; none of
+  the batch #13 changes restate or invalidate an earlier claim. Row 101
+  (the index-touching commit) landed only rows 77–95 content — batch #13
+  rows are this refresh's addition, so no row documents its own commit.
+- W984lf's Blocker-1 observation is **unchanged**: re-run at `567ab1f5`,
+  `git merge-base --is-ancestor 56325fa5 origin/main` → exit 1 (seal
+  still not reachable from origin/main). Recorded as observed tree
+  state, not adjudicated by this lane.
+- Receipt-absent-by-construction now additionally covers #102
+  (`567ab1f5`), alongside #80/#85/#88/#92/#95 — each a receipt-carrier
+  commit cited only by later probes/receipts rather than by an on-disk
+  receipt naming it as a tested subject. Now 7 of the last 46 wave
+  commits; C21 (out-of-subject receipts) remains an open coordinator
+  item.
+- W984lz's "W984lo NOT landed" note is superseded: batch #13 landed as
+  d3189b40…567ab1f5 with `w984lo-commit.md` on disk. W984lp/W984lq
+  receipts remain absent from both plans trees at this head; their rows
+  are still owed when landed. Batch #13 skips (kp/lc/lh/ln, lp/lq/lr/lt/
+  lw/lx/lz probes; e2e/playwright/ci_cd M-files) recorded per receipt as
+  in-flight/other-lane-owned.
+- Batch #13's own disclosure recorded here: kn batch #12 overlapped
+  batch #13's candidate list (jv/ju/jk courts, jn/kl/kh/jx receipts) —
+  deduped via pathspec at landing, not double-landed.
+
+### Counts (W984mg refresh)
+
+Rows 96–102: 7 commits → 7 rows (one per commit, all sharing the
+`w984lo-commit.md` receipt): witnessed 3 (#96, 97, 98 — batch gate 88/0
+plus title_iii 391 re-run, and the W984ks gate 80/0, on the exact
+subjects per receipt) · grep 4 (#99, 100, 101 docs-only; #102
+receipt-carrier). No receipt diverged from its commit's claim;
+disclosures recorded as-is (kk's repaired else→do-branch fix; lo's
+skips; kn-overlap pathspec dedup). All 7 wave SHAs grep-verified against
+`docs/sjira/v26.10.{6,7}/plans/`; 6/7 have an on-disk receipt citing
+them (`w984lo-commit.md`) and 1/7 (#102) is self-carried by its own
+receipt commit. Cumulative index: **102 rows** (rows 1–95 unchanged from
+W984lz; 96–102 appended).

@@ -420,3 +420,67 @@ long tail (`BoundedDo`, `CommandBudget`, `CommandTopology`, `ConsumerBoundary`,
 `OsirisBoundary`, `PlannerBinding`, `PolyEvidence`, `PowlTrace`, …). Full
 65-row list at `/tmp/w984it_map.txt` (regenerable). Standing: ALIVE (as a
 map). Lane hygiene: no `_build-laneW984it` created.
+
+## Addendum 8 — W984lq eighth re-census (2026-10-08)
+
+Method unchanged (W984cj/W984it CamelCase-aware direct-naming census, script
+`/tmp/w984lq_coverage.exs`, output `/tmp/w984lq_run.txt` / map at
+`/tmp/w984it_map.txt`, exit 0, no build root). Subject: /Users/sac/xaas @
+52ce8236 (feat/playwright-surface, uncommitted working tree as-walked —
+includes the 2 disclosed W984ks lib deletions, which is why TOTAL_FILES
+drops 831 → 829; expected, not newly-uncovered).
+
+```
+TOTAL_FILES=829 TESTABLE=810 COVERED=772 UNCOVERED=38 NON_TESTABLE=19
+```
+
+| Run | Files | Covered | Uncovered | Non-testable |
+|---|---|---|---|---|
+| W984it (7th, 3961c4ab) | 831 | 747 | 65 | 19 |
+| **W984lq (8th, 52ce8236)** | **829** | **772** | **38** | **19** |
+
+**Uncovered 65 → 38 (−27); zero newly-uncovered.** Structural argument this
+run instead of a sorted `comm`: W984it's original map was overwritten
+before a comm could run (the W984it script hardcodes
+`/tmp/w984it_map.txt` as its write path — disclosed in
+`docs/sjira/v26.10.6/plans/w984lq-recensus.md`; the surviving file now holds
+the W984lq 38-row map). Proof: coverage = module-name presence in the test
+corpus; every commit 3961c4ab..52ce8236 (16 commits) only added/modified
+tests and renamed no module; `git diff --name-status 3961c4ab..HEAD -- lib`
+= 7 paths (3 mix tasks non-testable, `a2a/tofu.ex` ADDED and covered by
+`test/xaas/a2a/tofu_test.exs`, eds ×2 + `authority_ledger_export.ex`
+name-unchanged ⇒ corpus superset ⇒ status can only improve). The 2 absent
+files were covered (named in
+`test/xaas/billing/gov_long_tail_court_w984ea_test.exs`) and leave the
+uncovered set untouched. 95.3% covered, up from 92.0%.
+
+The −27 retirements map to court landings since W984it's subject — landing
+batches **#9** (6fbfb47a/c58a8cea/663786f5, 8 courts), **#10**
+(ad159c18/ef2e8714/79581cf6/127dc790, 7 courts), **#11**
+(9a00385c/caf91669/86c69061, 16 courts + W984fv TOFU `lib/xaas/a2a/tofu.ex`)
+— batches #12/#13 are not in HEAD's log at this subject. Biggest single
+driver: `test/xaas/operations/fortune_batch_court_w984iv_test.exs` retiring
+the entire old top-5 (`ApprovalCastleVerbScheduleApprove`,
+`ApprovalK8sFaultRemediateSuggestApprove`,
+`CastleVerbFortune5RequirementsApprove`, and both matching
+`*RequiresApprover` validations) plus `RouteSecretsApprove`.
+
+Retirement spot-checks (real greps over `test/**/*.exs`, 5/5 hit):
+`ApprovalCastleVerbScheduleApprove` →
+`test/xaas/operations/fortune_batch_court_w984iv_test.exs`;
+`ApprovalK8sFaultRemediateSuggestApprove` → same court;
+`CastleVerbFortune5RequirementsRequiresApprover` → same court;
+`ApprovalK8sFaultRemediateSuggestRequiresApprover` → same court;
+`RouteSecretsApprove` → same court.
+
+New top-10 uncovered (the flat 2-pub tail is gone; now mixed depths, led by
+5 Platform Route validations): `RouteFeatureFlagsRequiresApprover` (2),
+`RouteOrgsCustomDomainActiveRequiresCertificateSecret` (2),
+`RouteOrgsCustomDomainValidHostname` (2),
+`RouteProjectsBackupsValidProjectName` (2),
+`RouteProjectsRequiresApprover` (2), `PromEx.CpuPlugin` (2),
+`Runtime.ProviderFabric.Budget` (2), `Trimtab.ZcodeAdapter` (2),
+`UNKNOWN_postgrex_types` (0), `Governance.Types.ChangeOfControlEventType` (0).
+Full 38-row list at `/tmp/w984it_map.txt` (now W984lq content; regenerate
+with `/tmp/w984lq_coverage.exs` after patching its map output path).
+Standing: ALIVE (as a map). Lane hygiene: no `_build-laneW984lq` created.

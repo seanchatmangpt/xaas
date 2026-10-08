@@ -183,3 +183,103 @@ re-witness), the maximal single run is counted once.
 - This receipt: docs-only, no commit, no build root (lane law). Falsifier:
   any cited count or SHA not reproducible from the cited receipt or
   `git log` at `b6fad269` falsifies this receipt.
+
+---
+
+## 7. Delta addendum (W984mp, 2026-10-08): receipts newer than this wave's coverage
+
+- Docs-only addendum by lane W984mp. Same disclosed method as §1–§5:
+  per receipt, the maximal single recorded green sub-census run
+  (`grep -oE '[0-9]+ passed' | awk '$1<500' | sort -n | tail -1`).
+  Coverage boundary: §5 ended at W984km; this addendum covers the
+  W984l* series and W984ma+ in `docs/sjira/v26.10.6/plans/` plus the
+  v26.10.7 lanes `w984kn`, `w984ko`, `w984kw`, `w984lo`, `w984mf`.
+  `w984mn-vendor.md` appeared on disk mid-lane (concurrent sibling lane,
+  zero sub-census runs recorded) and is included as docs-only.
+- Landing-batch commit SHAs (read from `git log`, HEAD `567ab1f5`):
+  batch #11 = `52ce8236` (receipt commit; legs `9a00385c`/`caf91669`/
+  `86c69061`), batch #12 = `1ba31a97` (legs `fcef478b`/`6ff734f2`),
+  batch #13 = `567ab1f5` (legs `d3189b40`/`be2591bd`/`4371fcff`/
+  `9ba3a44f`/`dc125c8c`/`038fd867`). No batch #14 exists as of
+  addendum time.
+- **Delta aggregate**: 23 receipts record at least one sub-census run;
+  their maximal figures sum to **1458 test-passes cited** (§7.1).
+  New wave total over both sections: **2334 + 1458 = 3792**. New
+  census floor: **1394 passed / 1 excluded / exit 0** (W984ko
+  `w984ko-census-witness.md`, superseding the §4 floor of 1388).
+
+### 7.1 Delta table (lane, court result, landing status)
+
+All receipts under `docs/sjira/v26.10.6/plans/` unless noted
+`v26.10.7`. Landing status read from `git status` / `git ls-files` /
+batch `--stat` at addendum time; HEAD `567ab1f5`.
+
+| receipt | fig | court result (as cited) | landing status |
+|---|---|---|---|
+| w984la-probe.md | 4 | dev-scope controller court, 4 passed | STAGED-UNCOMMITTED (receipt + `test/xaas_web/controllers/dev_court_w984la_test.exs` untracked) |
+| w984lb-probe.md | 2 | docs deepening, 2 dated blockquotes | LANDED batch #13 (`9ba3a44f` receipt; doc edits in `dc125c8c`) |
+| w984lc-probe.md | 4 | mutation non-vacuity audit #7, 4 legs | STAGED-UNCOMMITTED (receipt only) |
+| w984ld-probe.md | — | 9th landing addendum, docs-only | LANDED batch #13 (`9ba3a44f`) |
+| w984le-probe.md | 8 | pack query surfaces court, 8 passed | STAGED-UNCOMMITTED (receipt + `pack_queries_court_w984le_test.exs` untracked) |
+| w984lf-probe.md | 3 | closure-receipt truthing at `52ce8236` | LANDED batch #13 (`9ba3a44f`) |
+| w984lg-probe.md | 99 | evidence-index rows 77–92, 105/0 batch #11 re-read | LANDED batch #13 (`9ba3a44f`) |
+| w984lh-repair.md | 37 | next_read_live 2-failure repair, 37 passed | STAGED-UNCOMMITTED (receipt + `next_read_live_deepening_test.exs` modified) |
+| w984li-probe.md | — | 10th landing addendum, docs-only | LANDED batch #13 (`9ba3a44f`) |
+| w984lj-probe.md | 7 | supervision-tree court, 7 passed exit 0 | STAGED-UNCOMMITTED (receipt + `application_supervision_court_w984lj_test.exs` untracked) |
+| w984lm-repair.md | 137 | W984kk 4-failure pin repair, 137 passed | STAGED-UNCOMMITTED (receipt + repair edits uncommitted) |
+| w984ln-repair.md | 57 | W984kt typed-contract repair, 57 passed | STAGED-UNCOMMITTED (receipt + repair edits uncommitted) |
+| w984lp-e2e-falsifier.md | 6 | e2e seed falsifier, 6 passed | STAGED-UNCOMMITTED (receipt + `e2e/seed-library.exs` modified) |
+| w984lq-recensus.md | — | 8th census re-run (census-scale, sub-census n/a) | STAGED-UNCOMMITTED (receipt only) |
+| w984lr-fix.md | — | e2e seed Sandbox guard, falsifier progressed | STAGED-UNCOMMITTED (`e2e/seed-library.exs` modified; receipt untracked) |
+| w984ls-probe.md | 5 | platform route validations court, 5 passed | STAGED-UNCOMMITTED (receipt + `route_validations_court_w984ls_test.exs` untracked) |
+| w984lt-probe.md | 6 | 11th landing addendum + falsifier run, 6 passed | STAGED-UNCOMMITTED (runbook addendum in modified `_INTEGRATION_RUNBOOK.md`) |
+| w984lu-flake.md | 108 | fabric 204-flake classified, 108 passed × re-runs | STAGED-UNCOMMITTED (receipt only) |
+| w984lw-probe.md | — | mutation non-vacuity on w984lr guard (docs) | STAGED-UNCOMMITTED (receipt only) |
+| w984lx-probe.md | — | 12th landing addendum, docs-only | STAGED-UNCOMMITTED (runbook addendum uncommitted) |
+| w984ly-probe.md | 52 | flake-class sweep, 52 passed | STAGED-UNCOMMITTED (receipt only) |
+| w984lz-probe.md | 58 | evidence-index rows 93–95 (batch #12), 58 passed | STAGED-UNCOMMITTED (receipt only) |
+| w984m-graphql-doc.md | — | GraphQL doc census, docs-only | STAGED-UNCOMMITTED (receipt only) |
+| w984ma-probe.md | 5 | KNOWN-DEFECT comment refresh, 5 passed | STAGED-UNCOMMITTED (comment edits in modified lib/ files) |
+| w984mc-probe.md | — | 13th landing addendum, docs-only | STAGED-UNCOMMITTED (runbook addendum uncommitted) |
+| w984mg-probe.md | 391 | evidence-index batch #13 refresh (391 re-cites w984ke/lo eu_ai_act run) | STAGED-UNCOMMITTED (receipt only) |
+| w984mh-probe.md | — | 14th landing addendum, docs-only | STAGED-UNCOMMITTED (receipt only) |
+| w984ml-probe.md | — | 15th landing addendum, docs-only | STAGED-UNCOMMITTED (receipt only) |
+| w984mn-vendor.md | — | ash_pplan vendor residue disposition, zero tree changes | STAGED-UNCOMMITTED (receipt only; sibling `ash_pplan` untouched) |
+| v26.10.7 `w984kn-commit.md` | 58 | batch #12 gate: 58 passed / 0 failures | LANDED (`1ba31a97`) |
+| v26.10.7 `w984ko-census-witness.md` | 6 | census witness 1394/0/1 at `b6fad269` | STAGED-UNCOMMITTED (receipt untracked) |
+| v26.10.7 `w984kw-burndown.md` | 10 | fleet-seal burn-down, arithmetic only | LANDED batch #13 (`9ba3a44f`) |
+| v26.10.7 `w984lo-commit.md` | 391 | batch #13 gate 88 passed + eu_ai_act 391 passed | LANDED (`567ab1f5`) |
+| v26.10.7 `w984mf-ash-surface-playwright.md` | 4 | ash_surface Playwright seal ALIVE (sibling repo) | STAGED-UNCOMMITTED (receipt untracked; sibling repo untouched) |
+
+### 7.2 Landing-batch leg detail (post-W984km, from `git show --stat`)
+
+- Batch #12 (`1ba31a97`): `fcef478b` 10 courts → 3 court files + 3
+  receipts (jc/ju/jv); `6ff734f2` receipt-only lanes jn/kl/kh.
+- Batch #13 (`567ab1f5`): `d3189b40` disclosed lib repairs
+  (W984kk `approved_by` accept-list fix, W984jz, W984kg `no_lease`);
+  `4371fcff` W984ks orphan-change retirement (deletes the two
+  UNWIRED change modules, closes the §4 W984er orphan register —
+  **that open finding is now closed**); `be2591bd` 12 court files
+  (jt/jx/ka/jw/kr/kg/kj/js/ki/kq + `sparql_bridge_court_test.exs`
+  + title_iii edit); `9ba3a44f` 21 receipts incl. this wave receipt
+  and `w984kw-burndown.md`; `dc125c8c` diataxis edits (kx/ky/kz/kv/lb);
+  `038fd867` registers, closure receipt regen, evidence index (+101
+  lines), runbook (+348).
+- Batch #13 gate (as cited by `w984lo-commit.md`): 14 candidate court
+  files → **88 passed / exit 0**; W984ks gate re-run
+  `mix test test/xaas/billing` → 80 passed; `mix test test/eu_ai_act
+  --include eu_ai_act` → 391 passed.
+- Batch #12 gate (as cited by `w984kn-commit.md`): 10 candidate court
+  files → **58 passed / 0 failures**.
+
+### 7.3 §4 open-finding updates from the delta
+
+- W984ho rpc asymmetry: repair landed in batch #13 (`d3189b40`,
+  `execution_fabric_controller.ex` +10/-1) — **CLOSED**.
+- W984jk `CREATE_APPROVED_BY_BYPASS`: repair landed in batch #13
+  (`d3189b40`, `approval_invoice_reconciliation_approve.ex` +7/-1) —
+  **CLOSED** (W984ma's in-source comment refresh is the disclosed
+  follow-up, staged-uncommitted).
+- W984er orphan register: closed by `4371fcff` (see §7.2) — **CLOSED**.
+- Census floor raised to 1394 (W984ko). Remaining open items from §4
+  unchanged except as noted here; delta adds no new OPEN finding.
