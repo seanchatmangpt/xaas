@@ -1209,3 +1209,539 @@ docs are prior-lane appends, untouched by this lane.
 
 *Lane receipt (self-carried, docs-only, no commit, no build root):
 `docs/sjira/v26.10.6/plans/w984mx-probe.md`.*
+
+## Landing addendum — 2026-10-08 (lane W984nh)
+
+Nineteenth dated landing addendum, appended by lane W984nh at the shared
+canonical checkout `/Users/sac/xaas` on branch `feat/playwright-surface`
+(no branch switch, no stash, no commit; docs-only). Convention follows the
+W984ef→mx addenda. Written at 2026-10-08 01:49 PDT.
+
+### Commit delta since W984mx
+
+W984mx's addendum recorded HEAD = `567ab1f5` = origin. Seven commits have
+landed since, all batch #14 (W984mo); HEAD = `20a24db0` =
+`origin/feat/playwright-surface` at addendum time (rev-parse verified,
+nothing to push):
+
+| SHA | subject | receipt evidence |
+|---|---|---|
+| 22fe15c4 | fix(lib): W984ln marketplace catalog readiness repair + kt court leg 4 | w984mo-commit.md (row 1 of 6) + w984ng-probe.md |
+| 31322ec3 | fix(lib): W984lr e2e seed Sandbox guard + read-first get-or-create | w984mo-commit.md + w984ng-probe.md |
+| e982d1d0 | fix(e2e): W984fw/lp Playwright config + global-setup fixes | w984mo-commit.md + w984ng-probe.md |
+| 231088d2 | test(courts): ku/lj/ls courts (28 passed exit 0) | w984mo-commit.md + w984ng-probe.md |
+| 0c03909b | test: lh/ly flake-class repairs + ma comment refresh (53 passed exit 0) | w984mo-commit.md + w984ng-probe.md |
+| 2067a686 | docs(sjira): 91 files — untracked lane receipts + registers | w984mo-commit.md + w984ng-probe.md |
+| 20a24db0 | docs(sjira): W984mo — landing batch #14 lane commit receipt | w984ng-probe.md |
+
+Per-SHA receipt grep 7/7 found. No non-batch commits landed since W984mx;
+the log is otherwise unchanged from its coverage.
+
+### Open items (updated from disk, disclosed)
+
+- **Batch #14 (W984mo) — LANDED.** `w984mo-commit.md` now on disk in
+  `docs/sjira/v26.10.7/plans/` (tracked, arrived via `2067a686`/`20a24db0`).
+  Gates re-read from it: `mix compile` EXIT=0; court batch (ku/lj/ls + kt
+  catalog court) **28 passed exit 0**; repair batch (next_read_live/ranker/
+  nextread_deepening/next_read_test/dev_seeds_idempotency/pack_catalog_depth)
+  **53 passed exit 0**; mock gate `[]`; docs TODO scan 0 hits. Base
+  `567ab1f5`, six commits + its own receipt commit (`20a24db0`).
+- **ash_surface digest regen — NOW ON DISK, LANDED UNTRACKED**
+  (`docs/sjira/v26.10.7/plans/w984mk-fixture-regen.md`; absent at W984mx).
+  Falsifiers all pass: on-disk bytes == `DigestParityFixtures.encode()`
+  (4/4 Elixir guard); JS twin recomputes every fixture (10/10); full JS
+  suite **371/371 exit 0**. Working-tree regen of
+  `digest_cross_language_fixtures.json` (`532b4a1a…` present, `db26ae10…`
+  gone) — uncommitted in the shared tree; **W980g-pattern regen ownership
+  stays with the coordinator until committed.**
+- **W984ne (ash_surface TESTING.md truth sweep) — NOW ON DISK, UNTRACKED**
+  (`docs/sjira/v26.10.6/plans/w984ne-probe.md`). Real `npm test` in
+  `/Users/sac/ash_surface` @ `154385c82`: **371/371 pass, 0 fail, 0
+  skipped** — the 6 stale-fixture failures from the W984mf receipt are
+  gone with the regen. Playwright accessibility suite admitted (0
+  skipped) against real headless Chromium.
+- **Mutation audits — movement since W984mx:** `w984mr-probe.md` is NOW
+  ON DISK, UNTRACKED (mx recorded it absent): file-swap mutants over
+  `score_book.ex`/`ranker.ex`, courted against the 4 W984ly-repaired
+  surfaces. **`w984mj` still ABSENT** from both plans trees (lane root
+  `_build-laneW984mj` still on disk). `w984me` (#10) unchanged on disk.
+- **W984mt (ranker vacuous-fallback court) — STARTED but still ABSENT**
+  from both plans trees; `_build-laneW984mt` now on disk (was absent at
+  mx). In flight; unverifiable from disk beyond the build root.
+- **Batch #15 (W984nd) — in flight:** `_build-laneW984nd` on disk, no
+  receipt yet in either plans tree. Same for **`_build-laneW984na`** and
+  **`_build-laneW984nf`** (started, no receipt on disk).
+- **Evidence index — 109 numbered rows** (re-counted on disk:
+  `grep -cE '^\| *[0-9]+ '` = 109; UP from 102 at W984mx). Extension receipt `w984ng-probe.md` (UNTRACKED) grounds rows
+  103–109 in `w984mo-commit.md` + per-commit git stats, covering all 7
+  batch #14 commits (`567ab1f5..20a24db0`); rows 1–102 unchanged.
+- **Census chain — unchanged:** W984ko witness 1394/1394/1 @ `b6fad269`;
+  W984mi independent witness 1394/0/1 @ `567ab1f5` exit 0 (floor HELD);
+  8th re-census (`w984lq-recensus.md`) 95.3% covered. NEW on disk
+  UNTRACKED: `w984mm-probe.md` — census-tail court over the 5
+  non-route-validation remainder rows from the eighth re-census.
+- **Untracked docs under `docs/sjira`: 7 porcelain entries** (down from
+  mx's 84 by its broader recursive file count — batch #14's `2067a686`
+  landed 91 files, which is what drained the backlog): `w984mm`,
+  `w984mr`, `w984nb`, `w984nc`, `w984ne`, `w984ng` probes +
+  `v26.10.7/plans/w984mk-fixture-regen.md`. Note `w984nb` additionally
+  fixes diataxis link resolution (34 files swept).
+- **`_build-lane*` backlog: 10 roots** (re-listed on disk: ke/kh/ma/mi/
+  mj/mt/mw/na/nd/nf — UP from 9 at mx; lv/mm/mo/mr cleared, mt/mw/na/nd/
+  nf appeared). Pending osx-clnr classifier-r6 sweep.
+- **Remaining blockers (unchanged):** coordinator merge of
+  `feat/playwright-surface` to `main` + operator ash_pplan call.
+- **Push state at addendum time:** HEAD = `20a24db0` = origin
+  (verified). Coordinator push is current; nothing to push.
+
+*Lane receipt (self-carried, docs-only, no commit, no build root):
+`docs/sjira/v26.10.6/plans/w984nh-probe.md`.*
+
+## Landing addendum — 2026-10-08 (lane W984nk)
+
+Twentieth dated landing addendum, appended by lane W984nk at the shared
+canonical checkout `/Users/sac/xaas` on branch `feat/playwright-surface`
+(no branch switch, no stash, no commit; docs-only). Convention follows the
+W984ef→nh addenda. Written at 2026-10-08 02:0x PDT.
+
+### Commit delta since W984nh
+
+W984nh's addendum recorded HEAD = `20a24db0` = origin. **Zero commits have
+landed since** — HEAD = `20a24db0` =
+`origin/feat/playwright-surface` at addendum time (rev-parse verified,
+nothing to push). Batch #15 (W984nd) has NOT landed: no batch #15 commits,
+no `w984nd` receipt in either plans tree, `_build-laneW984nd` still on
+disk. Log otherwise unchanged from nh's coverage.
+
+### Open items (updated from disk, disclosed)
+
+- **ash_surface chain — regen leg NOW CLOSED on disk.**
+  `docs/sjira/v26.10.7/plans/w984mw-zod-regen.md` is NOW ON DISK, UNTRACKED
+  (nh recorded mw as build-root-only, in flight). Receipt: `mix
+  xaas.ash_surface` regen EXIT=0 against subject `567ab1f5`, SPEC-07
+  `org_id` now present in the 4 zod create schemas, `Xaas.Ocel.Event#destroy`
+  legitimately dropped (418→417 entrypoints — the W983e append-only fix
+  landed in `lib/xaas/ocel/event.ex`, so w984n's open falsifier #2 is
+  CLOSED); drift-guard court certifies byte-identity committed-vs-fresh.
+  Standing ALIVE (regen-landing witness). The regen landed as working-tree
+  edits to `priv/ash_surface/*` (visible in git status) — **W980g-pattern
+  commit ownership stays with the coordinator**. Receipt also discloses two
+  DENIED cleanups (`/tmp/w984mw-ashsurface-out`, `_build-laneW984mw` —
+  `rm -rf` permission denials); both leases remain on disk. `w984mk`
+  (fixture regen, 371/371) unchanged, still UNTRACKED. `w984mf` ALIVE
+  standing unchanged.
+- **Mutation audits — movement since nh:** `w984mj-probe.md` is NOW ON
+  DISK, UNTRACKED (nh recorded mj absent, lane root on disk): audit #12
+  over the W984ls route-validations court — file-swap mutants with
+  fresh-beam protocol, baseline 5 passed exit 0; all substantive mutants
+  KILLED (M1 nil-leg drop, M2 distinct-clause→false, M3 label-count
+  relaxation, M4' charset repair after M4 was reclassified as an
+  INVALID/equivalent mutant — auditor error, not court vacuity). Court
+  certified non-vacuous. `w984mr` (file-swap mutants over
+  score_book.ex/ranker.ex) unchanged on disk, UNTRACKED. **`w984ni` and
+  `w984nj` still ABSENT** from both plans trees; both lane roots on disk
+  (in flight). `w984me` (#10) unchanged.
+- **W984mt (ranker vacuous-fallback court) — STILL ABSENT** from both
+  plans trees; `_build-laneW984mt` still on disk. In flight; unverifiable
+  from disk beyond the build root.
+- **Batch #15 (W984nd) — in flight:** `_build-laneW984nd` on disk, no
+  receipt yet. Same for **`_build-laneW984na`** (started, no receipt on
+  disk).
+- **Wave-receipt delta (W984mp) — unchanged from W984mu**: wave total
+  **3792 passed** (2334 + 1458), re-verified present at
+  `docs/sjira/v26.10.7/plans/w984km-wave-receipt.md`.
+- **Closure receipt (W984lf regen, W984mq rows 21–29) — unchanged**:
+  9 appended rows re-counted on disk. Still DRAFT, exactly 2 blockers.
+- **Evidence index — 109 numbered rows, UNCHANGED from nh** (re-counted:
+  `grep -cE '^\| *[0-9]+ '` = 109). No new extension receipt since
+  `w984ng-probe.md` (rows 103–109); consistent with the zero commit delta.
+- **Census chain — unchanged:** W984ko witness 1394/1394/1 @ `b6fad269`;
+  W984mi independent witness 1394/0/1 @ `567ab1f5` exit 0 (floor HELD);
+  8th re-census (`w984lq-recensus.md`) 95.3% covered; `w984mm-probe.md`
+  census-tail court over the 5 remainder rows, still UNTRACKED.
+- **Untracked `w984*`/docs entries under `docs/sjira`: 10 porcelain
+  entries** (UP from 7 at nh): `w984mj`, `w984mm`, `w984mr`, `w984nb`,
+  `w984nc`, `w984ne`, `w984ng`, `w984nh` probes +
+  `v26.10.7/plans/w984mk-fixture-regen.md` +
+  `v26.10.7/plans/w984mw-zod-regen.md`. Delta vs nh: mj and mw receipts
+  arrived on disk (both self-disclosed as untracked at their write).
+- **`_build-lane*` backlog: 11 roots** (re-listed on disk: ke/kh/ma/mi/mt/
+  mw/na/nd/nf/ni/nj — UP from 10 at nh; ni and nj appeared, none cleared).
+  Pending osx-clnr classifier-r6 sweep; mw and mj roots are lease-remnant
+  (receipts landed, cleanups DENIED per those receipts).
+- **Remaining blockers (unchanged):** coordinator merge of
+  `feat/playwright-surface` to `main` + operator ash_pplan call.
+- **Push state at addendum time:** HEAD = `20a24db0` = origin
+  (verified). Coordinator push is current; nothing to push.
+
+*Lane receipt (self-carried, docs-only, no commit, no build root):
+`docs/sjira/v26.10.6/plans/w984nk-probe.md`.*
+
+## Landing addendum — 2026-10-08 (lane W984nn)
+
+Twenty-first dated landing addendum, appended by lane W984nn at the shared
+canonical checkout `/Users/sac/xaas` on branch `feat/playwright-surface`
+(no branch switch, no stash, no commit; docs-only). Convention follows the
+W984ef→nk addenda. Written at 2026-10-08 02:xx PDT.
+
+### Commit delta since W984nk
+
+W984nk's addendum recorded HEAD = `20a24db0` = origin. **Zero commits have
+landed since** — HEAD = `20a24db0` =
+`origin/feat/playwright-surface` at addendum time (rev-parse verified,
+nothing to push). Batch #15 (W984nd) has still NOT landed: no batch #15
+commits, no `w984nd` receipt in either plans tree, `_build-laneW984nd`
+still on disk. Log otherwise unchanged from nk's coverage (last 7 commits
+remain the batch #14 range `567ab1f5..20a24db0`, rows 80–86 in the
+manifest).
+
+### Open items (updated from disk, disclosed)
+
+- **Commit manifest — now 86 rows.** `w984nm-probe.md` is NOW ON DISK,
+  UNTRACKED (nk recorded nm not yet present): extends
+  `docs/sjira/v26.10.7/_COMMIT_MANIFEST.md` from 79 rows (W984mv) to 86
+  (rows 80–86, one per batch #14 commit `22fe15c4, 31322ec3, e982d1d0,
+  231088d2, 0c03909b, 2067a686, 20a24db0`; 6/7 SHAs grep-verified in
+  `w984mo-commit.md`, 20a24db0 self-carried). Summary header re-census at
+  20a24db0: 96 total commits, 131 test/ paths, 26 lib/ paths since
+  baseline `5e03acf5`. Header also notes batch #15 (W984nd) in flight.
+- **W984na follow-on court — receipt NOW ON DISK, UNTRACKED, and its
+  lane root is GONE** (nk recorded na build-root-only, in flight).
+  `w984na-probe.md`: 9-test ConnCase court
+  (`test/xaas_web/controllers/internal_api_followon_court_w984na_test.exs`,
+  on disk UNTRACKED) over the 6 previously-UNKNOWN JSON:API route
+  families W984lv left open (`RouteCastleRun/Schedule/Sunset`,
+  `CastleVerbInventoryComponents/Fortune5Requirements`,
+  `ApprovalK8sFaultRemediateSuggest`) — all 6 now **ALIVE** (index/read/
+  404 ×5; index/read/404/create/approve-refusal/401-floor for the k8s
+  suggest). Court 9/9 exit 0; W984lv re-run 8/8; mock gate `[]`.
+  Disclosed: first compile hit SystemLimitError on long test-description
+  atoms (names shortened). Build root `_build-laneW984na` deleted after
+  final gate per the receipt. The W984lv court file itself
+  (`internal_api_court_w984lv_test.exs`) remains UNTRACKED alongside it.
+- **Mutation audits — movement since nk:** no new receipts for
+  `w984nf`/`w984ni`/`w984nj`/`w984mt` (all still ABSENT from both plans
+  trees; all four lane roots still on disk). **`_build-laneW984nl` has
+  appeared** with no receipt in either plans tree (in flight,
+  build-root-only evidence, same status na/nd held at nk). `w984mj`
+  (route-validations audit, all substantive mutants KILLED),
+  `w984mr` (score_book/ranker file-swap mutants), `w984mm` (census-tail
+  court), `w984me` (#10) all unchanged on disk, UNTRACKED.
+- **Batch #15 (W984nd) — still in flight:** `_build-laneW984nd` on disk,
+  no receipt. Unchanged from nk.
+- **ash_surface chain — unchanged from nk:** `w984mw-zod-regen.md` and
+  `w984mk-fixture-regen.md` (371/371) on disk UNTRACKED; `w984mf` ALIVE.
+  Working-tree edits to `priv/ash_surface/*` remain staged for
+  coordinator commit ownership (W980g pattern).
+- **Wave-receipt delta (W984mp) — unchanged from W984mu**: wave total
+  **3792 passed** (2334 + 1458) at
+  `docs/sjira/v26.10.7/plans/w984km-wave-receipt.md`.
+- **Closure receipt (W984lf regen, W984mq rows 21–29) — unchanged**: 9
+  appended rows; still DRAFT, exactly 2 blockers.
+- **Evidence index — 109 numbered rows, UNCHANGED from nk** (re-counted:
+  `grep -cE '^\| *[0-9]+ '` = 109). No new extension receipt since
+  `w984ng-probe.md` (rows 103–109); consistent with the zero commit delta.
+- **Census chain — unchanged:** W984ko witness 1394/1394/1 @ `b6fad269`;
+  W984mi independent witness 1394/0/1 @ `567ab1f5` exit 0 (floor HELD);
+  8th re-census (`w984lq-recensus.md`) 95.3% covered; `w984mm-probe.md`
+  census-tail court over the 5 remainder rows, still UNTRACKED.
+- **Untracked `w984*`/docs entries under `docs/sjira`: 13 porcelain
+  entries** (UP from 10 at nk): `w984mj`, `w984mm`, `w984mr`,
+  `w984na`, `w984nb`, `w984nc`, `w984ne`, `w984ng`, `w984nh`,
+  `w984nk`, `w984nm` probes +
+  `v26.10.7/plans/w984mk-fixture-regen.md` +
+  `v26.10.7/plans/w984mw-zod-regen.md`. Delta vs nk: the `na` and `nm`
+  receipts arrived on disk (both self-disclosed as untracked at their
+  write).
+- **`_build-lane*` backlog: 11 roots** (re-listed on disk: ke/kh/ma/mi/mt/
+  mw/nd/nf/ni/nj/nl — same count as nk but the composition moved: the
+  **na root is CLEARED** (deleted per its receipt) and **nl appeared**;
+  ke/kh/ma/mi/mt/mw/nd/nf/ni/nj unchanged). Pending osx-clnr
+  classifier-r6 sweep; mw and mj roots remain lease-remnant.
+- **Remaining blockers (unchanged):** coordinator merge of
+  `feat/playwright-surface` to `main` + operator ash_pplan call.
+- **Push state at addendum time:** HEAD = `20a24db0` = origin
+  (verified). Coordinator push is current; nothing to push.
+
+*Lane receipt (self-carried, docs-only, no commit, no build root):
+`docs/sjira/v26.10.6/plans/w984nn-probe.md`.*
+
+## Landing addendum — 2026-10-08 (lane W984nq)
+
+Twenty-second dated landing addendum, appended by lane W984nq at the shared
+canonical checkout `/Users/sac/xaas` on branch `feat/playwright-surface`
+(no branch switch, no stash, no commit; docs-only). Convention follows the
+W984ef→nn addenda. Written at 2026-10-08.
+
+### Commit delta since W984nn
+
+W984nn recorded HEAD = `20a24db0` = origin with batch #15 still in flight.
+**Batch #15 (W984nd) has LANDED: 6 new commits, HEAD = `7593a062` =
+`origin/feat/playwright-surface` at addendum time (rev-parse verified,
+nothing to push).** Per-SHA receipt grep against
+`docs/sjira/v26.10.7/plans/w984nd-commit.md` (now on disk, TRACKED):
+
+| SHA | Subject (from log) | Receipt evidence |
+|---|---|---|
+| `4d96b097` | fix(ci) — W984md gate-fix: regen-drift CI leg + `--engine oxigraph` pin | grep hit in `w984nd-commit.md` |
+| `2e77ce47` | test(courts) — W984md engine-pin court (3) + W984le pack-queries court (8) | grep hit in `w984nd-commit.md` |
+| `7904b088` | fix(lib) — comment-sweep residue + W984eu compile-freeze + W984eb FRIA evidence flip | grep hit in `w984nd-commit.md` |
+| `df22abb6` | test — W984lm bare-atom pin repairs (4 pins, tests-only) | grep hit in `w984nd-commit.md` |
+| `17ef4b54` | test(courts) — 14 court files from finished lanes + owner probe receipts + docs | grep hit in `w984nd-commit.md` |
+| `7593a062` | docs(sjira) — W984nd landing batch #15 lane commit receipt | self-carried: the receipt's own commit (`w984nd-commit.md`) |
+
+Batch gates per the receipt (real output, lane root `_build-laneW984nd`,
+since deleted): mock gate `[]`; gates A/B/C/D = 101/45/46/4 passed — 196
+tests, 0 failures. Disclosed NOT landed: `w984dg` RED court (coordinator
+EXCLUDED, no owner green run); mf-family `priv/ash_surface/*` +
+`manufacture.ex.eex` (no landed owner receipt); `cleanup-plan.json` /
+`emergency-reclaim-receipt.json` / `priv/semantic/generated/` (coordinator
+triage); in-flight lm/lh-family M-test edits.
+
+### Open items (updated from disk, disclosed)
+
+- **Commit manifest — batch #15 rows owed:** `_COMMIT_MANIFEST.md` still
+  ends at the batch #14 range (rows 80–86) with its header noting batch #15
+  in flight (lines 61–63, 210); the 6 new SHAs are NOT yet rows. Manifest
+  extension owed to the next mv-style pass.
+- **Mutation audits — movement since nn:** `w984nf-probe.md` NOW ON DISK,
+  UNTRACKED — mutation non-vacuity audit #16 over W984mm's census-tail
+  court (5 lib subjects incl. CpuPlugin, budget.ex, zcode_adapter.ex);
+  baseline 16 passed exit 0; early matrix rows all KILLED (M1 poll_rate,
+  M2 error-util flip). **`_build-laneW984nf` and `_build-laneW984nd` are
+  GONE** (nf cleanup post-receipt; nd deleted per its landing receipt).
+  No receipts yet for `w984ni`/`w984nj`/`w984nl`/`w984mt` (all roots still
+  on disk). `mj` (route-validations, all killed) and `mr` (ranker
+  file-swap) unchanged, UNTRACKED.
+- **W984na follow-on court — landed-content state unchanged from nn:**
+  `w984na-probe.md` + court file still UNTRACKED (its 6 route families
+  ALIVE, 9/9 exit 0; court file not in batch #15's candidate list per the
+  nd receipt's disclosure).
+- **ash_surface chain — unchanged from nn:** `w984mw-zod-regen.md` and
+  `w984mk-fixture-regen.md` (371/371) on disk UNTRACKED; `w984mf` ALIVE;
+  `priv/ash_surface/*` + `manufacture.ex.eex` working-tree edits remain
+  staged for coordinator commit ownership (W980g pattern) — explicitly
+  excluded from batch #15.
+- **Wave-receipt delta (W984mp) — unchanged from W984mu**: wave total
+  **3792 passed** (2334 + 1458) at
+  `docs/sjira/v26.10.7/plans/w984km-wave-receipt.md`.
+- **Closure receipt (W984lf regen, W984mq rows 21–29) — unchanged**: 9
+  appended rows; still DRAFT, exactly 2 blockers.
+- **Evidence index — 109 numbered rows, UNCHANGED from nn** (re-counted:
+  `grep -cE '^\| *[0-9]+ '` = 109). Batch #15's court/test files are not
+  yet index rows; extension receipt owed.
+- **Census chain — unchanged:** W984ko witness 1394/1394/1 @ `b6fad269`;
+  W984mi independent witness 1394/0/1 @ `567ab1f5` exit 0 (floor HELD);
+  8th re-census (`w984lq-recensus.md`) 95.3% covered; the census-tail
+  court (mm, 16 tests) is now TRACKED via batch #15 and mutation-audited
+  by nf.
+- **Untracked `w984*`/docs entries under `docs/sjira`: 13 porcelain
+  entries** (same count as nn, composition moved: `w984mm` is now TRACKED
+  via batch #15 and **`w984nf` appeared**): `w984mj`, `w984mr`, `w984na`,
+  `w984nb`, `w984nc`, `w984ne`, `w984nf`, `w984ng`, `w984nh`, `w984nk`,
+  `w984nm`, `w984nn` probes +
+  `v26.10.7/plans/w984mk-fixture-regen.md` +
+  `v26.10.7/plans/w984mw-zod-regen.md`.
+- **`_build-lane*` backlog: 10 roots** (re-listed on disk: ke/kh/ma/mi/mt/
+  mw/ni/nj/nl/no — DOWN from 11 at nn: **nd cleared** per its landing
+  receipt and **nf never left a root on disk post-cleanup**, while **no
+  appeared** with no receipt in either plans tree). Pending osx-clnr
+  classifier-r6 sweep; mw and mj roots remain lease-remnant.
+- **Remaining blockers (unchanged):** coordinator merge of
+  `feat/playwright-surface` to `main` + operator ash_pplan call.
+- **Push state at addendum time:** HEAD = `7593a062` = origin
+  (verified). Coordinator push is current; nothing to push.
+- **Runbook diff note:** `git diff --stat` on this file at addendum time
+  shows 348 insertions — the pre-existing uncommitted nn section (~256
+  lines) plus this nq section (~92 lines); nq added only its own appended
+  block (no edits above it).
+
+*Lane receipt (self-carried, docs-only, no commit, no build root):
+`docs/sjira/v26.10.6/plans/w984nq-probe.md`.*
+
+## Landing addendum — 2026-10-08 (lane W984nt)
+
+### Commit delta since W984nq
+
+**No new commits.** `git log --oneline -15` head = `7593a062` (W984nd
+batch #15 lane commit receipt); `git rev-parse HEAD
+origin/feat/playwright-surface` → both `7593a062bf6c350b56df4987c9e5847f0a1223e6`;
+`git log --oneline 7593a062..HEAD` → 0 rows. Push state current (nothing
+to push). Since nq's write, the tree gained two docs-only lane extensions
+(both UNCOMMITTED, working-tree only):
+
+| Lane | Artifact | State at nt write |
+|---|---|---|
+| W984nr | evidence-claims-index extension (rows 110–115, batch #15 SHAs) | on disk UNTRACKED, receipt `w984nr-probe.md` UNTRACKED |
+| W984ns | commit-manifest extension (rows 87–92, batch #15 SHAs) | on disk UNTRACKED, receipt `w984ns-probe.md` UNTRACKED |
+
+### Open items (updated from disk, disclosed)
+
+- **Commit manifest: 92 numbered rows** (`grep -cE '^\| *[0-9]+ '` = 92;
+  ends at batch #15 range with W984ns extension notes at lines 213/222/
+  238/244/248/255). Batch #15 is now fully rowed — the nq-era "batch #15
+  rows owed" item is CLOSED.
+- **Evidence index — 115 numbered rows** (re-counted on disk; was 109 at
+  nn/nq). Batch #15's six SHAs now have index rows via W984nr.
+- **Mutation audits — disk state:** receipts on disk for
+  kp/lc/mb/me/mj/mr/nf/ni (`w984{kp,lc,mb,me,mj,mr,nf,ni}-probe.md`);
+  **in-flight: nl/np** — `w984nl`/`w984np` probes absent, both lanes hold
+  build roots (`_build-laneW984nl`, `_build-laneW984np`). `mj` (route-
+  validations, all killed) and `mr` (ranker file-swap) unchanged,
+  UNTRACKED.
+- **W984mt ranker court — in tree, NOT landed:** 
+  `test/xaas/library/ranker_fallback_court_w984mt_test.exs` present
+  UNTRACKED; receipt `w984mt-probe.md` on disk UNTRACKED; not in any
+  landing batch. Still owner-carried.
+- **ash_surface chain — unchanged from nq:** `priv/ash_surface/*` +
+  `manufacture.ex.eex` working-tree edits remain coordinator-owned;
+  `w984mw-zod-regen.md` / `w984mk-fixture-regen.md` UNTRACKED.
+- **Wave-receipt delta: 3792 passed** (unchanged from mp/mu).
+- **Closure receipt: 9 appended rows, DRAFT, 2 blockers** (unchanged).
+- **Census chain — unchanged:** witness 1394/1394/1 @ `b6fad269`; mi
+  independent witness 1394/0/1 @ `567ab1f5`; 8th re-census 95.3%; mm
+  court TRACKED + nf-audited.
+- **Untracked `docs/sjira` porcelain entries: 18** (up from 13 at nn;
+  nq saw a mid-flight 17 when `w984ns-probe.md` landed during this
+  lane's census; movement vs nn: mm/nd/ns now TRACKED-or-present, mj/
+  mr/mt/ni/nq/nr appeared). List: mj, mr, mt, na, nb, nc, ne, nf, ng,
+  nh, ni, nk, nm, nn, nq, nr, ns probes + `v26.10.7/plans/
+  w984mk-fixture-regen.md` + `v26.10.7/plans/w984mw-zod-regen.md` (ns
+  counted within; the two v26.10.7 regen docs bring the list to 18).
+- **`_build-lane*` backlog: 9 roots** (ke/kh/ma/mi/mw/nj/nl/no/np —
+  DOWN from 10 at nq: **mt and ni cleared** since nq's listing, **np
+  appeared** in-flight). Pending osx-clnr classifier-r6 sweep; mw and
+  nj roots remain lease-remnant.
+- **Remaining blockers (unchanged):** coordinator merge of
+  `feat/playwright-surface` to `main` + operator ash_pplan call.
+- **Push state at addendum time:** HEAD = `7593a062` = origin
+  (verified).
+- **Runbook diff note:** `git diff --stat` on this file at addendum time
+  shows 349 insertions — pre-existing uncommitted sections (through nq)
+  plus this nt section (~65 lines); nt appended only its own block (no
+  edits above it).
+
+*Lane receipt (self-carried, docs-only, no commit, no build root):
+`docs/sjira/v26.10.6/plans/w984nt-probe.md`.*
+
+## Landing addendum — 2026-10-08 (lane W984nv)
+
+### Commit delta since W984nt
+
+**No new commits.** `git log --oneline -15` head = `7593a062` (W984nd
+batch #15 lane commit receipt); `git rev-parse HEAD
+origin/feat/playwright-surface` → both
+`7593a062bf6c350b56df4987c9e5847f0a1223e6`; `git log --oneline
+7593a062..HEAD` → 0 rows. Push state current (nothing to push). Working
+tree remains the live surface: pre-existing modifications (ash_surface
+chain, court files, diataxis docs) plus untracked lane artifacts, all
+coordinator-owned; this lane added docs only.
+
+### Open items (updated from disk, disclosed)
+
+- **Commit manifest: 92 numbered rows** (re-counted on disk; unchanged
+  from nt — batch #15 fully rowed, W984ns extension intact).
+- **Evidence index: 115 numbered rows** (re-counted on disk; unchanged
+  from nt — W984nr extension intact).
+- **Census chain — advanced:** NEW independent witness W984no —
+  1394 passed / 0 failed / 1 excluded @ `17ef4b54` (batch #15 head),
+  exit 0, floor HELD vs the W984mi witness (1394/0/1 @ `567ab1f5`);
+  witness doc on disk UNTRACKED:
+  `docs/sjira/v26.10.7/plans/w984no-census-witness.md`.
+- **Mutation audits — disk state:** receipts on disk for
+  kp/lc/mb/me/mj/mr/ni/**nl** (`w984nl-probe.md` now present — nl DONE
+  since nt: non-vacuity audit #20 over W984na's follow-on court, 9-test
+  baseline, file-swap idiom). **In-flight: np, nu** — `w984np`/`w984nu`
+  probes absent, both lanes hold build roots (`_build-laneW984np`,
+  `_build-laneW984nu`). `mj` (route-validations, all killed) and `mr`
+  (ranker file-swap) unchanged, UNTRACKED.
+- **W984mt ranker court — still NOT landed:**
+  `test/xaas/library/ranker_fallback_court_w984mt_test.exs` present
+  UNTRACKED; receipt `w984mt-probe.md` on disk UNTRACKED; not in any
+  landing batch. Owner-carried.
+- **ash_surface chain — unchanged from nt:** `priv/ash_surface/*` +
+  `manufacture.ex.eex` working-tree edits coordinator-owned;
+  `w984mw-zod-regen.md` / `w984mk-fixture-regen.md` UNTRACKED.
+- **Untracked `docs/sjira` porcelain entries: 22** (up from 18 at nt;
+  movement vs nt: **no** witness appeared,
+  `w984no-census-witness.md` in v26.10.7/plans; nt/nl probes landed
+  on disk during the window). List: mj, mr, mt, na, nc, ne, nf, ng,
+  nh, ni, nj-strengthen, nk, nl, nm, nn, nq, nr, ns, nt probes +
+  `v26.10.7/plans/w984mk-fixture-regen.md` +
+  `v26.10.7/plans/w984mw-zod-regen.md` +
+  `v26.10.7/plans/w984no-census-witness.md` (22 total).
+- **`_build-lane*` backlog: 7 roots** (ke/kh/ma/mi/mw/np/nu — DOWN
+  from 9 at nt: **nj, nl, no cleared** since nt's listing; **nu
+  appeared** in-flight). Pending osx-clnr classifier-r6 sweep; mw
+  root remains lease-remnant.
+- **Remaining blockers (unchanged):** coordinator merge of
+  `feat/playwright-surface` to `main` + operator ash_pplan call.
+- **Push state at addendum time:** HEAD = `7593a062` = origin
+  (verified).
+- **Runbook diff note:** `git diff --stat` on this file at addendum
+  time shows 414 insertions — pre-existing uncommitted sections
+  (through nt) plus this nv section (~60 lines); nv appended only its
+  own block (no edits above it).
+
+*Lane receipt (self-carried, docs-only, no commit, no build root):
+`docs/sjira/v26.10.6/plans/w984nv-probe.md`.*
+
+## Landing addendum — 2026-10-08 (lane W984nx)
+
+### Commit delta since W984nv
+
+**No new commits.** `git log --oneline -15` head = `7593a062` (W984nd
+batch #15 lane commit receipt); `git rev-parse HEAD
+origin/feat/playwright-surface` → both
+`7593a062bf6c350b56df4987c9e5847f0a1223e6`; `git log --oneline
+7593a062..HEAD` → 0 rows. No batch #16 landed; push state current
+(nothing to push). Working tree remains the live surface: pre-existing
+modifications (ash_surface chain, court files, diataxis docs) plus
+untracked lane artifacts, all coordinator-owned; this lane added docs
+only.
+
+### Open items (updated from disk, disclosed)
+
+- **Commit manifest: 92 numbered rows** (re-counted on disk; unchanged
+  from nt/nv — batch #15 fully rowed).
+- **Evidence index: 115 numbered rows** (re-counted on disk; unchanged
+  from nt/nv — W984nr extension intact).
+- **Mutation audits — disk state:** receipts on disk for
+  kp/lc/mb/me/mj/mr/ni/nl; **in-flight: np, nu** — `w984np`/`w984nu`
+  probes absent, both lanes hold build roots (`_build-laneW984np`,
+  `_build-laneW984nu`). `mj` (route-validations, all killed) and `mr`
+  (ranker file-swap) unchanged, UNTRACKED.
+- **W984mt ranker court — still NOT landed:**
+  `test/xaas/library/ranker_fallback_court_w984mt_test.exs` present
+  UNTRACKED; receipt `w984mt-probe.md` on disk UNTRACKED; not in any
+  landing batch. Owner-carried.
+- **ash_surface chain — unchanged from nv:** `priv/ash_surface/*` +
+  `manufacture.ex.eex` working-tree edits coordinator-owned;
+  `w984mw-zod-regen.md` / `w984mk-fixture-regen.md` UNTRACKED.
+- **Wave-receipt delta: 3792 passed** (unchanged from mp/mu/nv).
+- **Closure receipt: 9 appended rows, DRAFT, 2 blockers** (unchanged).
+- **Census chain — unchanged from nv:** witness 1394/1394/1 @
+  `b6fad269`; mi witness 1394/0/1 @ `567ab1f5`; NEW nv-window witness
+  W984no 1394/0/1 @ `17ef4b54` (batch #15 head), doc UNTRACKED at
+  `docs/sjira/v26.10.7/plans/w984no-census-witness.md`; 8th re-census
+  95.3%; mm court TRACKED + nf-audited.
+- **Untracked `docs/sjira` porcelain entries: 23** (up from 22 at nv;
+  movement: nv probe appeared on disk during the window). List: mj, mr,
+  mt, na, nc, ne, nf, ng, nh, ni, nj-strengthen, nk, nl, nm, nn, nq,
+  nr, ns, nt, nv probes + `v26.10.7/plans/w984mk-fixture-regen.md` +
+  `v26.10.7/plans/w984mw-zod-regen.md` +
+  `v26.10.7/plans/w984no-census-witness.md` (23 total).
+- **`_build-lane*` backlog: 7 roots** (ke/kh/ma/mi/mw/np/nu — unchanged
+  from nv). Pending osx-clnr classifier-r6 sweep; mw root remains
+  lease-remnant.
+- **Remaining blockers (unchanged):** coordinator merge of
+  `feat/playwright-surface` to `main` + operator ash_pplan call.
+- **Push state at addendum time:** HEAD = `7593a062` = origin
+  (verified).
+- **Runbook diff note:** `git diff --stat` on this file at addendum
+  time shows 476 insertions — pre-existing uncommitted sections (through
+  nv) plus this nx section (~70 lines); nx appended only its own block
+  (no edits above it).
+
+*Lane receipt (self-carried, docs-only, no commit, no build root):
+`docs/sjira/v26.10.6/plans/w984nx-probe.md`.*

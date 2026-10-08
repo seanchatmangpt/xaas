@@ -1,10 +1,12 @@
 # Commit Manifest — v26.10.7 wave (commit-manifest v3 staging)
 
 - Staged by: lane W984iz (commit-manifest v3 staging), 2026-10-07;
-  extended by lane W984mv, 2026-10-08 (rows 64–79, batches #11–#13 + W984kb/kc)
-- Subject: /Users/sac/xaas @ feat/playwright-surface, HEAD 567ab1f5
-  (extended from 3961c4ab; range verified `git log 3961c4ab..HEAD` at write time)
-- Range: 5e03acf5..HEAD — 89 commits, all 2026-10-07/08. Tag `v26.10.7` =
+  extended by lane W984mv, 2026-10-08 (rows 64–79, batches #11–#13 + W984kb/kc);
+  extended by lane W984nm, 2026-10-08 (rows 80–86, landing batch #14 / W984mo);
+  extended by lane W984ns, 2026-10-08 (rows 87–92, landing batch #15 / W984nd)
+- Subject: /Users/sac/xaas @ feat/playwright-surface, HEAD 7593a062
+  (extended from 20a24db0; range verified `git log 20a24db0..HEAD` at write time)
+- Range: 5e03acf5..HEAD — 102 commits, all 2026-10-07/08. Tag `v26.10.7` =
   56325fa5 (verified `git tag --points-at 56325fa5` → v26.10.7);
   5e03acf5 (W650v4 digest framing rotation) is the earliest post-tag wave
   commit and the manifest's baseline (excluded as zero-point).
@@ -16,16 +18,23 @@
   (b) per-commit — each row's receipt either names the SHA on disk (grep
   verified this lane) or is self-carried (the commit itself lands the receipt
   file, so it cannot contain its own hash; existence holds in the tree at HEAD).
-- Push state: HEAD == origin/feat/playwright-surface == 567ab1f5 — the entire
-  range is PUSHED (re-verified `git rev-parse HEAD origin/...` by W984mv).
+- Push state: HEAD == origin/feat/playwright-surface == 7593a062 — the entire
+  range is PUSHED (re-verified `git rev-parse HEAD origin/...` by W984ns).
 
 ## Summary header
 
-- Total commits: **89** (5e03acf5..HEAD).
-- Test files landed: **122** distinct paths under `test/` in the range diff
-  (`git diff --name-only 5e03acf5..HEAD -- test/ | wc -l`, re-run at 567ab1f5).
-- lib/ diffs landed: **24** distinct paths under `lib/` (includes 2 deletions
-  from 4371fcff W984ks orphan retirement) — each backed by a
+- Total commits: **102** (5e03acf5..HEAD).
+- Test files landed: **150** distinct paths under `test/` in the range diff
+  (`git diff --name-only 5e03acf5..HEAD -- test/ | wc -l`, re-run at 7593a062;
+  batch #15 adds 18 new/modified test paths).
+- lib/ diffs landed: **30** distinct paths under `lib/` (includes 2 deletions
+  from 4371fcff W984ks orphan retirement; batch #14 adds
+  lib/xaas/marketplace/catalog.ex [22fe15c4] and lib/xaas/dev_seeds.ex
+  [31322ec3]; batch #15 adds lib/xaas/generated/regen_check.ex [4d96b097],
+  lib/xaas/library/book.ex, lib/xaas/operations/audit_log_entry.ex,
+  lib/xaas/operations/refusal_ledger_export.ex,
+  lib/xaas/semantics/oversight_governance.ex [all 7904b088]; re-census at
+  7593a062) — each backed by a
   landing/repair receipt:
   - 3c03bffa — W650h14 gated batch 1 (6 lib files) — `plans/w650h14-gated-commit.md`
   - f0321df2 — W984dq6 SpgGate F2 guard + single-funnel seam — `plans/w650h22-commit.md`
@@ -43,16 +52,29 @@
     controller) — `v26.10.7/plans/w984lo-commit.md`
   - 4371fcff — W984ks orphan-change retirement (2 billing change modules
     deleted) — `v26.10.7/plans/w984lo-commit.md`
-- Docs landings: **229** distinct paths under `docs/` (lane receipts, landing
-  addenda #1–#4, runbook/closure-plan updates, coverage re-censuses, diataxis/
-  cro truthing; re-census at 567ab1f5).
+  - 22fe15c4 — W984ln marketplace catalog readiness repair —
+    `v26.10.7/plans/w984mo-commit.md`
+  - 31322ec3 — W984lr e2e seed Sandbox guard + read-first get-or-create —
+    `v26.10.7/plans/w984mo-commit.md`
+  - 4d96b097 — W984md regen_check `--engine oxigraph` pin —
+    `v26.10.7/plans/w984nd-commit.md` (owner receipts `w984md-gate-fix.md`,
+    `w984le-probe.md`)
+  - 7904b088 — W984ex/W984eu/W984eb lib repairs (comment sweep `book.ex` +
+    `audit_log_entry.ex`; compile-freeze `refusal_ledger_export.ex`; FRIA
+    evidence flip `oversight_governance.ex`) — `v26.10.7/plans/w984nd-commit.md`
+    (owner receipts `w984ex/w984eu/w984eb-probe.md`)
+- Docs landings: **319** distinct paths under `docs/` (lane receipts, landing
+  addenda #1–#4, untracked lane receipt sweep, runbook/closure-plan updates,
+  coverage re-censuses, diataxis/cro truthing; re-census at 20a24db0).
 - Open-items carryover (per docs/sjira/v26.10.7/_INTEGRATION_RUNBOOK.md):
   (1) coordinator merge of `feat/playwright-surface` → `main`; (2) operator
   ash_pplan decision — W984hd re-pin landed in the ash_pplan repo itself
   (runbook: LANDED-IN-ash_pplan, receipt-only here); ash_pplan tag decision
-  remains open; (3) batch #14 (W984mo) in flight at staging time; (4)
-  W984lr/lw e2e fixes + W984ln/md lib diffs staged-uncommitted at staging
-  time (not in this range).
+  remains open; (3) batch #14 (W984mo) LANDED (22fe15c4..20a24db0, all
+  pushed); (4) batch #15 (W984nd) LANDED this extension
+  (4d96b097..7593a062, all pushed; receipt `v26.10.7/plans/w984nd-commit.md`,
+  196 tests passed across 4 batch gates per receipt; disclosed exclusions:
+  w984dg RED 4/22 court per coordinator, in-flight lanes mj/mr/mt/na files).
 
 ## Commit table (5e03acf5..HEAD, chronological)
 
@@ -140,6 +162,19 @@ the commit lands the receipt file itself.
 | 77 | dc125c8c | W984kx, W984ky, W984kz, W984kv, W984lb, W984lo | 8 docs (diataxis truth-pass) | docs-only | v26.10.7/plans/w984lo-commit.md (cites SHA); self: v26.10.6/plans/w984kx/ky/kz/kv/lb-probe.md |
 | 78 | 038fd867 | W984lo | 7 docs (closure regen + registers + evidence index + runbook) | docs-only | v26.10.7/plans/w984lo-commit.md (cites SHA) |
 | 79 | 567ab1f5 | W984lo | 1 docs receipt | docs-only | self: v26.10.7/plans/w984lo-commit.md |
+| 80 | 22fe15c4 | W984ln, W984mo | 1 lib (marketplace catalog readiness repair) + 1 test court | landing batch #14, receipt attested | v26.10.7/plans/w984mo-commit.md (cites SHA); self: v26.10.6/plans/w984ng-probe.md, w984nh-probe.md |
+| 81 | 31322ec3 | W984lr, W984mo | 1 lib (dev_seeds) + 1 e2e seed script (Sandbox guard + read-first get-or-create) | landing batch #14, receipt attested | v26.10.7/plans/w984mo-commit.md (cites SHA); self: v26.10.6/plans/w984ng-probe.md, w984nh-probe.md |
+| 82 | e982d1d0 | W984fw, W984lp, W984mo | 2 e2e (playwright.config.cjs + global-setup.cjs fixes) | landing batch #14, verified by W984lp | v26.10.7/plans/w984mo-commit.md (cites SHA); self: v26.10.6/plans/w984ng-probe.md, w984nh-probe.md |
+| 83 | 231088d2 | W984lj, W984ku, W984ls, W984mo | 3 test courts (application supervision + curation resource + route validations) | landing batch #14 courts | v26.10.7/plans/w984mo-commit.md (cites SHA); self: v26.10.6/plans/w984ng-probe.md, w984nh-probe.md |
+| 84 | 0c03909b | W984lh, W984ly, W984ma, W984mo | 6 test modified (flake-class repairs + comment refresh) | landing batch #14, flake repairs | v26.10.7/plans/w984mo-commit.md (cites SHA); self: v26.10.6/plans/w984ng-probe.md, w984nh-probe.md |
+| 85 | 2067a686 | W984mo | 38+ docs (untracked lane receipts sweep + registers + evidence-claims index) | docs-only | v26.10.7/plans/w984mo-commit.md (cites SHA); self: v26.10.6/plans/w984ng-probe.md, w984nh-probe.md |
+| 86 | 20a24db0 | W984mo | 1 docs receipt (batch #14 lane commit receipt) | docs-only | self: v26.10.7/plans/w984mo-commit.md (receipt cannot contain its own hash) |
+| 87 | 4d96b097 | W984md, W984nd | 1 CI leg (regen-drift in ci_cd.yaml) + 1 lib (regen_check --engine oxigraph pin) | landing batch #15, gate-fix | v26.10.7/plans/w984nd-commit.md (cites SHA); self: v26.10.6/plans/w984nq-probe.md |
+| 88 | 2e77ce47 | W984md, W984le, W984nd | 2 test courts (engine-pin 3 tests + pack-queries 8 tests) | landing batch #15 courts | v26.10.7/plans/w984nd-commit.md (cites SHA); self: v26.10.6/plans/w984nq-probe.md |
+| 89 | 7904b088 | W984ex, W984eu, W984eb, W984nd | 4 lib + 1 test (comment sweep, compile-freeze vacuous-guard drop, FRIA evidence flip) | landing batch #15, owner receipts cited | v26.10.7/plans/w984nd-commit.md (cites SHA); self: v26.10.6/plans/w984nq-probe.md |
+| 90 | df22abb6 | W984lm, W984nd | 2 test modified (4 bare-atom pin repairs) | landing batch #15, repairs | v26.10.7/plans/w984nd-commit.md (cites SHA); self: v26.10.6/plans/w984nq-probe.md |
+| 91 | 17ef4b54 | W984la, W984dz, W984jr, W984dv, W984ei, W984ih, W984if, W984dr3, W984ds2, W650y3, W650h21, W984mm, W984nb, W984kz, W984nd | 14 test courts + 4 docs (2 probe receipts, diataxis README, e2e README) | landing batch #15 courts + docs | v26.10.7/plans/w984nd-commit.md (cites SHA); self: v26.10.6/plans/w984nq-probe.md |
+| 92 | 7593a062 | W984nd | 1 docs receipt (batch #15 lane commit receipt) | docs-only | self: v26.10.7/plans/w984nd-commit.md (receipt cannot contain its own hash) |
 
 ## Group verification of landing-batch receipts (test -f + grep, this lane)
 
@@ -160,6 +195,8 @@ All 9 receipts exist on disk (real `test -f`). grep-SHA results vs the range:
 | v26.10.7/plans/w984kf-commit.md | OK | 9a00385c caf91669 86c69061 | all 3 in range |
 | v26.10.7/plans/w984kn-commit.md | OK | fcef478b 6ff734f2 1ba31a97 | all 3 in range |
 | v26.10.7/plans/w984lo-commit.md | OK | d3189b40 be2591bd 4371fcff 9ba3a44f dc125c8c 038fd867 | all 6 in range |
+| v26.10.7/plans/w984mo-commit.md | OK | 22fe15c4 31322ec3 e982d1d0 231088d2 0c03909b 2067a686 | all 6 in range; 20a24db0 self-carried (not grep-findable in own receipt) |
+| v26.10.7/plans/w984nd-commit.md | OK | 4d96b097 2e77ce47 7904b088 df22abb6 17ef4b54 | all 5 in range; 7593a062 self-carried (the commit lands the receipt) |
 
 W984mv extension note (2026-10-08): all 16 new-range SHAs were per-SHA
 grep-verified on disk this lane — each names its batch receipt
@@ -167,6 +204,22 @@ grep-verified on disk this lane — each names its batch receipt
 under docs/sjira/v26.10.6/plans/. The batch #13 wave receipt
 `v26.10.7/plans/w984km-wave-receipt.md` also exists and greps all 7 batch #13
 SHAs including 567ab1f5 itself.
+
+W984nm extension note (2026-10-08): all 7 batch #14 SHAs verified at write
+time — 6 grep-found in `v26.10.7/plans/w984mo-commit.md` (test -f OK) and
+also in `v26.10.6/plans/w984ng-probe.md` / `w984nh-probe.md`; 20a24db0 is
+self-carried (the commit itself lands w984mo-commit.md).
+
+W984ns extension note (2026-10-08): all 6 batch #15 SHAs verified at write
+time — 5 grep-found in `v26.10.7/plans/w984nd-commit.md` (test -f OK; also in
+`v26.10.6/plans/w984nq-probe.md`) and 7593a062 is self-carried (the commit
+itself lands w984nd-commit.md). Per-receipt real gates at landing (per
+w984nd-commit.md): mock gate `[]` exit 0; batch gates A/B/C/D → 101+45+46+4 =
+196 passed, 0 failures, in lane build root `_build-laneW984nd` (lane-leased,
+deleted at integration per cleanup law). Disclosed exclusions: W984dg court
+RED 4/22 (coordinator-excluded per `w650h16-commit.md`); in-flight lanes
+mj/mr/mt/na files NOT landed. Range now 5e03acf5..7593a062 = 102 commits,
+counts re-censused by W984ns: 150 test/ + 30 lib/ + 319 docs/ paths.
 
 Note: w984fu-commit.md also names 180d4606/956b772a/b5615c6d, which are inside
 5e03acf5..HEAD (in range). No receipt in the sweep named a SHA that is not
@@ -176,16 +229,28 @@ and similar), not xaas commits.
 ## Standing
 
 - Manifest staging: **ALIVE** — every row grounded in real `git log` /
-  `git show --name-status` output at HEAD 567ab1f5; all 13 group receipts
-  test -f + grep verified on disk (9 by W984iz at 3961c4ab, 4 more by W984mv
-  at 567ab1f5); all 16 extension SHAs per-SHA grep-verified.
+  `git show --name-status` output at HEAD 7593a062; all 15 group receipts
+  test -f + grep verified on disk (9 by W984iz at 3961c4ab, 4 by W984mv
+  at 567ab1f5, 1 by W984nm at 20a24db0, 1 more by W984ns at 7593a062); all
+  extension SHAs per-SHA grep-verified.
 - Commit execution: **UNKNOWN** — coordinator owns git operations; this manifest
   is advisory staging (docs-only lane). Range is fully PUSHED (origin == HEAD
-  == 567ab1f5, re-verified by W984mv).
+  == 7593a062, re-verified by W984ns).
 - Open items (carryover, per runbook): coordinator merge of
   feat/playwright-surface → main; operator ash_pplan re-pin/tag decision
   (W984hd landed in ash_pplan repo — receipt-only here); batch #14 (W984mo)
-  in flight; W984lr/lw e2e fixes + W984ln/md lib diffs staged-uncommitted
-  (outside this range).
-- No git write operations performed by lane W984iz or lane W984mv. No build
-  root created.
+  LANDED (this extension); batch #15 (W984nd) in flight at extension time.
+- No git write operations performed by lane W984iz, lane W984mv, lane
+  W984nm, or lane W984ns. No build root created.
+
+## Receipt
+
+- Lane W984ns, 2026-10-08, docs-only extension of this manifest to landing
+  batch #15. Subject /Users/sac/xaas @ feat/playwright-surface, HEAD
+  7593a062 (verified `git rev-parse HEAD origin/feat/playwright-surface`).
+- Verified this lane: `git log 20a24db0..HEAD` = 6 commits; per-SHA grep of
+  all 6 in docs/sjira (5 in w984nd-commit.md + w984nq-probe.md; 7593a062
+  self-carried); re-census `git diff --name-only 5e03acf5..HEAD` → 102
+  commits / 150 test/ + 30 lib/ + 319 docs/ paths; tag `v26.10.7` still
+  56325fa5. Rows 87–92 appended; summary header + group-verification table +
+  standing updated. No commit, no build root.
