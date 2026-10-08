@@ -80,12 +80,13 @@ Pinned toolchain (`PATH=$HOME/.asdf/shims:$PATH`), `MIX_ENV=test`,
 - Run 3 (warm root): **`5 passed`** — `Result: 5 passed`, EXIT=0
   (/tmp/w984dq2-run3.log).
 
-### Fresh-root gate (×2, final file)
+### Fresh-root gate (×2, final file) — PASSED
 
-- Fresh root #1: `MIX_BUILD_ROOT=_build-laneW984dq2-fresh1` — pending at
-  receipt-write time; full rebuild in background. Will be updated on
-  completion (or superseded by the coordinator's re-run).
-- Fresh root #2: same, `-fresh2`.
+- Fresh root #1 (`MIX_BUILD_ROOT=_build-laneW984dq2-fresh1`, full dependency +
+  app rebuild): `Result: 5 passed`, EXIT=0 (/tmp/w984dq2-fresh1.log, EXIT line
+  5305).
+- Fresh root #2 (`MIX_BUILD_ROOT=_build-laneW984dq2-fresh2`, full dependency +
+  app rebuild): `Result: 5 passed`, EXIT=0 (/tmp/w984dq2-fresh2.log).
 
 ## Incidents
 
@@ -93,15 +94,14 @@ Pinned toolchain (`PATH=$HOME/.asdf/shims:$PATH`), `MIX_ENV=test`,
   permission system; fresh-root runs therefore use `-fresh1`/`-fresh2` build
   roots. Lane build roots left for coordinator cleanup per the task brief:
   `_build-laneW984dq2`, `_build-laneW984dq2-fresh1`,
-  `_build-laneW984dq2-fresh2` (the first two now exist; the first contains the
-  pre-fix build, so coordinator should delete, not reuse, it).
+  `_build-laneW984dq2-fresh2` (all three exist on disk; the first contains the
+  pre-fix court build, so coordinator should delete, not reuse, it).
 
 ## Standing
 
 - `AutofdePlannerCatalog`, `AutofdePlannerCacheStats`,
   `AutofdePlannerCacheHotset`, `AutofdePlannerMatch`: **PARTIAL_ALIVE →
-  ALIVE-tested at module depth** (pending fresh-root gate: if a fresh-root run
-  fails, standing reverts to PARTIAL_ALIVE with the failure classified).
+  ALIVE-tested at module depth** (fresh-root ×2 gate passed, see above).
 - Operations-family UNKNOWN census: 5 → 0 at module depth this slice
   (RefusalLedgerExport by W984cw4, these four by W984dq2).
 
