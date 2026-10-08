@@ -345,7 +345,15 @@ defmodule XaasWeb.ExecutionFabricController do
   defp mcp_typed(%{method: "POST"} = conn, _params) do
     with {:ok, body, conn} <- read_json(conn),
          {:ok, response} <- rpc(body) do
-      json(conn, response)
+      # JSON-RPC 2.0: a notification gets NO response. Return bare 204
+      # silence (same shape as fabric_controller's established 204), never
+      # a 200 body. W984kk: this must be a `case` in the do-branch — a
+      # `with`-else clause can never catch {:ok, :notification} because it
+      # matches the success pattern {:ok, response}.
+      case response do
+        :notification -> send_resp(conn, 204, "")
+        response -> json(conn, response)
+      end
     else
       {:error, %{} = rpc_error} ->
         json(conn, rpc_error)

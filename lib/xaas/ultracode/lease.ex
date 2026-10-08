@@ -954,7 +954,14 @@ defmodule Xaas.Ultracode.Lease do
   @spec record_provider_event(String.t(), map()) :: :ok | {:error, term()}
   def record_provider_event(lease_token, event) when is_binary(lease_token) do
     case find_by_lease(lease_token) do
-      {:ok, epoch} ->
+      # `Ash.read_one` returns `{:ok, nil}` for an unmatched token; without
+      # this arm the generic `{:ok, epoch}` clause below crashes with a
+      # BadMapError (`epoch.id` on nil) instead of the documented typed
+      # refusal (W984kg probe finding, real-DB-verified).
+      {:ok, nil} ->
+        {:error, {:no_lease, lease_token}}
+
+      {:ok, %Epoch{} = epoch} ->
         :telemetry.execute(
           [:xaas, :ultracode, :provider_event],
           %{},

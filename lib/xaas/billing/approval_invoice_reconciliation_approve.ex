@@ -93,8 +93,13 @@ defmodule Xaas.Billing.ApprovalInvoiceReconciliationApprove do
   actions do
     defaults([:read])
 
+    # W984jz repair of CREATE_APPROVED_BY_BYPASS (docs/sjira/v26.10.6/plans/w984jk-probe.md):
+    # `:approved_by` was removed from the accept list so rows ALWAYS start
+    # unapproved; approval can only be minted through `:approve`, where the
+    # RequiresApprover validation enforces maker-checker and the W984k
+    # `is_nil(approved_by)` guard stays reachable for every row.
     create :create do
-      accept([:requested_by, :approved_by, :org_id])
+      accept([:requested_by, :org_id])
     end
 
     # Real mutation route: approve a pending invoice reconciliation approval request. Real
