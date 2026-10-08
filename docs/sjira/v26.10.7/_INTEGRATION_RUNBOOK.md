@@ -10,6 +10,25 @@ Sweep lanes: campaign-versioned receipt dirs — v26.10.6 lanes write to `docs/s
 
 Lane-lease cleanup: osx-clnr classifier r6 (7b12d2e) nominates stale `_build-lane*`/`target-lane*` roots per-candidate (dir-mtime gate); live lanes suppressed. Future sweeps: run the oclnr CLI audit directly (the session MCP may serve a stale build). Cites: `plans/w651d-gate-fix.md` (fix), `plans/w651c2-gate-falsifier.md` (motivating refutation), `plans/w651b-audit-retest.md` (31-root witness).
 
+Mutation-probe conventions (from the 2026-10-07 mutation-audit series):
+
+- **Compound-mutation leg for redundant-pair guards.** When two guards mask each
+  other, a single-mutant survival is NOT vacuity. W984ha's M3: the two
+  `rate_limit.ex` clamps (lines 27+52) each survived alone but the compound
+  mutant was killed — the court's invariant is real, only the *pair* is
+  load-bearing. Mutation probes over courts guarding redundant pairs must add a
+  compound-mutation leg. Cite: `docs/sjira/v26.10.6/plans/w984ha-probe.md`.
+- **Tag-excluded courts report false greens under bare `mix test`.** Files with
+  `@moduletag :eu_ai_act` (or any tag in the test_helper exclusion list) show
+  "0 tests, N excluded, exit 0" without `--include <tag>` — a bare green on
+  these is a FALSE GREEN. Mutation/court verification of such files MUST pass
+  `--include <tag>`. Same hazard hid a stale assertion
+  (`quiescent_stop_deepening_test.exs:203`, asserting `:OPEN_GAP` against an
+  all-`:EVIDENCED` lib) for a whole campaign leg until W984ig's repair — the
+  tag exclusion is why it never failed in the default loop. Cites:
+  `docs/sjira/v26.10.6/plans/w984ha-probe.md`,
+  `docs/sjira/v26.10.6/plans/w984ig-quiescent-repair.md`.
+
 Classifier revision: CLASSIFIER_REVISION bumped 3→4→5→6 across the day's fixes (W651/W651c/W651d); old scan caches (`scan-rN-` prefixes) are invalidated per revision — stale caches self-invalidate, no manual sweep needed. Cites: `plans/w651-osxclnr-classifier.md`, `plans/w651c-fs-gate.md`, `plans/w651d-gate-fix.md`, `plans/w651e-gate-fix-note.md`.
 
 ## Landing addendum — 2026-10-07 (lane W984ef)
@@ -110,3 +129,97 @@ commits from W984gi found. Each row: real `git show --stat` + receipt grep
 - **Carried from W984ft, unchanged:** W984ee court file
   (`test/xaas/compat/otp29_map_update_court_test.exs`) uncommitted / no `w984fo`
   receipt; ~100 `_build-lane*` roots pending osx-clnr classifier-r6 sweep.
+
+## Landing addendum — 2026-10-07 (lane W984hs)
+
+Fourth dated landing addendum, following the W984ef/W984ft/W984gn conventions.
+Verified per-commit on `feat/playwright-surface` (`git log --oneline -20` re-run
+at addendum time; HEAD = `009bd05768794cb8b62e7bc3fda0d9c81faad657`, no commits
+newer than `009bd057` found). Covers everything since W984gn's stated boundary
+(`102c1782`): landing batches #6 and #7. Each row: real `git show --stat` +
+receipt grep (`grep -rl <sha> docs/sjira/`) on disk at addendum time.
+
+| SHA | Landing | Paths | Court result | Receipt |
+|---|---|---|---|---|
+| `ba3309c7` | W984fy aws_adapter runtime base_url + real Plug/Cowboy local harness court | `lib/xaas/aws_repo_adapters/aws_adapter.ex`, `test/xaas/aws_repo_adapters/aws_adapter_local_harness_court_w984fy_test.exs` (+232), `docs/sjira/v26.10.6/plans/w984fy-probe.md` | court carried green from owner lane (per batch receipts) | `w984gy-commit.md` + `w984hg-commit.md` (both cite `ba3309c7`) |
+| `226803b8` | W984fy/W984gu/W984hc — IMDS runtime-config seam + 2xx status guards | `lib/xaas/aws_repo_adapters/aws_adapter.ex`, `test/xaas/aws_repo_adapters/aws_adapter_token_guard_court_w984hc_test.exs` (+92), w984gu/hc repair docs (3 files, +207) | W984hc token-guard court landed with the fix (per batch receipt) | `w984gy-commit.md` + `w984hg-commit.md` |
+| `3b0bf56d` | W984gy landing batch #6 — six family courts | `test/xaas/generator/family_court_w984ga_test.exs`, `test/xaas/witness/family_court_w984gb_test.exs`, `test/xaas_web/live/family_court_w984gh_test.exs`, `test/xaas_web/plugs/family_court_w984gf_test.exs` (12 files, +1302) | courts carried green from owner lanes (per batch receipt) | `w984gy-commit.md` + `w984hg-commit.md` |
+| `56615dc3` | W984gy landing batch #6 — docs surface + witness/triage/receipt sweep | `docs/sjira/v26.10.6/plans/w984gc-triage.md` (+109), `w984gn-probe.md`, `w984gq-probe.md`, `docs/sjira/v26.10.7/plans/w984gm-census-witness.md` (+29) (8 files, +509) | census witness: 1388 passed, 0 failed, 1 excluded @ `102c1782` | `w984gy-commit.md` (sole citing receipt; self-path only) |
+| `857ebe60` | W984gy landing batch #6 lane commit receipt | `docs/sjira/v26.10.7/plans/w984gy-commit.md` | docs-only | **self-carried; grep for `857ebe60` in docs/sjira/ returns zero third-party citations** |
+| `d1a2b91b` | W984hg landing batch #7 — gj/gl/gp family courts | `test/xaas/telemetry/family_court_w984gj_test.exs` (+210), `test/xaas/zoe/family_court_w984gl_test.exs` (+324), `test/xaas_web/mcp/family_court_w984gp_test.exs` (+289), `docs/sjira/v26.10.6/plans/w984gp-probe.md` (6 files, +1029) | courts carried green from owner lanes (per batch receipt) | `w984hg-commit.md` |
+| `69c5a095` | W984hg batch #7 — W984gr item-14 closure + W984gz truthing | `docs/sjira/v26.10.6/plans/w984gr-item14.md` (+35), `w984gz-probe.md` (+77), `docs/sjira/v26.10.7/_CLOSURE_RECEIPT.md` refresh, gap-register addendum (4 files, +139/−8) | docs-only closure/truthing | `w984hg-commit.md` |
+| `3674159f` | W984hg landing batch #7 lane commit receipt | `docs/sjira/v26.10.7/plans/w984hg-commit.md` | docs-only | self-carried; third-party citations appear only after `009bd057` added the pushed head, and even `009bd057` itself has **zero** citations |
+| `009bd057` | W984hg — record pushed head in lane receipt | `docs/sjira/v26.10.7/plans/w984hg-commit.md` (2+/2−) | docs-only; records the pushed head | **self-carried; zero third-party citations at addendum time** |
+
+### Open items (updated from disk, disclosed)
+
+- **W984hm landing batch #8 — IN FLIGHT, unreceipted.** `grep -rl w984hm
+  docs/sjira/` returns zero hits at addendum time; no receipt exists yet.
+  Status stays OPEN until the owning lane writes its receipt.
+- **W984hd ash_pplan re-pin — LANDED-IN-ash_pplan.** Receipt
+  `docs/sjira/v26.10.6/plans/w984hd-repin.md` is present on disk; the landing
+  itself happened in the ash_pplan repo, so here it is receipt-only.
+- **W984gm census witness — RESOLVED (was a false alarm).** W984hg's report
+  that `w984gm-census-witness.md` "does not exist on disk" was wrong: the file
+  is at `docs/sjira/v26.10.7/plans/w984gm-census-witness.md` (v26.10.**7**, not
+  v26.10.6 as W984hg evidently assumed), byte-identical to the `56615dc3`
+  version, with the witnessed census (1388 passed / 0 failed / 1 excluded @
+  `102c1782`) intact. No restore needed.
+- **Remaining coordinator/operator blockers (unchanged):** merge of
+  `feat/playwright-surface` to `main` + the ash_pplan tag decision.
+- **Carried from W984gn, unchanged:** W984ee court file
+  (`test/xaas/compat/otp29_map_update_court_test.exs`) uncommitted / no `w984fo`
+  receipt; ~100 `_build-lane*` roots pending osx-clnr classifier-r6 sweep.
+
+## Landing addendum — 2026-10-07 (lane W984jg)
+
+Fifth dated landing addendum, following the W984ef/W984ft/W984gn/W984hs
+conventions. Verified per-commit on `feat/playwright-surface` (`git log
+--oneline -25` re-run at addendum time; HEAD = `3961c4ab`, no commits newer
+than `3961c4ab` found). Covers everything since W984hs's stated boundary
+(`009bd057`): landing batch #8 (W984hm) + the W984hx W984fx trio landing.
+Each row: real `git show --stat` + receipt grep (`grep -rl <sha> docs/sjira/`)
+on disk at addendum time.
+
+| SHA | Landing | Paths | Court result | Receipt |
+|---|---|---|---|---|
+| `58cd87b9` | W984hm landing batch #8 — four family courts from finished lanes | `test/xaas/actuation/validations_court_w984gw_test.exs` (+357), `test/xaas/operations/audit_log_court_w984go_test.exs` (+132), `test/xaas/workbench/family_court_w984gs_test.exs` (+132), `test/xaas/accounts/family_court_w984gx_test.exs` (+193) + w984go/gs/gw/gx probes (8 files, +1074) | courts carried green from owner lanes (per batch receipt: 27+5+16+7 = 55 passed, 0 failed) | `docs/sjira/v26.10.7/plans/w984hm-commit.md` (cites `58cd87b9`; also `w984it-recensus.md`, `_COMMIT_MANIFEST.md`) |
+| `68073d8d` | W984hm batch #8 — W984gt pin rotations + drift-map zeroing + W984hd receipt | `docs/cro/artifacts/airo-wiring-ledger.md` (6 fleet pin rotations, spot-checked ash_atlassian `0e210efb` / ash_dspy `e3dcc4fa`), `test/xaas/airo/airo_pin_court_test.exs` (+189), `test/xaas/airo/pin_drift_test.exs` (`@receipted_drift` zeroed), `docs/sjira/v26.10.6/plans/w984gt-airo-pins.md`, `w984hd-repin.md` (6 files, +485/−6) | `test/xaas/airo/` block 9 passed, 0 failed (per batch receipt) | `docs/sjira/v26.10.7/plans/w984hm-commit.md` (sole citing receipt; `w984hd-repin.md` self-carried) |
+| `82f7f558` | W984hm landing batch #8 lane commit receipt | `docs/sjira/v26.10.7/plans/w984hm-commit.md` (+36, docs-only) | docs-only; batch gates: mock gate `[]` exit 0; push fetch-first fast-forward `009bd057..68073d8d`, no force | **self-carried; third-party citations: w984hy/hw/hz/ij/if probes + `w984ia-audit-witness.md` + `_COMMIT_MANIFEST.md` all cite `82f7f558` only as the receipt path's owning commit context, none as third-party verification of this SHA** |
+| `fc2adcb0` | W984hx — W984fx library-circulation AIRo RiskControl trio | `lib/xaas/semantics/airo_risk_mapping.ex` (+8), `test/xaas/semantics/airo_risk_mapping_depth_test.exs` (+42), `docs/cro/artifacts/airo-wiring-ledger.md` (+12, W984fx section), `docs/sjira/v26.10.6/plans/w984fx-probe.md` (4 files, +140) | depth court landed with the mapping (per `w984hx-commit.md`); push fetch-first fast-forward `82f7f558..fc2adcb0` | `docs/sjira/v26.10.7/plans/w984hx-commit.md` (cites `fc2adcb0`; also `w984it-recensus.md`, `w984cj-coverage-map.md`, `_COMMIT_MANIFEST.md`) |
+| `3961c4ab` | W984hx lane commit receipt for the W984fx trio | `docs/sjira/v26.10.7/plans/w984hx-commit.md` (+43, docs-only) | docs-only; `_build-laneW984hx` deleted at close (per receipt) | **self-carried; third-party citations: `w984it-recensus.md`, `w984iq-probe.md`, `w984iz-manifest.md`, `w984id-regen-witness.md`, `w984ir-remediation.md`, `_COMMIT_MANIFEST.md` (all cite it as HEAD/baseline, not as verification)** |
+
+### Open items (updated from disk, disclosed)
+
+- **W984ia + W984ir release-audit leg — PASS at current HEAD.**
+  `docs/sjira/v26.10.7/plans/w984ir-remediation.md` on disk: the 2 stale
+  literals W984ia witnessed in `plans/w650k-audit-remediation.md` hyphenated
+  (4 table rows), then fresh-root `mix xaas.release_audit` →
+  `XAAS_RELEASE_AUDIT ALIVE version=26.10.7 tracked_files=5375
+  ash_resources=122`, **exit 0, zero findings**; audit courts 19/19 exit 0.
+  Tag-precondition audit leg: **PASS**. Note: the remediation edit and
+  `lib/mix/tasks/xaas.release_audit.ex` changes are UNCOMMITTED working-tree
+  modifications at addendum time — coordinator owns the commit + post-commit
+  audit re-run.
+- **W984iz commit-manifest — STAGED (uncommitted), 63 rows, range fully
+  pushed.** `docs/sjira/v26.10.6/plans/w984iz-manifest.md` on disk: range
+  `5e03acf5..3961c4ab` = 63 commits; `git rev-parse HEAD
+  origin/feat/playwright-surface` both `3961c4ab`; 9 group receipts
+  test-f-checked 9/9 OK; deliverable `docs/sjira/v26.10.7/_COMMIT_MANIFEST.md`
+  is a new file in the working tree, awaiting coordinator commit. One
+  disclosed row: `009bd057`'s receipt is on disk but the SHA itself is not
+  grep-found anywhere.
+- **Landing batch #9 (W984il) — IN FLIGHT, unreceipted.** `grep -rln w984il
+  docs/sjira/` returns zero hits; no `w984il*` file exists under any
+  `docs/sjira/*/plans/`. Status stays OPEN until the owning lane writes its
+  receipt.
+- **W984ee court file — RESOLVED (was carried open since W984ft).**
+  `test/xaas/compat/otp29_map_update_court_test.exs` landed in `e49d7033`
+  (W984gi batch #5); `git log -1 -- <path>` confirms, working tree clean for
+  the path. No `w984fo` receipt was ever written; the restoration evidently
+  happened via batch #5 instead. Retiring the carried flag.
+- **Remaining blockers (unchanged):** coordinator merge of
+  `feat/playwright-surface` to `main` + operator ash_pplan call.
+- **Carried from W984hs, unchanged:** ~112 `_build-lane*` roots at repo root
+  (re-counted this lane via `ls -d _build-lane* | wc -l`; W984hs said ~100)
+  pending osx-clnr classifier-r6 sweep.

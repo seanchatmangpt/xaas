@@ -36,6 +36,15 @@ against `lib/xaas_web/router.ex`, `lib/xaas_web/api_router.ex`,
 - **`/mcp`** (`[:api, :require_internal_api_token, :resolve_org_actor,
   :audit_mcp_tool_call]`): generated `XaasWeb.McpScope.mount()` forwarding to
   `AshAi.Mcp.Router` — read-only Library tools, one audit row per request.
+- **Provenance pipeline** (v26.10.7, w605, IN FLIGHT — standing UNKNOWN pending
+  court + mutation runs): a `pipeline :prov_origin`
+  (`lib/xaas_web/router.ex:29`) attaches a `x-prov-o` response header
+  (`lib/xaas_web/plugs/prov_origin_header.ex`, PROV-O `wasGeneratedBy` /
+  `actedOnBehalfOf`, constant config-driven identity) to the `/a2a` and `/api`
+  scopes (`router.ex:211-213,322`); `/internal-api` direct scopes and the
+  `:browser` pipeline are deliberately NOT wired (human-facing pages would
+  carry a false "machine-generated" assertion). Receipt:
+  `docs/sjira/v26.10.7/plans/w605-prov-o-plug.md`.
 - **`/a2a`** (`[:api, :require_internal_api_token]`): `forward /zoe-event` to
   `XaasWeb.A2A.ZoeEventPlug` (registered before the catch-all), `forward /v1` to
   `XaasWeb.A2A.V1TransportPlug` (wrapping `AshA2A.Protocol.Plug`) with
@@ -670,6 +679,74 @@ submitted → executing → sealed → replayed — with typed illegal transitio
   (public, browser pipeline). Dev-only routes (`/dev/dashboard`, `/dev/mailbox`,
   `/dev/dashboards/autofde-lab`, `/admin`) mount only under
   `Application.compile_env(:xaas, :dev_routes)`.
+
+## Verified 2026-10-07 (W984 wave router/endpoint probes)
+
+Code-verified against `lib/xaas_web/router.ex` at `feat/playwright-surface`
+on 2026-10-07; court receipts cited per item.
+
+- **`/rpc/run` + `/rpc/validate`** — `POST /internal-api/rpc/run` and
+  `POST /internal-api/rpc/validate` (router.ex:109-110), token-gated in the
+  explicit `/internal-api` scope (`:api` + `:require_internal_api_token`),
+  registered ahead of the catch-all `forward "/internal-api"` so the forward
+  cannot shadow them. Receipt: `w984ho-probe.md`.
+- **`/a2a`, `/mcp`, `/api/workbench` scopes** — `/a2a` pipes
+  `[:prov_origin, :api, :require_internal_api_token]` and forwards
+  `/zoe-event`, `/v1` (owned `V1TransportPlug`), and the `/` catch-all;
+  `/mcp` pipes `[:api, :require_internal_api_token, :resolve_org_actor
+  (documented no-op for /mcp paths), :audit_mcp_tool_call]` onto the
+  generated `XaasWeb.McpScope` mount; `/api/workbench` pipes
+  `[:require_internal_api_token, :api]` (W150 order: token floor precedes
+  content negotiation). Receipts: `w984hq-probe.md` (scope/pipeline
+  disposition table), `w984ho-probe.md`.
+- **`/internal-api/sparql` Ontop proxy** — token-gated `forward` registered
+  in its own `/internal-api` scope before the catch-all forward;
+  `ontop_proxy_deepening_test` covers auth'd + unauth'd cells.
+  Receipt: `w984hq-probe.md`.
+- **`/webhooks/stripe`** — public `:api`-only scope (no token floor by
+  design; Stripe-signature verification is the authenticity check).
+  W984hq courted the negotiation cells: html-Accept POST → 406;
+  default-Accept reaches the controller (signature 400/500, never
+  404/406). Receipt: `w984hq-probe.md`.
+- **Authenticated catch-all 406 (W984hq cell 6)** — the catch-all
+  `forward "/internal-api"` scope pipes
+  `[:require_internal_api_token, :internal_api]` (W739 order); an
+  authenticated request with a non-`json-api` Accept (e.g. text/plain)
+  answers `Phoenix.NotAcceptableError` 406 — negotiation still applies
+  after the token floor passes it. Receipt: `w984hq-probe.md` (court test
+  6, mutation: reorder token floor after `:internal_api`).
+- **`/api` GET-forward 406 negotiation (W984hq / W299c)** — a GET on a
+  POST-only workbench route falls through the `/api/workbench` scope to
+  the `forward "/api"` catch-all, whose pipeline is
+  `[:prov_origin, :require_internal_api_token, :internal_api,
+  :authenticate_org, :resolve_org_actor, :set_internal_api_system_actor]`
+  (W299c/W605 order); authenticated non-json-api requests get 406 from the
+  same `:accepts` floor (pinned by `ggen_workbench_auth_floor_test` W299c
+  fall-through cell + `jsonapi_content_negotiation_test`).
+  Receipt: `w984hq-probe.md`.
+- **`GET /internal-api/prometheus/query` + `PROMETHEUS_URL` seam (W984if)** —
+  token-gated proxy to Prometheus's real `/api/v1/query`; upstream base
+  URL reads `PROMETHEUS_URL` (default `http://localhost:9090`,
+  `prometheus_query_controller.ex:92`). PromQL allowlist
+  (`XaasWeb.PrometheusQueryAllowlist`) rejects non-app metric prefixes and
+  ≥1d range selectors / subqueries (400 `query_not_allowed`); missing
+  `query` param → 400 `missing_query_param`; upstream unreachable → 502
+  `Req.TransportError` detail; upstream 200 + invalid JSON → 502 via the
+  `{:error, other}` catch-all (branch closed by W984if's real-Bandit
+  upstream court). Receipts: `w984if-probe.md`, `w984eq-probe.md`.
+- **Auth-before-route-match floor (W984eq)** — every internal surface
+  carries the token floor before content negotiation
+  (`/api/workbench` W150, `/api` forward W299c, `/internal-api` forward
+  W739), so unauthenticated probes get 401, never a 406 leaking accepted
+  content types; `residue_court_w984eq_test` pinned the controller
+  residue cells (missing `query` param, subquery rejection) via real
+  ConnCase HTTP. Receipt: `w984eq-probe.md`.
+- **Known defect (disclosed, upstream-shaped)** — `rpc/validate` with a
+  non-list `fields` (e.g. `"fields": 42`) raises an unhandled
+  `FunctionClauseError` (500) in ash_typescript 0.18.2's
+  `Atomizer.atomize_requested_fields/3`; `rpc/run` returns the typed
+  `success=false` envelope for the identical body. Court pins the real
+  current behavior. Receipt: `w984ho-probe.md`.
 
 ## See Also
 

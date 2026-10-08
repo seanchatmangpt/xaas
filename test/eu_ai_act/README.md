@@ -79,6 +79,33 @@ runs explicitly via `--include eu_ai_act`.
 | `counterfactual_test.exs` | `Xaas.EuAiAct.CounterfactualTest` | — (cross-title do-intervention harness, Pearl 3-step: FACTUAL → ACTION → PREDICTION) | handwritten |
 | `airo_grounding_test.exs` | `Xaas.EuAiAct.AiroGroundingTest` | — (W702 AIRo grounding court: every Art. 5 refusal atom grounded to a W601 AIRo risk-graph concept; cited consumer files asserted to exist first) | handwritten |
 
+### Deepening and audit suites in this directory (addendum, W984ja registry audit)
+
+These 16 files live in `test/eu_ai_act/` but predate this file map; registered
+here per the W984ja registry audit so the map matches `ls test/eu_ai_act/`.
+
+| File | Module | Scope | Pattern |
+|---|---|---|---|
+| `art9x_risk_management_deepening_test.exs` | `Xaas.EUAIAct.Art9xRiskManagementDeepeningTest` | Art. 9 risk-management deepening | handwritten deepening |
+| `art10_2e_art26_4_dataset_purpose_deepening_test.exs` | `Xaas.EUAIAct.Art10_2eArt26_4DatasetPurposeDeepeningTest` | Art. 10.2e / 26.4 dataset purpose-limitation | handwritten deepening |
+| `art11_1_art12x_audit_chain_deepening_test.exs` | `Xaas.EUAIAct.Art11_1Art12xAuditChainDeepeningTest` | Art. 11.1 / 12.x record-keeping + AuditChain | handwritten deepening |
+| `art13x_counterfactual_deepening_test.exs` | `Xaas.EuAiAct.Art13xCounterfactualDeepeningTest` | Art. 13.x counterfactual transparency | handwritten deepening |
+| `art14x_oversight_deepening_test.exs` | `Xaas.EUAIAct.Art14xOversightDeepeningTest` | Art. 14.x human oversight | handwritten deepening |
+| `art15_deepening_test.exs` | `Xaas.EUAIAct.Art15DeepeningTest` | Art. 15 accuracy/robustness | handwritten deepening |
+| `art15x_robustness_deepening_test.exs` | `Xaas.EUAIAct.Art15xRobustnessDeepeningTest` | Art. 15.x robustness margin | handwritten deepening |
+| `art26x_postmarket_deepening_test.exs` | `Xaas.EUAIAct.Art26xPostmarketDeepeningTest` | Art. 26.x deployer post-market | handwritten deepening |
+| `art50_deepening_test.exs` | `Xaas.EUAIAct.Art50DeepeningTest` | Art. 50 transparency | handwritten deepening |
+| `art73_chain_deepening_test.exs` | `Xaas.EUAIAct.Art73ChainDeepeningTest` | Art. 73 serious-incident chain | handwritten deepening |
+| `art86_rights_deepening_test.exs` | `Xaas.EuAiAct.Art86RightsDeepeningTest` | Art. 86 explanatory rights | handwritten deepening |
+| `art99_enforcement_deepening_test.exs` | `Xaas.EUAIAct.Art99EnforcementDeepeningTest` | Art. 99 enforcement | handwritten deepening |
+| `counterfactual_deepening_test.exs` | `Xaas.EuAiAct.CounterfactualDeepeningTest` | counterfactual harness deepening | handwritten deepening |
+| `title_ii_deepening_test.exs` | `Xaas.EUAIAct.TitleIIDeepeningTest` | Title II Art. 5 refusal-atom deepening | handwritten deepening |
+| `eyerun_wire_deepening_test.exs` | `Xaas.EUAIAct.EyerunWireDeepeningTest` | eyerun wire surface | handwritten deepening |
+| `not_applicable_completeness_test.exs` | `Xaas.EUAIAct.NotApplicableCompletenessTest` | NOT_APPLICABLE reason completeness gate | handwritten audit |
+
+All carry `@moduletag :eu_ai_act` (gate-included) except `art9x...` which
+additionally per-test tags 7 tests with `@tag :eu_ai_act`.
+
 Companion surfaces outside this directory (run under the same doctrine,
 same build-root discipline; not part of the per-title corpus projection):
 
@@ -152,7 +179,17 @@ intentional Title II synthetic layer (`5.1.a-manipulative`,
 `5.1.a-vulnerability`, `5.1.g-h`, `5.catch-all`, `5.live-integration`,
 `5.structural-gate`).
 
-Re-run on this README's own subject (W651 lane run, 2026-10-06 23:2x–23:4x,
+Re-run on this README's own subject (W984ja registry audit, 2026-10-07, on
+the shared `feat/playwright-surface` tree; gap lineage: 37 pre-W547 → 24
+(W547) → 19 (W605) → 10 (W622/W629) → 5 (W651) → **1 today**):
+
+- **Honest census: 1388/1389 passed, 1 failed = the single remaining
+  intentional `:eu_ai_act_open_gap` test, Art. 49.3 deployer EU-database
+  registration (`Xaas.EUAIAct.TitleIVVTest`)** — exactly the one
+  intentional open gap. **Green gate: 1388 passed, 1 excluded, exit 0.**
+  (`art9x...` also per-test tags 7 tests with `@tag :eu_ai_act`.)
+
+Historical aggregation (W651 lane run, 2026-10-06 23:2x–23:4x,
 build root `_build-laneW651`, on the shared `feat/playwright-surface` tree
 with sibling lanes landing concurrently):
 
@@ -160,8 +197,9 @@ with sibling lanes landing concurrently):
   run time).
 - **Honest census: 1112/1118 passed, 6 failed = the 5
   `:eu_ai_act_open_gap`-tagged failures (4.1, 8.1, 27.1.b/e/f) + 1
-  cross-repo drift red (below).** Typed open-gap count is now **5** (down
-  from 10 at W622/W629, 19 at W605, 24 at W547, 37 before W547).
+  cross-repo drift red (below).** Typed open-gap count was then **5** (down
+  from 10 at W622/W629, 19 at W605, 24 at W547, 37 before W547; since
+  closed to 1 — see the W984ja re-run above).
 - **Disclosed concurrent-landing drift**: between the first gate run and
   the census, a sibling lane's refactor of the external
   `/Users/sac/wasm4pm` `crates/eu_gate/src/lib.rs` (verdict rendered via

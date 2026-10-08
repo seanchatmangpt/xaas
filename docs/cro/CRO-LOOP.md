@@ -208,7 +208,7 @@ provocation premise itself is dead, not the execution.**
 ## Ship/Remove Annotations (w405 evidence-claims-index, 2026-10-06)
 
 The verbatim blocks above are operator source and are not edited in place.
-Per `artifacts/evidence-claims-index.md`, the ship-list corrections that MUST
+Per `docs/cro/artifacts/evidence-claims-index.md`, the ship-list corrections that MUST
 accompany any send:
 
 - REMOVE: "<15 ms WASI gate", "FRE 902(14)" (no backing artifact).
@@ -223,3 +223,44 @@ accompany any send:
   refusal with replayable typed receipts".
 - NUMBERS: cite 62/62 tokens, 86/0 capstone (w236), 26/26 conformance
   (in-repo court, not official A2A TCK), 96/0 tokened Playwright (w317).
+
+## Verified 2026-10-07 (lane W984in truth-pass)
+
+> Every actionable claim above re-verified against the current tree
+> (`feat/playwright-surface`, docs-only pass; no commit, no build root):
+>
+> - **All 10 cited artifact paths `test -f` EXIST on disk** (w322, coverage map,
+>   w236, w385, w320, w317, w390, ARTIFACT-MANIFEST, CYCLE-LOG, w620-cro-entry).
+>   One stale path fixed forward in place: the evidence-claims-index citation is
+>   `docs/cro/artifacts/evidence-claims-index.md`, not `artifacts/…`.
+> - **Refusal-engine seams named in the loop's evidence story are live code**:
+>   `lib/xaas/semantics/eu_ai_act_admission.ex` (12 defs),
+>   `lib/xaas/semantics/incident_report.ex` (5 defs, `IncidentReport.build/2` /
+>   `transmit/1`), `lib/xaas/semantics/oversight_governance.ex`
+>   (`ai_literacy/0`, `fria_schedule/0`, `fria_oversight_description/0`,
+>   `fria/0` all present), `lib/xaas/operations/refusal_ledger_export.ex`
+>   (9 defs) + `lib/mix/tasks/xaas.export_refusal_ledger.ex`,
+>   `lib/xaas/semantics/airo_risk_mapping.ex` (6 defs), plus the
+>   `eu_ai_act_admission_plug` / `synthetic_marking_plug` HTTP boundary.
+> - **GCP/VITO references remain documentation-only, correctly stated**: all
+>   GCP/Marketplace/VITO mentions in this file are pipeline stage design
+>   (persona/channel/exit-gate language), never claims of implemented GCP
+>   integration; no GCP SDK/Marketplace API code exists in the tree.
+> - **Census/counts refreshed to current truth**: typed-gap register
+>   (`docs/sjira/v26.10.6/plans/w859-typed-gap-register.md`, post-W984ff
+>   flips) = **51 rows — 44 REPAIRED / 3 OPEN / 2 TYPED-OPEN / 2
+>   OUT-OF-SCOPE(removed-by-operator)**; module coverage-map sixth re-run
+>   (`docs/sjira/v26.10.6/plans/w984cj-coverage-map.md`, W984fh addendum
+>   2026-10-07) = **830 files — 718 COVERED (88.5%) / 93 UNCOVERED /
+>   19 NON-TESTABLE** (as-of 2026-10-07; counts drift with each court wave —
+>   re-read at citation time per no-overclaiming discipline). Cited
+>   S3-artifact numbers confirmed against their receipts: 96 passed tokened
+>   Playwright (w317, 96+2 skipped=98 matching `--list`), CONFORMANT 26/26
+>   in-repo court at HEAD 07180bd3 (w385, EXIT=0), 86 tests / 12 files / 62/62
+>   refusal tokens (w236).
+> - **Zero-config posture**: `w322-zero-config-posture.md` HELD verdict intact;
+>   coverage-map tail independently corroborates (Vault CLOAK_KEY prod
+>   fail-close, OS-17 FIXED).
+>
+> Receipt: `docs/sjira/v26.10.6/plans/w984in-probe.md`. Standing: ALIVE for the
+> docs-only truth-pass. No new commitments invented.

@@ -360,3 +360,63 @@ hitting real court files): `ApprovalCmekKeyBindingApprove` →
 Same limitations as the original map (indirect DSL-attached coverage
 invisible; last-segment alias pass conservative-toward-covered). Standing:
 ALIVE (as a map). Lane hygiene: no `_build-laneW984fh` created.
+
+## Addendum 7 — W984it seventh re-census (2026-10-07)
+
+Method unchanged (W984cj/W984fh CamelCase-aware direct-naming census, script
+`/tmp/w984it_coverage.exs`, output `/tmp/w984it_run.txt` / `/tmp/w984it_map.txt`,
+exit 0, no build root). Subject: /Users/sac/xaas @ 3961c4ab (feat/playwright-surface,
+uncommitted working tree as-walked).
+
+```
+TOTAL_FILES=831 TESTABLE=812 COVERED=747 UNCOVERED=65 NON_TESTABLE=19
+```
+
+| Run | Files | Covered | Uncovered | Non-testable |
+|---|---|---|---|---|
+| W984fh (6th, ed015775) | 830 | 718 | 93 | 19 |
+| **W984it (7th, 3961c4ab)** | **831** | **747** | **65** | **19** |
+
+**Uncovered 93 → 65 (−28); zero newly-uncovered** (sorted `comm` over
+`/tmp/w984fh_map.txt` vs `/tmp/w984it_map.txt`: 28 retirements, 0 additions).
+File count 830 → 831 (+1 new covered file, net testable-covered +29 = 28
+retirements + 1 new covered file). 92.0% covered, up from 88.5%.
+
+The −28 retirements map to the court landings since W984fh's subject
+(ed015775 → 3961c4ab, 34 commits): landing batches #4–#8 (a9056f7b, e49d7033,
+3b0bf56d, d1a2b91b, 58cd87b9) plus W984hx/fc2adcb0 — family/remainder courts
+in the W984fj/fm/gd/gx/gw/go/gs/ie/ij/hi family naming the modules directly:
+
+- Operations Castle/Route-verb long tail
+  (`CastleVerbInventoryComponents/GoalsApprove`,
+  `RouteCastleDeploy/Run/Schedule/SunsetApprove` + matching
+  `*RequiresApprover` validations) → `castle_verb_court_w984fj`,
+  `route_approve_court_w984fm` families.
+- Platform `RouteFeatureFlagsApprove` / `RouteProjectsApprove` →
+  `route_approve_court_w984fm`.
+- CapitalCensus `Types.*` (GapStatus, PrimitiveTarget, RecurrenceClass,
+  ResolutionOutcome, WorkOrderStatus) → `family_court_w984ij`.
+- Ultracode `Changes.{ExtendCycleBudget,RevokeLiveLeases,SetTerminalAt}`,
+  `SetPreviousStatus`, `RelateEventToObjects`,
+  `ProjectMeasure.Verifiers.ValidateConfiguration`, Accounts senders →
+  `remainder_court_w984hi` / `family_court_w984ie` /
+  `family_court_w984gx` families.
+
+Retirement spot-checks (real greps over `test/**/*.exs`, real files on disk):
+`ApprovalTierDowngradeTargetsLowerTier` →
+`test/xaas/platform/route_approve_court_w984fm_test.exs`;
+`RouteCastleDeployApprove` → `test/xaas/operations/castle_verb_court_w984fj_test.exs`;
+`RelateEventToObjects` → `test/xaas/changes/family_court_w984ie_test.exs`;
+`GapStatus` → `test/xaas/capital_census/family_court_w984ij_test.exs`;
+`SetTerminalAt` → `test/xaas/ultracode/remainder_court_w984hi_test.exs`.
+
+New top-10 uncovered: still flat (every entry 2-pub), led by
+`ApprovalCastleVerbScheduleApprove` /
+`ApprovalK8sFaultRemediateSuggestApprove` /
+`CastleVerbFortune5Requirements*` (operations), `RouteSecretsApprove` +
+matching `*RequiresApprover` validations (platform), and the research_runtime
+long tail (`BoundedDo`, `CommandBudget`, `CommandTopology`, `ConsumerBoundary`,
+`EdgeSet`, `FondRecovery`, `GenerationFence`, `MigrationGuard`,
+`OsirisBoundary`, `PlannerBinding`, `PolyEvidence`, `PowlTrace`, …). Full
+65-row list at `/tmp/w984it_map.txt` (regenerable). Standing: ALIVE (as a
+map). Lane hygiene: no `_build-laneW984it` created.

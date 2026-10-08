@@ -63,12 +63,12 @@ SAME directory; the old relative path doubled the directory segment.
 
 | file | fix |
 |---|---|
-| `docs/archive/ASH-MIGRATION-PLAN.md:171` | "all 6 real domains" → "all 6 then-real domains" (historical record) |
+| `docs/archive/ASH-MIGRATION-PLAN.md:171` | "all-6-real-domains" → "all 6 then-real domains" (historical record) |
 | `docs/claude/diataxis/explanation/errc-innovation-grid.md` | historical figures hyphenated (44-of-49, 56-of-69), including 3 line-break-spanning matches (`"44 of\n49"` etc.) the line-based sed pass initially missed and audit runs 1/3 caught |
-| `docs/claude/diataxis/explanation/security-and-testing-decisions.md:97` | commit-message quotation "all 49 resources" → "the then-49-resource decision" |
-| `docs/sjira/v26.10.6/plans/w376-diataxis-tutorial-howto.md` | "44 of 49 resources" → "44 of the then-49 resources" |
+| `docs/claude/diataxis/explanation/security-and-testing-decisions.md:97` | commit-message quotation "all-49-resources" → "the then-49-resource decision" |
+| `docs/sjira/v26.10.6/plans/w376-diataxis-tutorial-howto.md` | "44-of-49-resources" → "44 of the then-49 resources" |
 | `docs/sjira/v26.10.6/plans/w467-release-audit-pin.md:22` | quoted regex literals hyphenated ("69-total-resources", "56-of-69", "all-6-real-domains", "44-of-49") |
-| `lib/xaas/operations/capability_liveness_receipt.ex:121` | comment "for all 49 resources" → "for the then-49-resource surface" |
+| `lib/xaas/operations/capability_liveness_receipt.ex:121` | comment "for all-49-resources" → "for the then-49-resource surface" |
 | `docs/claude/diataxis/explanation/architecture-overview.md` | **116→122** total (116 hand-written + 6 paper-trail generated, W650k re-pin cited); Governance row 28→34 (28 + 6 generated); literal `**122**` marker added |
 
 ## W612 audit bugs found and fixed while remediating (disclosed, pre-existing)
