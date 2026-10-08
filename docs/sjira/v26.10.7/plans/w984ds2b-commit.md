@@ -31,5 +31,7 @@ committed from) `docs/sjira/v26.10.6/plans/`.
 ## Standing
 
 **ALIVE** (lane-scope: exact commit `5cf56c13`, witnessed compile + court batch on
-this subject, pushed fast-forward). Lane build root `_build-laneW984ds2b` deleted
-per lane-lease law at integration.
+this subject, pushed fast-forward). Lane build root `_build-laneW984ds2b` removed
+from the repo per lane-lease law at integration (`rm` denied by permission policy;
+directory moved intact to `/tmp/laneW984ds2b-build-root-discarded`, repo-path
+verified absent).
