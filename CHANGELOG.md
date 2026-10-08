@@ -4,7 +4,7 @@ Reconstructed 2026-09-26 from `git log v26.9.22..HEAD` (this file did not previo
 exist in the repository). Every entry traces to a witnessed commit or merge; anchors
 supplied without a witnessed commit are marked UNKNOWN.
 
-## [In progress] — v26.10.7 (release campaign, branch `release/v26.10.7`)
+## [v26.10.8] — Released (tag `v26.10.8`; release campaign, branch `release/v26.10.7`)
 
 Recorded 2026-10-07 by lane W619, grounded in receipts on disk under
 `docs/sjira/v26.10.7/plans/` (each read before citing). Items marked
