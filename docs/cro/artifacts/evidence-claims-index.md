@@ -1,9 +1,10 @@
-# Evidence–Claims Index (lane W405; refreshed W711, W855)
+# Evidence–Claims Index (lane W405; refreshed W711, W855, W984fp)
 
 Campaign v26.10.6 CRO-loop, honest-numbers directive. Subject: branch
 `feat/playwright-surface`. W405 audit at head `d1db2b03…` 2026-10-06;
 W711 refresh at head `a0723bf6` 2026-10-07; W855 refresh (rows 33–58) at
-head `a0723bf6` 2026-10-07. Repo `/Users/sac/xaas`.
+head `a0723bf6` 2026-10-07; W984fp refresh (rows 59–76) at head
+`43265cb1` 2026-10-07. Repo `/Users/sac/xaas`.
 
 Method: every pitch number checked against the on-disk artifact named in the
 table. "Real" = number as stated in the receipt file, not the pitch copy.
@@ -60,8 +61,8 @@ the receipt's own standing vocabulary, not the wave's intent.
 
 | # | Claim | Evidence artifact | What the receipt actually witnesses | Grade |
 |---|---|---|---|---|
-| 33 | Fresh full gate green after repairs (census 1347/1348) | `docs/sjira/v26.10.6/plans/w778-gate-fix-verify.md` | F1 coordinator repair verified as-found (503/503 title_i+iii); F2 coordinator repair was **direction-inverted** (expected newest-first from `Enum.reverse |> take(2)`) — W778 corrected forward; then full gate `--exclude eu_ai_act_open_gap` → **1347 passed, 1 excluded, 0 failures, exit 0** on `_build-laneW778`. Mid-run concurrent-lane lib edits disclosed; final runs on settled tree | witnessed |
-| 34 | Terminal census CERTIFIED (1347/1348, deterministic) | `docs/sjira/v26.10.6/plans/w821-terminal-census-2.md` | Two census runs (incl. open gap) identical: 1347/1348, 1 failed = the 49.3 `flunk/1` open gap (W779/W815 ledger), via its own explicit flunk — not a regression; green gate 1347/1-excluded exit 0; delta 1348−1347=1 = open-gap count exactly. Closes the certification W662/W650c could not make | witnessed |
+| 33 | Fresh full gate green after repairs (census 1347/1348) | `docs/sjira/v26.10.6/plans/w778-gate-fix-verify.md` | F1 coordinator repair verified as-found (503/503 title_i+iii); F2 coordinator repair was **direction-inverted** (expected newest-first from `Enum.reverse |> take(2)`) — W778 corrected forward; then full gate `--exclude eu_ai_act_open_gap` → **1347 passed, 1 excluded, 0 failures, exit 0** on `_build-laneW778`. Mid-run concurrent-lane lib edits disclosed; final runs on settled tree. **STALE (2026-10-07, W984fp): totals superseded by W650h14's 1354/1355 census (row 70)** | witnessed |
+| 34 | Terminal census CERTIFIED (1347/1348, deterministic) | `docs/sjira/v26.10.6/plans/w821-terminal-census-2.md` | Two census runs (incl. open gap) identical: 1347/1348, 1 failed = the 49.3 `flunk/1` open gap (W779/W815 ledger), via its own explicit flunk — not a regression; green gate 1347/1-excluded exit 0; delta 1348−1347=1 = open-gap count exactly. Closes the certification W662/W650c could not make. **STALE (2026-10-07, W984fp): totals superseded by W650h14's 1354/1355 census (row 70) — tree grew during the campaign; do not cite 1347/1348 as current** | witnessed |
 | 35 | Checkout `:return` open-checkout guard (closes W796 (c)) | `docs/sjira/v26.10.6/plans/w809-return-guard.md` | Guard reads status FRESH FROM DB (in-memory variant proven vacuous by a real 10/12 failing run), 12/12 deepening courts + 19 pre-existing return-suite tests green; mutation rationale: guard-drop mutant killed by error-tuple AND inventory asserts independently. **Uncommitted**, PARTIAL_ALIVE | witnessed |
 | 36 | Incident lifecycle guards (closes W793 gaps (a)/(b)) | `docs/sjira/v26.10.6/plans/w818-incident-guards.md` | `:resolved`-at-:create refused outright (guard (a) on :create); resolved→reopen refused via new `IncidentResolvedIsTerminal` on :update (guard (b)); 29/29 across deepening + migrated fixture; per-guard mutation falsifiers stated; 3 typed gaps (NO_RESOLVED_AT_GUARD, NO_POSTMORTEM_STATUS_GUARD, NO_CROSS_REFERENCE) pinned open, unfixed. ALIVE | witnessed |
 | 37 | SA2A route exclusions guard (bare binary refused) | `docs/sjira/v26.10.6/plans/w831-exclusions-guard.md` | Terminal `admit_field("exclusions", _)` catch-all after the `is_list` clause routes non-lists to typed `{:refused, {:invalid_field, "exclusions"}}`; pinned-gap test converted to refusal court; 25/25 ×2 green. Clause-ordering bug (shadowing valid lists, 7 failures) caught and fixed in-lane. **Uncommitted**, PARTIAL_ALIVE | witnessed |
@@ -116,6 +117,63 @@ the receipt's own standing vocabulary, not the wave's intent.
 - #14 w700: OS-21/OS-19 landings are on the uncommitted lane build at
   a0723bf6 — coordinator integration still pending.
 
+## Claims table — W984fp refresh (rows added 2026-10-07, the 2026-10-07 evening wave)
+
+One row per wave commit, f0321df2 → 43265cb1 (20 commits), in landing order.
+Refresh at head `43265cb1` 2026-10-07. Each receipt read in full; court
+numbers re-read from the receipt, not the commit subject.
+
+| # | Claim | Evidence artifact | What the receipt actually witnesses | Grade |
+|---|---|---|---|---|
+| 59 | SpgGate integration landed (F2 fingerprint guard + `admit_spg/1` seam) | `docs/sjira/v26.10.7/plans/w650h22-commit.md` | Exact subject `f0321df2`, FF `c0626503..f0321df2`; fresh-root compile EXIT=0; 18 passed / 0 failures (spg_integration 8, spg_gate 5, actuation_test 5); six-checkbox table re-verified on disk; disclosed out-of-pathspec `run_idempotency_deepening_test.exs` 7/10 (ActuationIntent persistence, not this lane's file). ALIVE | witnessed |
+| 60 | SpgGate landing commit receipt | `docs/sjira/v26.10.7/plans/w650h22-commit.md` | `ee6c18bc` carries the w650h22 receipt itself (pushed in range `ee6c18bc..34fc8a53` per w650h33); nothing on disk cites `ee6c18bc` as subject — self-referential-limits class | grep |
+| 61 | vkg query_depth court landed (unreceipted-owner) | `docs/sjira/v26.10.7/plans/w650h33-commit.md` | Exact subject `34fc8a53`, FF `ee6c18bc..34fc8a53`; strict compile fresh root EXIT=0; court 5 passed EXIT=0; owner receipt w984de **UNSUPPORTED (never minted)** — disclosed, retrospective coverage via w650h11 repair. Court ALIVE | witnessed |
+| 62 | vkg query_depth court: commit-receipt leg + git-state correction | `docs/sjira/v26.10.7/plans/w650h33b-commit.md` | Subjects `d51119c5` (git-state verdict correction) and `0b1b70fc` (receipt-only commit); concurrently-landed `34fc8a53` verified identical bytes; re-run 5 passed exit 0; compile --strict EXIT=0. LANDED | witnessed |
+| 63 | causal_receipt process_receipt_depth court: first-ever green on a committed subject | `docs/sjira/v26.10.7/plans/w650h33c-commit.md` | Exact subject `32b72c4f`, FF `d51119c5..32b72c4f`; fresh-root compile EXIT=0; court **5 passed / 0 failed** — previously CompileError'd, 0/5 ever executed; replay block included. ALIVE | witnessed |
+| 64 | W984ds + W650za completed-lane courts landed | `docs/sjira/v26.10.7/plans/w984ds2b-commit.md` | Exact subject `5cf56c13` (full SHA in receipt), FF `34fc8a53..5cf56c13`; fresh-root compile EXIT=0; batch **10 passed / 0 failures** (validations 5 + incident-lifecycle 5); prior-landing check `git log` empty; build root moved to /tmp (rm denied), repo path verified absent. ALIVE | witnessed |
+| 65 | W984ds2b receipt landing + cleanup-wording correction | `docs/sjira/v26.10.7/plans/w984ds2b-commit.md` | `b75918a5` carries the receipt; `f2d30813` is the cleanup-wording correction (rm denied; build root moved to /tmp). Doc-only; nothing on disk cites either SHA as subject | grep |
+| 66 | Gov/actuation courts batch (W984dx/W984dw/W984dr2b) | `docs/sjira/v26.10.7/plans/w984el-commit.md` | `acacc1db`: 6 files +1166 (freeze_window_active, causal_admission, gov thin batch + 3 receipts); fresh re-verification in `_build-laneW984el`: mock gate `[]`, 7-file batch **91 passed / 0 failed exit 0** (14+14+20+33+5+5). ALIVE | witnessed |
+| 67 | Adapters/billing/bridges courts batch (W984dy/W650v5/W650v7) | `docs/sjira/v26.10.7/plans/w984el-commit.md` | `ab3562b8`: 7 files +643 (ils_repo_fixture, aws_repo_adapters, sla_credit court + 3 receipts); same 91-passed batch gate. ALIVE | witnessed |
+| 68 | Docs leg (W984ef runbook addendum + W984eg actuation-and-semantics deepening) | `docs/sjira/v26.10.7/plans/w984el-commit.md` | `8f9ea495`: 4 files +302/-1; disclosure: shared `actuation-and-semantics.md` carried sibling-lane working-tree content alongside; cited courts already landed. LANDED (docs) | grep |
+| 69 | W984el landing-batch commit receipt | `docs/sjira/v26.10.7/plans/w984el-commit.md` | `ecf84663` carries the receipt itself; cited as stage-time base by w650h14 (`ecf84663` at stage time). Self-referential-limits class | grep |
+| 70 | Gated lib/test landing batch 1 (16 files, v26.10.7 fleet seal) | `docs/sjira/v26.10.7/plans/w650h14-gated-commit.md` | Subject `3c03bffa`; fresh-root `mix compile --force` EXIT=0; eu_ai_act census **1354/1355** (1 failure = concurrent-lane mid-edit compile, isolated rerun 26/26 → floor ≥1352/0/1 MET with disclosure); staged batch 57 passed EXIT=0; typed exclusions table (SPG landed by own lane; ENV-DRIFT pin courts excluded). ALIVE for the gated landing | witnessed |
+| 71 | W650h14 docs commit (runbook/census/receipt doc updates) | `docs/sjira/v26.10.7/plans/w650h14-gated-commit.md` | `ed015775`: v26.10.6 runbook, w984cj coverage map, w983g receipt; same receipt's gates. LANDED (docs) | grep |
+| 72 | Landing batch #2 (courts w984eh/en/ea/dt + probes) | `docs/sjira/v26.10.7/plans/w984fe-commit.md` | `0153101a`: 5 court files; batch gate real run **28 passed, exit 0** (2+12+3+5+6); mock gate `[]`. ALIVE | witnessed |
+| 73 | OTP-29 Map.update compat module (W984ee) + airo_risk_mapping lib trio | `docs/sjira/v26.10.7/plans/w984fe-commit.md` | `c6bf5bbc`: `lib/xaas/compat/otp29_map_update.ex` + probes; w984ed trio disclosed as **already landed by sibling lane in 3c03bffa** (not duplicated); w984ee court file ABSENT from tree (left to owning lane) — lib landed, court pending | witnessed |
+| 74 | mix.lock 3-deletion unlock (absinthe, absinthe_plug, ash_graphql) | `docs/sjira/v26.10.7/plans/w984fe-commit.md` | `49992412`: `git diff mix.lock` verified exactly 3 deletions pre-stage. ALIVE (deps) | witnessed |
+| 75 | w984ej security-parsing receipt (court file deferred) | `docs/sjira/v26.10.7/plans/w984fe-commit.md` | `a420b7d5`: receipt only; court file deferred to concurrent lane W984ez per batch contract. PARTIAL_ALIVE (court pending) | grep |
+| 76 | w984et mix.lock probe + W984fe commit receipt landing | `docs/sjira/v26.10.7/plans/w984fe-commit.md` | `43265cb1` (HEAD at refresh time): carries w984et-probe.md (omitted from 49992412 by pathspec gap) + the receipt itself. **Nothing on disk cites `43265cb1`** — a commit cannot contain its own hash (out-of-subject receipt gap, catalog C21); content standing inherited from w984fe's batch gates | grep (receipt-absent-by-construction) |
+
+### DRIFT summary (W984fp)
+
+- Rows 33/34 (W778/W821): the certified census totals **1347/1348 are
+  superseded** — W650h14's 2026-10-07 census is **1354/1355** (row 70). The
+  1347/1348 numbers were correct at their subject; the tree grew since. Re-grep
+  at use time; do not cite 1347/1348 as current.
+- Row 70's census carries its own in-flight caveat (1 failure disclosed as a
+  concurrent-lane compile artifact, isolated 26/26) — cite "≥1352/0/1 with
+  disclosure", not a bare 1354/1355.
+- Receipt-absent-by-construction now covers #76 (`43265cb1`) in addition to
+  the W855 uncommitted-landing caveat list; out-of-subject receipts (C21)
+  remain an open coordinator item.
+- #59 w650h22 discloses a pre-existing out-of-pathspec RED leg
+  (`run_idempotency_deepening_test.exs` 7/10, ActuationIntent persistence) —
+  open, not fixed by any receipt in this wave.
+
+### Counts
+
+W984fp refresh (rows 59–76, 20 commits → 18 rows; batch commits share
+receipts): witnessed 12 (#59, 61, 62, 63, 64, 66, 67, 70, 72, 73, 74 —
+gates re-run or batch-run on the exact subject) · grep/existence 6 (#60,
+65, 68, 69, 71, 75 — doc-only or receipt-carrier commits; #76 is
+receipt-absent-by-construction, annotated). No receipt diverged from its
+commit's claim; two disclosures recorded as-is (w650h22's out-of-pathspec
+RED leg; w650h14's concurrent-edit census failure). All 20 wave SHAs
+grep-verified against `docs/sjira/v26.10.{6,7}/plans/`; 18/20 have an
+on-disk receipt citing or carrying them.
+
+Total rows: 12 → 32 → 58 → 76.
+
 ## Ship-list (use these wordings)
 
 - "62 CASTLE refusal-negative tests; 7/7 fail-closed auth-floor plug tests;
@@ -168,4 +226,4 @@ Receipt-absent lanes skipped, not invented: **W840-check** (no
 from its claim outright — one cross-row divergence (row 32's 116 vs W756's
 117 resources) recorded as DRIFT above.
 
-Total rows: 12 → 32 → 58.
+Total rows: 12 → 32 → 58 → 76 (W984fp, 2026-10-07).
