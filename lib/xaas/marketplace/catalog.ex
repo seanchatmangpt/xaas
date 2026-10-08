@@ -111,10 +111,22 @@ defmodule Xaas.Marketplace.Catalog do
 
       missing = required -- Map.keys(pack)
 
-      if missing == [] and is_binary(pack["name"]) do
-        {:cont, :ok}
-      else
-        {:halt, {:error, %Error{reason: :invalid_pack, detail: {i, missing, pack["name"]}}}}
+      readiness = Map.get(pack, "readiness")
+
+      cond do
+        missing != [] or not is_binary(pack["name"]) ->
+          {:halt, {:error, %Error{reason: :invalid_pack, detail: {i, missing, pack["name"]}}}}
+
+        # W984bo-family repair: readiness that is neither a map nor a binary
+        # (nil, integer, list, ...) used to fall through readiness_string/1 to
+        # "" and raise a raw Ash.Error.Invalid out of the upsert. Refuse it
+        # typed, per the moduledoc contract.
+        not (is_map(readiness) or is_binary(readiness)) ->
+          {:halt,
+           {:error, %Error{reason: :invalid_pack, detail: {i, [:invalid_readiness], readiness}}}}
+
+        true ->
+          {:cont, :ok}
       end
     end)
   end
