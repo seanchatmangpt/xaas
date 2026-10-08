@@ -9,7 +9,11 @@ W650h33's earlier dispatch (vkg query_depth landing) **did not execute**:
 - `git status --porcelain -- test/xaas/semantics/vkg/query_depth_test.exs` → `??` (untracked)
 - `git log -- <file>` → zero commits touch it
 
-So this lane performed the landing (stage-now path per W650h32's map), not a NO-OP.
+At initial check (18:23 PDT) untracked and unreached by any commit. During this lane's
+gate run, W650h33's dispatch executed concurrently: **34fc8a53** (18:39:56, exact
+pathspec, 158 lines = the full test file) landed the file. This lane's commit
+**0b1b70fc** therefore carries the receipt only; the test file landing belongs to
+W650h33 via 34fc8a53. Both pushed fast-forward f2d30813..0b1b70fc.
 
 ## Freshness
 
@@ -23,7 +27,8 @@ Owner-completed state = W650h11's repair.
 
 ## Action
 
-- Staged exactly 1 file: `test/xaas/semantics/vkg/query_depth_test.exs`
+- Receipt commit 0b1b70fc (git-state correction vs. initial verdict; test file itself
+  in 34fc8a53, verified identical path — gates below ran against the same on-disk bytes)
 - Commit message cites W650h11's repair + W650h32's stage-now map
 - Push: fast-forward after fetch (no force)
 
