@@ -113,3 +113,12 @@ repo root with any Elixir ≥ 1.14 + git.
 2. 4 ledger repos (ash_a2a, ash_r2rml, ggen_igniter, ash_affidavit) have no
    recorded SHA in the ledger; a future extension could add their rows so the
    court covers all 25.
+
+## W984gt addendum (2026-10-07) — drift row resolved, court map emptied
+
+The single DRIFT row above is RESOLVED: lane W980b lawfully rebased the
+ledger submodule pin to `6e934414…` (equivalence verified per w982h), so
+`pin_drift_check.exs` now reports `drift=0` (5 CURRENT / 16 ANCESTOR / 21 rows).
+Per the receipt contract, `@receipted_drift` in
+`test/xaas/airo/pin_drift_test.exs` is emptied to match reality. Re-add
+entries only from real `pin_drift_check.exs` output.
