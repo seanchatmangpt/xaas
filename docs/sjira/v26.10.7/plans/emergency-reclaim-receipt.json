@@ -1,0 +1,10 @@
+{
+  "cache_bytes": 813288378368,
+  "end_available": 60200677376,
+  "mode": "execute",
+  "mount": "/",
+  "reclaim_shortfall": true,
+  "reclaim_witnessed": false,
+  "snapshots_seen": 0,
+  "start_available": 125390848
+}
