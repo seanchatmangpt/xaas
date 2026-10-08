@@ -146,3 +146,67 @@ The ranked backlog is a heuristic surface — each entry is UNKNOWN until a dept
 lane opens a direct court on it. Full 193-row list lives at `/tmp/w984cj_map.txt`
 (not durable); regenerate with the script content preserved in this receipt's
 method section, or copy the file before /tmp is cleared.
+
+## Re-census addendum — W650h8, 2026-10-07 (third dated re-run)
+
+Lane W650h8, v26.10.7 fleet seal, same CamelCase-aware method re-implemented
+fresh (`/tmp/w650h8_coverage.exs`; defmodule-source parsing, full-dotted-name
++ last-segment-alias passes, protocol/mix-task/config-class non-testable
+filter, column-0 def/defdelegate/defmacro pub heuristic). Real run, no
+project compile needed.
+
+**Post-integration walk: 829 files — 634 COVERED (78.4%), 176 UNCOVERED,
+19 NON-TESTABLE.**
+
+| Run | Files | Covered | Uncovered | Non-testable |
+|---|---|---|---|---|
+| W984cj as-written | 825 | 629 | 193 | 15 |
+| W984cj re-run | 826 | 629 | 194 | 15 |
+| **W650h8 re-run** | **829** | **634** | **176** | **19** |
+
+Delta vs baseline: 194 → 176 uncovered (−18). Depth-court waves (W984da–dr,
+W650w/y) knocked out the entire former top of the backlog: `Xaas.SparqlBridge`
+(former #1, 7 pub), `Xaas.Hddl.Mermaid` (5), `Xaas.Tunnel.Submit` (5),
+`Xaas.Operations.AuthorityLedgerExport` (6, then rank #4),
+`Xaas.Accounts.Token.RevokeVerifier` (4), `Xaas.Ultracode.SubstitutionPolicy`
+(4), `Xaas.Actuation.SpgGate` (3) — all now COVERED with real courts
+(spot-verified: `test/xaas/sparql_bridge_court_test.exs`,
+`test/xaas/operations/authority_ledger_export_test.exs`,
+`test/xaas/generation/substitution_policy_depth_test.exs`).
+W984cy3's O-corrected ultracode true-uncovered set is fully retired:
+DurableClose, ProcessGroup (`test/xaas/ultracode/process_group_court_test.exs`),
+SubstitutionPolicy all COVERED.
+
+NON-TESTABLE grew 15 → 19: new config-class modules landed mid-campaign
+(`Xaas.A2a.Catalog`, `Xaas.Graphlaw.Catalog`, `Xaas.Marketplace.Catalog`/
+`Pack`, `Xaas.Witness.Catalog` — same config-class filter, not a method
+change).
+
+New top-ranked uncovered (top 15, full 176-row list at `/tmp/w650h8_map.txt`):
+
+| # | Pub | Module |
+|---|---|---|
+| 1 | 4 | `Xaas.CS2.FleetContract` |
+| 2 | 4 | `Xaas.Library.ILSRepo.FixtureAdapter` |
+| 3 | 4 | `Xaas.Ultracode.ProviderMesh.ProviderWorker` |
+| 4 | 3 | `Xaas.Billing.Changes.ApprovalPricingOverrideApprove` |
+| 5 | 3 | `Xaas.CS2.GeneratedFleetContract` |
+| 6 | 3 | `Xaas.Governance.Checks.FreezeWindowActive` |
+| 7 | 3 | `Xaas.Platform.Validations.RouteProjectsBackupsRetainUntilPassed` |
+| 8 | 3 | `Xaas.Ultracode.ProviderMesh.ReconciliationLoop` |
+| 9 | 2 | `Xaas.Actuation.Validations.CausalAdmission` |
+| 10 | 2 | `Xaas.AwsRepo.AwsAdapter` / `Xaas.AwsRepo.FixtureAdapter` |
+| 11 | 2 | `Xaas.Billing.Changes.ApprovalInvoiceReconciliationApproveApprove` |
+| 12 | 2 | `Xaas.Billing` changes/validations batch (ApprovalPatchSlaCreditApplyApprove, ApprovalQuotaOverrideApprove, ApprovalTierDowngradeTargetsLowerTier, SubscriptionChangeTierNotNoOp) |
+| 13 | 2 | `Xaas.Governance.Changes.ApprovalBackupRetentionChangeApprove` and the governance Approval*-Approve 2-pub batch (long tail) |
+| 14 | 2 | remaining governance changes 2-pub modules (ApprovalCmekKeyBinding, ApprovalComplianceRotationBlock, ApprovalDeniedPartyOverride, ApprovalDeploymentQuarantine, ApprovalDrFailover, ApprovalDsarErasure, …) |
+| 15 | — | full long tail: 176 rows at `/tmp/w650h8_map.txt` (regenerable via method above) |
+
+Domain shifts (cov/uncov): governance 51/73 → 53/70; operations 31/28 → 35/26;
+ultracode 129/21 → 130/18 raw (and 0 uncovered under W984cy3's O-corrected
+courtable view); platform 10/12 → 10/11; billing 23/7 → 23/6.
+
+Same limitations as the original map apply (indirect DSL-attached coverage
+invisible; last-segment alias pass conservative-toward-covered).
+Standing: ALIVE (as a map). Lane hygiene: run used `elixir` directly — no
+`_build-laneW650h8` created.
