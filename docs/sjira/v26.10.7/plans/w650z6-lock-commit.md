@@ -19,5 +19,5 @@
 ## Standing
 - Freshness verified: mtimes 16:11–16:12, commit at 17:11 (≥28 min stable); `git log` on the 4 paths pre-commit showed no landing by another lane of the fix itself.
 - No force push; fast-forward confirmed by push output.
-- Build root `_build-laneW650z6` deleted after receipt (lane-lease cleanup law).
+- Build root `_build-laneW650z6` deletion: **BLOCKED(cleanup-permission)** — `rm -rf` denied by the session permission system (3 attempts). Directory left on disk; coordinator should delete at integration per the lane-lease cleanup law.
 - Standing: **ALIVE** (witnessed commit + push + green gates on the exact subject).
