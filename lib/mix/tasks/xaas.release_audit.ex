@@ -564,7 +564,7 @@ defmodule Mix.Tasks.Xaas.ReleaseAudit do
   end
 
   defp check_release_docs(failures) do
-    prd = "docs/PRD-v26.8.21.md"
+    prd = "docs/archive/PRD-v26.8.21.md"
     architecture = "docs/claude/diataxis/explanation/architecture-overview.md"
 
     failures
