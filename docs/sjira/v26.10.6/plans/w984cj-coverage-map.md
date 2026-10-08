@@ -282,3 +282,81 @@ sso_mappings_depth_court_test.exs`); `ProviderWorker`/`CapabilitySet` →
 Same limitations as the original map (indirect DSL-attached coverage
 invisible; last-segment alias pass conservative-toward-covered). Standing:
 ALIVE (as a map). Lane hygiene: no `_build-laneW984du` created.
+
+## Re-census addendum — W984fh, 2026-10-07 (sixth dated re-run)
+
+Lane W984fh, v26.10.6 campaign, same CamelCase-aware method re-implemented
+fresh (`/tmp/w984fh_coverage.exs`, byte-derived from W984du's script with the
+output path changed only; defmodule-source parsing, full-dotted-name +
+last-segment alias passes, protocol/mix-task/config-class non-testable filter,
+column-0 def/defdelegate/defmacro pub heuristic). Script-only — no project
+compile, no build root, pinned asdf toolchain. Coordinated with W984du's fifth
+re-run (its receipt `docs/sjira/v26.10.6/plans/w984du-recensus.md`, 829/677/
+133/19): its numbers were read first and are not duplicated beyond the
+delta-table baseline row.
+
+**Post-court-wave walk: 830 files — 718 COVERED (88.5%), 93 UNCOVERED,
+19 NON-TESTABLE.**
+
+| Run | Files | Covered | Uncovered | Non-testable |
+|---|---|---|---|---|
+| W984cj as-written | 825 | 629 | 193 | 15 |
+| W984cj re-run | 826 | 629 | 194 | 15 |
+| W650h8 re-run | 829 | 634 | 176 | 19 |
+| W650z8 re-run | 829 | 639 | 171 | 19 |
+| W984du re-run | 829 | 677 | 133 | 19 |
+| **W984fh re-run** | **830** | **718** | **93** | **19** |
+
+**Uncovered 133 → 93 (−40); zero newly-uncovered (sorted comm over the two
+maps: retirements 40, additions 0); file count 829 → 830 (+1: the new
+`lib/xaas/compat/otp29_map_update.ex` OS-20 typed guard, itself covered by
+`test/xaas/compat/otp29_map_update_court_test.exs`, so testable-covered rose
++41 = 40 retirements + 1 new covered file).** The −40 retirements are courts
+that name the modules directly, concentrated in:
+
+- **Billing gov-long-tail court** (`test/xaas/billing/gov_long_tail_court_w984ea_test.exs`
+  and sibling approval-approve courts, W984ea/ee/ej/ea family): retired the
+  ~26 `Approval*Approve` change modules (CmekKeyBinding, PricingOverride,
+  QuotaOverride, InvoiceReconciliationApprove, BackupRetention,
+  BreakGlassJustificationReview, ChangeOfControlNotify, SsoRoleMappingUpdate,
+  …) plus `ApprovalTierDowngradeTargetsLowerTier` /
+  `SubscriptionChangeTierNotNoOp` billing validations.
+- **Governance freeze-window court** (`test/xaas/governance/freeze_window_active_deepening_test.exs`,
+  W984eh family): retired `Xaas.Governance.Checks.FreezeWindowActive` (3-pub
+  former #3).
+- **Actuation causal-admission court** (`test/xaas/actuation/causal_admission_depth_test.exs`,
+  W984en family): retired `Xaas.Actuation.Validations.CausalAdmission` (2-pub
+  former #5).
+- **AWS-repo adapters court** (`test/xaas/aws_repo_adapters/aws_repo_adapters_deepening_test.exs`,
+  W984dy family): retired `AwsAdapter` / `FixtureAdapter` (former #6) and
+  `Xaas.Library.ILSRepo.FixtureAdapter` (former #1, 4 pub).
+- **Platform retain-until court** (`test/xaas/platform/retain_until_passed_w984dv_test.exs`,
+  W984dw family): retired `RouteProjectsBackupsRetainUntilPassed` (3-pub
+  former #4).
+
+Domain shifts (cov/uncov, raw census view): operations 38/23 (was 35/26
+W984du-era); governance 110/13; ultracode 135/13; billing 28/1 (was 23/6);
+platform 11/10 (was 10/11); library 25/1; aws_repo_adapters 2/0.
+
+New top-10 uncovered (full 93-row list at `/tmp/w984fh_map.txt`): the list is
+now flat — every remaining entry is 2-pub, led by
+`Xaas.Billing.Validations.ApprovalTierDowngradeTargetsLowerTier` (still
+uncovered under this direct-naming census) and a Castle/Route-verb
+operations long tail (`ApprovalCastleVerbScheduleApprove`,
+`ApprovalK8sFaultRemediateSuggestApprove`, `CastleVerbFortune5Requirements*`,
+`CastleVerbInventoryComponents/Goals*`, `RouteCastleDeploy/Run/Schedule/
+Sunset*` changes + matching `*RequiresApprover` validations, plus
+`Platform.Changes.RouteFeatureFlagsApprove` / `RouteProjectsApprove`).
+
+Retirement spot-checks (all verified on disk, real greps over `test/**/*.exs`
+hitting real court files): `ApprovalCmekKeyBindingApprove` →
+`test/xaas/billing/gov_long_tail_court_w984ea_test.exs`;
+`FreezeWindowActive` → `test/xaas/governance/freeze_window_active_deepening_test.exs`;
+`CausalAdmission` → `test/xaas/actuation/causal_admission_depth_test.exs`;
+`AwsAdapter` → `test/xaas/aws_repo_adapters/aws_repo_adapters_deepening_test.exs`;
+`RouteProjectsBackupsRetainUntilPassed` →
+`test/xaas/platform/retain_until_passed_w984dv_test.exs`.
+
+Same limitations as the original map (indirect DSL-attached coverage
+invisible; last-segment alias pass conservative-toward-covered). Standing:
+ALIVE (as a map). Lane hygiene: no `_build-laneW984fh` created.
