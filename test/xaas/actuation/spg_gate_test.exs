@@ -113,13 +113,17 @@ defmodule Xaas.Actuation.SpgGateTest do
     assert SpgGate.fingerprint_token(family_b) != token
   end
 
-  test "seam: fingerprint_token/1 raises KeyError on string-keyed input; admit/1's atom-keyed projection fingerprints identically to its atom-keyed source" do
-    # Mutation rationale: pins the observed fail-closed boundary of the
-    # fingerprint seam — string-keyed identities (the raw ontology/JSON
-    # shape) crash the fingerprint, only the gate's atom-keyed admitted
-    # projection is fingerprintable — and kills drift between admit/1's
-    # check-surface and projection-surface.
-    assert_raise KeyError, fn -> SpgGate.fingerprint_token(admitted_identity()) end
+  test "seam: fingerprint_token/1 returns typed refusal on string-keyed input; admit/1's atom-keyed projection fingerprints identically to its atom-keyed source" do
+    # Mutation rationale: pins the F2-refined (W984dq5 work order §2)
+    # fail-closed boundary of the fingerprint seam — string-keyed
+    # identities (the raw ontology/JSON shape) get the typed refusal
+    # `{:error, :spg_fingerprint_atom_keyed}`, never a raise — and kills
+    # drift between admit/1's check-surface and projection-surface.
+    assert {:error, :spg_fingerprint_atom_keyed} =
+             SpgGate.fingerprint_token(admitted_identity())
+
+    assert {:error, :spg_fingerprint_atom_keyed} =
+             SpgGate.fingerprint_token(%{"graph_id" => "g"})
 
     assert {:ok, projected} = SpgGate.admit(admitted_identity())
     assert SpgGate.fingerprint_token(projected) == SpgGate.fingerprint_token(atom_identity())

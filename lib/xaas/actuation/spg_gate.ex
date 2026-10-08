@@ -35,15 +35,31 @@ defmodule Xaas.Actuation.SpgGate do
 
   def admit(_), do: {:error, :spg_identity_required}
 
-  @spec fingerprint_token(map()) :: tuple()
-  def fingerprint_token(identity) do
-    {
-      identity.graph_id,
-      identity.graph_version,
-      identity.node_id,
-      identity.edge_id,
-      Map.get(identity, :projection_family)
-    }
+  # F2 (W650x → W984dq5 work order §2): string-keyed input — the shape
+  # `admit/1` itself accepts — used to raise an untyped KeyError. Guard
+  # head converts crash-refusal to typed-refusal
+  # `{:error, :spg_fingerprint_atom_keyed}`. Lawfulness unchanged: only
+  # the atom-keyed map `admit/1` returns remains fingerprintable; a
+  # Map.get-with-default alternative was rejected as fail-OPEN (nil
+  # components silently fingerprinting).
+  @spec fingerprint_token(map()) :: tuple() | {:error, :spg_fingerprint_atom_keyed}
+  def fingerprint_token(identity) when is_map(identity) do
+    cond do
+      is_binary(Map.get(identity, :graph_id)) and
+        is_binary(Map.get(identity, :graph_version)) and
+        is_binary(Map.get(identity, :node_id)) and
+        is_binary(Map.get(identity, :edge_id)) ->
+        {
+          identity.graph_id,
+          identity.graph_version,
+          identity.node_id,
+          identity.edge_id,
+          Map.get(identity, :projection_family)
+        }
+
+      true ->
+        {:error, :spg_fingerprint_atom_keyed}
+    end
   end
 
   defp normalize(identity) do

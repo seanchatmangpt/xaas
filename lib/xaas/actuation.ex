@@ -250,6 +250,9 @@ defmodule Xaas.Actuation do
     case step_error do
       {:idempotency_conflict, _key} -> step_error
       {:idempotency_not_replayable, _key, _status} -> step_error
+      # SPG gate refusals (W984dq5): typed contract tuples surfaced bare
+      # to run/4 callers, same unwrapping class as idempotency conflicts.
+      {:spg_gate_refused, _reason} -> step_error
       _ -> reason
     end
   end
@@ -322,6 +325,7 @@ defmodule Xaas.Actuation.Kernel do
   require Ash.Query
 
   alias Xaas.Operations.{ActuationIntent, ActuationReceipt}
+  alias Xaas.Actuation.SpgGate
   alias Xaas.Semantics.Registry
 
   def admit(args, _context), do: do_admit(args, :transactional)
@@ -329,6 +333,16 @@ defmodule Xaas.Actuation.Kernel do
 
   defp do_admit(args, mode) do
     with :ok <- admit_authority(args.authorize?, args.authority),
+         # SPG identity gate (W984dq5 work order §1) — the gate's ONLY
+         # caller. Opt-in via the atom key `:spg` in the authority map;
+         # absent key = no-op (behavior byte-identical to pre-gate).
+         # Deliberately NO string-key fallback: a string `"spg"` key in
+         # the authority map is IGNORED (fail-closed-by-absence) — the
+         # string-key tolerance inside SpgGate.admit/1 is the gate's own
+         # normalize contract, not the seam's. Ordered AFTER
+         # admit_authority/2 so an authority-refused call never observes
+         # the SPG gate. Opening the gate grants no authority.
+         :ok <- admit_spg(args.authority),
          {:ok, projection} <- Registry.admit(args.resource),
          projection_hash <- Registry.hash(projection),
          input_hash <-
@@ -620,6 +634,24 @@ defmodule Xaas.Actuation.Kernel do
   # `:claim_shaped_authority_refused` (new atom; the closest existing family
   # `:delegated_actuation_requires_authority_evidence` names MISSING evidence,
   # not POWERLESS evidence, so it would misclassify this refusal).
+  # SPG identity gate (W984dq5 work order §1). Absent `:spg` key in the
+  # authority map = no-op (opt-in, same shape as CausalAdmission's
+  # `causal` declaration). Present = SpgGate.admit/1 must open; any gate
+  # refusal is fatal to the admission (fail-closed). This is the gate's
+  # single caller — no bypass paths elsewhere.
+  defp admit_spg(authority) when is_map(authority) do
+    case Map.get(authority, :spg) do
+      nil ->
+        :ok
+
+      identity ->
+        case SpgGate.admit(identity) do
+          {:ok, _projected} -> :ok
+          {:error, reason} -> {:error, {:spg_gate_refused, reason}}
+        end
+    end
+  end
+
   defp admit_authority(false, authority) when is_map(authority) and map_size(authority) > 0 do
     if Map.has_key?(authority, :__struct__) do
       {:error, :claim_shaped_authority_refused}
