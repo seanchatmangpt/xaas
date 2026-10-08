@@ -301,3 +301,4 @@ first.
 - `docs/claude/diataxis/reference/actuation-and-semantics.md` — actuation, idempotency, receipts.
 - `docs/claude/diataxis/reference/http-api-surface.md` — `/internal-api` auth boundary.
 - `docs/claude/diataxis/reference/sa2a-computation-boundary.md` — SA2A boundary.
+- `~/zcode-cli/docs/c4-zcode-cli-xaas.md` — host-side C4 view of this integration (plugin contracts, gate, lease, launcher seam).
