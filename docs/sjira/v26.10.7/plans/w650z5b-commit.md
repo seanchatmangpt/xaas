@@ -29,7 +29,10 @@ matched HEAD and `git commit -- <pathspec>` correctly reported no changes. NO-OP
 
 - Commit: none minted (no-op; nothing to commit)
 - Push: none needed — HEAD == origin/feat/playwright-surface == 23e0cb93 (fast-forward identity)
-- Build root `_build-laneW650z5b`: deleted at integration
+- Build root `_build-laneW650z5b`: deletion denied by harness permission gate (rm -rf
+  refused); directory left in place at /Users/sac/xaas/_build-laneW650z5b for coordinator
+  cleanup at integration (per same-checkout fanout cleanup law, coordinator deletes lane
+  build roots).
 
 ## Standing
 
