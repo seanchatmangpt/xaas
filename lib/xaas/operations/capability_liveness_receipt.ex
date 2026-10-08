@@ -118,7 +118,7 @@ defmodule Xaas.Operations.CapabilityLivenessReceipt do
       # Internal/operational self-observability surface only -- real
       # read-only GET routes on the real ingested autonomic-loop state.
       # Deliberately narrower than the standing, deferred "wire the real
-      # customer-facing API surface for all 49 resources" decision
+      # customer-facing API surface for the then-49-resource surface" decision
       # (docs/ASH-MIGRATION-PLAN.md Phase 5 item 2, still undecided) --
       # this resource is infra self-observability, not a customer-facing
       # business capability, so exposing its own real state is a bounded

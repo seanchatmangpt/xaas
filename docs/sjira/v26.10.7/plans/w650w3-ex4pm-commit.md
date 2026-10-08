@@ -47,8 +47,14 @@ content equals d7fe61cd.
 
 - Fetch-first: `origin/feat/playwright-surface` at d7fe61cd, local HEAD
   identical, `--is-ancestor` confirmed → fast-forward.
-- Commit SHA: see `git log` (single commit, parent d7fe61cd, explicit
-  pathspec staging).
+- Commit SHA: **bae6bdc1** (parent d7fe61cd, `git commit -F <msg> -- <paths>`
+  pathspec-scoped, exactly the 2 paths above).
+- Incident, fixed forward before push: the first attempt (5defdc0b) staged
+  via `git add` + bare `git commit -F` and swept 12 sibling-lane entries from
+  the shared index. Repaired by non-destructive `git reset --soft HEAD~1`
+  (restoring the exact prior index state for those lanes) followed by a
+  pathspec-scoped recommit. bae6bdc1 is the only commit that exists on the
+  branch; nothing was pushed between attempts, so no remote history changed.
 - Push: fast-forward, no force.
 
 ## Standing

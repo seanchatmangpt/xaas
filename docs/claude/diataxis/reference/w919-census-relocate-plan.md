@@ -61,7 +61,7 @@ Why a new page works:
    link direction is one-way: the new hand-authored page links TO the generated page;
    the generated page gets no reverse link (never hand-edit generated output).
 5. **Index the new page** in `docs/claude/diataxis/README.md` under Reference:
-   - [`reference/generated-surfaces.md`](reference/generated-surfaces.md) — hand-authored census of generated surfaces: provenance, drift checks, DRIFT-CHECKED / PROVENANCE-ONLY / UNPINNED classes (W849; relocated from the generated ERRC page, W919).
+   - [`reference/generated-surfaces.md`](generated-surfaces.md) — hand-authored census of generated surfaces: provenance, drift checks, DRIFT-CHECKED / PROVENANCE-ONLY / UNPINNED classes (W849; relocated from the generated ERRC page, W919).
 
 ## (c) Follow-up guard: census artifact home
 

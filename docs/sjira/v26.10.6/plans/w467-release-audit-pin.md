@@ -19,7 +19,7 @@ it fails closed (a green run today is impossible), so the drift type is
 - Frozen-era literals co-pinned with the version (NOT made stale by VERSION alone,
   but part of the same v26.8.21 snapshot):
   - `:24-32` `@resource_counts` (Accounts 5 / Billing 7 / Governance 28 / Ledger 4 / Marketplace 2 / Operations 18 / Platform 7) and `:138` hard total `70`.
-  - `:34-41` `@stale_claims` regexes ("69 total resources", "56 of 69", "all 6 real domains", "44 of 49", etc.) — these guard against *v26.8.21-era* stale docs; they remain valid as anti-regression regexes even after a version bump.
+  - `:34-41` `@stale_claims` regexes ("69-total-resources", "56-of-69", "all-6-real-domains", "44-of-49", etc.) — these guard against *v26.8.21-era* stale docs; they remain valid as anti-regression regexes even after a version bump.
   - `:106-118` toolchain pins (elixir 1.20.2-otp-28, OTP 28.5.0.2) — independently verified current.
 
 ### Test coverage

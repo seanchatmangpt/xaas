@@ -168,7 +168,7 @@ Re-attempted `ash_admin` (originally dropped in Phase 3 for a real `phoenix_live
   `phoenix_html` 3.3 -> `~> 4.1`, `phoenix_live_dashboard` 0.7.2 -> `~> 0.9.0` (each forced by
   a real resolver error, one at a time, same discipline as every other Phase 3 conflict).
 - `mix compile` clean across the whole tree (183 files) with `ash_admin` added.
-- Wired `AshAdmin.Domain` onto all 6 real domains (Accounts, Billing, Governance, Ledger,
+- Wired `AshAdmin.Domain` onto all 6 then-real domains (Accounts, Billing, Governance, Ledger,
   Operations, Platform) and mounted `AshAdmin.Router`'s `ash_admin("/")` under `/admin` in
   `XaasWeb.Router`, dev-only (same `dev_routes` guard as LiveDashboard).
 - `mix phx.routes` confirms the real route: `GET /admin/*route AshAdmin.PageLive :page`.

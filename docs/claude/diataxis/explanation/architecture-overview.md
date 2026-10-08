@@ -10,8 +10,9 @@ read this first, then follow the links for depth on any one topic.
 ## The 19 Ash domains
 
 Defined in `lib/xaas/*.ex` (`use Ash.Domain`), configured in `config/config.exs:13-33`,
-resources counted directly from each domain's real `resources do ... end` block (116 total,
-re-verified 2026-10-07):
+resources counted directly from each domain's real `resources do ... end` block (**122** total,
+re-verified 2026-10-07 by lane W650k against the re-pinned
+`lib/mix/tasks/xaas.release_audit.ex` constants):
 
 | Domain | Module | Resources | What it owns |
 |---|---|---|---|
@@ -24,7 +25,7 @@ re-verified 2026-10-07):
 | Ocel | `Xaas.Ocel` (`lib/xaas/ocel.ex`) | 5 | Object-centric event log: typed events relate to sets of typed objects; object state is an append-only fold of deltas, never a mutated column |
 | Operations | `Xaas.Operations` (`lib/xaas/operations.ex`) | 21 | `AuditLogEntry`, capability-liveness receipts, actuation intents/receipts, incidents, project measurement, incident/route-castle lifecycle, and the AutofdePlanner cache/catalog/candidate/match resources |
 | Platform | `Xaas.Platform` (`lib/xaas/platform.ex`) | 7 | `Webhook` + `WebhookDelivery` (outbound HMAC dispatch), plus platform-level route/approval resources |
-| Governance | `Xaas.Governance` (`lib/xaas/governance.ex`) | 28 | The largest domain: `FreezeWindow`, `AuditExportToken`, `PentestFinding`, `InternalApiToken`, and the bulk of the `Approval*` maker-checker surface, including the 4 non-global-multitenancy resources (`ApprovalDrFailover`, `ApprovalLegalHoldRelease`, `ApprovalDeploymentQuarantine`, `ApprovalBackupRetentionChange`) |
+| Governance | `Xaas.Governance` (`lib/xaas/governance.ex`) | 34 (28 hand-written + 6 AshPaperTrail-generated `*.Version`) | The largest domain: `FreezeWindow`, `AuditExportToken`, `PentestFinding`, `InternalApiToken`, and the bulk of the `Approval*` maker-checker surface, including the 4 non-global-multitenancy resources (`ApprovalDrFailover`, `ApprovalLegalHoldRelease`, `ApprovalDeploymentQuarantine`, `ApprovalBackupRetentionChange`) |
 | Library | `Xaas.Library` (`lib/xaas/library.ex`) | 7 | Next Read case study: `Book`, `Checkout`, `HoldRequest`, `Curation`, `RecommendationLog`, `School`, `PersonaGrant` — powers 6-factor ML recommendation ranker, PubSub reactive LiveViews, Ash AI MCP tools, and the A2A persona agents; `Checkout :borrow` enforces a 3-open-checkouts-per-student cap (`lib/xaas/library/checkout.ex:12,90-112`, w902) |
 | TemporalMemory | `Xaas.TemporalMemory` (`lib/xaas/temporal_memory.ex`) | 1 | Bitemporal process memory: `Observation` with retroactive-observation-safe admission, `as_of` query, deterministic replay verifier |
 | Ultracode | `Xaas.Ultracode` (`lib/xaas/ultracode.ex`) | 8 | Run/Epoch/Receipt control plane for the autonomous execution fabric, plus the five `CapitalCensus.*` resources (`ExperienceCluster`, `Gap`, `Resolution`, `WorkOrder`, `Episode`) |
@@ -36,7 +37,7 @@ re-verified 2026-10-07):
 | Witness | `Xaas.Witness` (`lib/xaas/witness.ex`) | 2 | `CertifiedReceipt` + `VerificationKey` — certified-receipt witness surface |
 
 Extensions are no longer uniform: most domains use `AshJsonApi.Domain` +
-`AshGraphql.Domain` + `AshAdmin.Domain`; `Accounts`, `Billing`, `Marketplace`, and
+`AshAdmin.Domain`; `Accounts`, `Billing`, `Marketplace`, and
 `Operations` additionally use `AshTypescript.Rpc`; `Governance` adds
 `AshPaperTrail.Domain`; `Operations` adds its own `ProjectMeasure.Extension`; `Library`
 exposes read actions to `AshAi`'s MCP server; `Coupling` and `Ocel` are Admin-only; and

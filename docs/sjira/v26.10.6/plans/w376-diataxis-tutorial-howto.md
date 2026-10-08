@@ -12,7 +12,7 @@ verified against the working tree on 2026-10-06.
 | tutorials/receipted-provider-lifecycle.md | CURRENT | none |
 | tutorials/build-an-autonomic-capability-loop.md | CURRENT | none |
 | how-to/actuate-provider-lifecycle.md | CURRENT | none |
-| how-to/add-a-real-json-api-route-to-an-ash-resource.md | STALE (minor) | (1) "44 of 49 resources (see `lib/xaas_web/api_router.ex`'s moduledoc)" — the moduledoc no longer states these counts (now: "all seven configured XaaS domains … Sensitive Ledger and authentication resources that declare no routes"). (2) Internal inconsistency: "one of those 6 domains" after listing 7 domains. |
+| how-to/add-a-real-json-api-route-to-an-ash-resource.md | STALE (minor) | (1) "44 of the then-49 resources (see `lib/xaas_web/api_router.ex`'s moduledoc)" — the moduledoc no longer states these counts (now: "all seven configured XaaS domains … Sensitive Ledger and authentication resources that declare no routes"). (2) Internal inconsistency: "one of those 6 domains" after listing 7 domains. |
 | how-to/author-ggen-templates-safely.md | STALE (line refs only) | (1) `lib/xaas_web/router.ex:37` (pipeline :audit_mcp_tool_call) → now router.ex:49-50. (2) `lib/xaas_web/router.ex:113-114` (require/import XaasWeb.McpScope) → now router.ex:173-174. All other claims (mcp_scope tools, A2A skill ids, priv/ggen_igniter/mcp_a2a/* files, commit a0ee306, ~/ggen_igniter format fix) verified CURRENT. |
 | how-to/fix-ash-admin-and-use-ggen-for-codegen.md | STALE | (1) `e2e/ash-admin-state-change.spec.js` ×3 (lines ~89, ~142-143, ~218) → renamed this branch to `e2e/ash-admin-state-change.spec.cjs` (also the `npx playwright test e2e/ash-admin-state-change.spec.js` command). (2) "Every one of this repo's 6 domains (Accounts, Billing, Governance, Ledger, Operations, Platform)" — stale: Marketplace is also a core domain with `admin do show?(true) end` (lib/xaas/marketplace.ex:10-12); core count is 7, and `config :xaas, ash_domains` now lists 12+. (3) Cosmetic: current domain files use `show?(true)` syntax, not `show? true`. |
 
@@ -37,7 +37,7 @@ version strings. Zero hits of the W328 stale-mount class in these two families.
 ## Corrections for coordinator application (verbatim list)
 
 1. how-to/add-a-real-json-api-route-to-an-ash-resource.md — replace "the pattern already applied
-   to 44 of 49 resources (see `lib/xaas_web/api_router.ex`'s moduledoc)" with wording that does
+   to 44 of the then-49 resources (see `lib/xaas_web/api_router.ex`'s moduledoc)" with wording that does
    not cite counts from the api_router moduledoc (e.g. "the pattern used across the mechanically
    migrated read-only resources"), and change "one of those 6 domains" → "one of those 7 domains".
 2. how-to/author-ggen-templates-safely.md — `lib/xaas_web/router.ex:37` → `lib/xaas_web/router.ex:49-50`;

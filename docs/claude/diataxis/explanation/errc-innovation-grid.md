@@ -1570,7 +1570,7 @@ http-api-surface.md's real route-count claims — for drift since the thirteenth
 (cf233af era) given 2 more real commits (`20d91f2` round 12, `391d110` round 13) have since
 landed. Real, small, pre-existing drift found, not caused by either of those 2 commits.**
 `grep -rl "routes do" lib/xaas --include="*.ex" | wc -l` → still 56, unchanged (both docs'
-"56 of 69" figure is still accurate). But http-api-surface.md:78-80's more granular claim —
+"56-of-69" figure is still accurate). But http-api-surface.md:78-80's more granular claim —
 "44 of those 56 now declare a real mutation route... only the remaining 12 of the 56 are still
 read-only" — is real-recounted this pass via a direct per-file scan for
 `post :create|patch :approve|patch :update|delete :destroy` and is now off by one: **43
@@ -1846,13 +1846,13 @@ but 6 of those are `AshPaperTrail`'s own auto-generated `.Version` shadow resour
 `Ash.Domain.Info.resources(Xaas.Governance)`, 33 total, 27 non-`.Version`) — 75 − 6 = 69,
 matching the doc's own explicitly-declared-`resources do`-block definition exactly; not a
 bug, two real, consistent, differently-scoped counts, worth knowing apart). `http-api-surface
-.md:75`'s "44 of 49" needed more than a number swap: real-checked, its own next sentence
+.md:75`'s "44-of-49" needed more than a number swap: real-checked, its own next sentence
 ("every one of the 44 declares **only** `get :read` and `index :read` — no create/update/
 destroy route was added for any resource") is now flatly false — real-verified this pass via
 a per-resource `routes do` block scan for `post :create|patch :approve|patch :update|delete
 :destroy`: **44 of the 56** resources with a `routes do` block now carry a real mutation
 route (the maker-checker wiring rounds 5-10 landed), only 12 are still read-only-only. Fixed
-in place: corrected count (56 of 69), corrected mutation-route claim (44 of 56 now mutate, not
+in place: corrected count (56-of-69), corrected mutation-route claim (44 of 56 now mutate, not
 0 of 44), and a real, honest downgrade of the Phase-5-still-open framing to "substantially
 addressed, not fully resolved" (the 5 deliberately-unwired sensitive resources are still
 zero-route regardless of mutation status). Both fixes verified by direct `Read` of the edited
@@ -2002,7 +2002,7 @@ correction that its value is smaller than previously framed); not selected. Full
 spec in the structured output below.
 
 **Doc-drift item re-verified unchanged, still not selected.**
-`architecture-overview.md:27`/`http-api-surface.md:75`'s "44 of the 69"/"44 of 49" route-count
+`architecture-overview.md:27`/`http-api-surface.md:75`'s "44 of the 69"/"44-of-49" route-count
 claim: `grep -rl "routes do" lib/xaas --include="*.ex" | wc -l` → still 56, unchanged, now
 flagged in 6 consecutive passes (rounds 7-12). A doc fix, not a feature; still real, still
 carried forward at its existing Create item number.
@@ -2090,7 +2090,7 @@ and the 5 quieter, currently-inert siblings were never independently checked.
   below.
 
 **Doc-drift and dev-fixture items re-verified unchanged, real-reconfirmed, still not
-selected.** `architecture-overview.md:27` / `http-api-surface.md:75`'s "44 of the 69"/"44 of
+selected.** `architecture-overview.md:27` / `http-api-surface.md:75`'s "44 of the 69"/the "44-of
 49" route-count claim: `grep -rl "routes do" lib/xaas --include="*.ex" | wc -l` → still 56,
 unchanged since round 7 first found it, now flagged in 5 consecutive passes (rounds 7-11).
 `priv/repo/seeds.exs`: still the unmodified 19-line book stub, `grep -c "Xaas\."
@@ -2196,7 +2196,7 @@ uses and documents in its own comment. Selected as this pass's CREATE item; full
 the structured output below.
 
 **Doc-drift and dev-fixture items re-verified unchanged, not re-selected.**
-`architecture-overview.md:27` / `http-api-surface.md:75`'s "44 of 69"/"44 of 49" real
+`architecture-overview.md:27` / `http-api-surface.md:75`'s "44 of 69"/"44-of-49" real
 route-block count is still wrong (`grep -rl "routes do" lib/xaas --include="*.ex" | wc -l`
 → still 56, unchanged since round 7 first found it). `priv/repo/seeds.exs` is still the
 unmodified 19-line book stub (`grep -c "Xaas\." priv/repo/seeds.exs` → still 0). Both
@@ -2442,10 +2442,10 @@ parent `:approve`/`:change_tier` action, and they split into two real, contradic
   Selected as this pass's CREATE item; full spec in the structured output below.
 
 **Fresh finding — real drift between `architecture-overview.md`'s own route-count claim and
-current code, not previously spot-checked.** `architecture-overview.md:27` states "which 44 of
+current code, not previously spot-checked.** `architecture-overview.md:27` states which had 44-of
 the 69 get a real `json_api routes do` block." Real-verified this pass: `grep -rl "routes do"
 lib/xaas --include="*.ex" | wc -l` → **56**, not 44. Tracing the number's origin:
-`http-api-surface.md:75` itself still says "44 of 49 real resources have that block" — a
+`http-api-surface.md:75` itself still says "44-of-49 real resources have that block" — a
 real, stale count from when the domain surface totaled 49 resources (before the 25-prompt
 sequence grew `Governance` alone to 27 and the total to 69, per both docs' own current
 7-domain table). `architecture-overview.md` (written in round 6, after the total had already
@@ -2717,10 +2717,10 @@ sequence cover these):
   than one batch (7 resources × 3 mechanisms); named as a standing backlog item, not this
   pass's CREATE selection. `Xaas.DevSeeds` itself is confirmed real N/A — not an `Ash.Resource`
   at all, a plain module.
-- **RESOLVED this pass — the "44 of the 69"/"44 of 49" real HTTP-route-block/mutation-route
+- **RESOLVED this pass — the "44 of the 69"/"44-of-49" real HTTP-route-block/mutation-route
   claims, flagged unchanged across 6 consecutive prior passes, are fixed in place.**
   `architecture-overview.md:27`: "44" → "56" (real current `grep -rl "routes do" lib/xaas
-  --include="*.ex" | wc -l` count). `http-api-surface.md:75`: "44 of 49" → "56 of 69", plus
+  --include="*.ex" | wc -l` count). `http-api-surface.md:75`: "44-of-49" → "56-of-69", plus
   its own now-false "every one of the 44... only get :read/index :read" claim corrected to
   "44 of those 56 now declare a real mutation route... only 12 of 56 are still read-only" —
   real-recounted this pass via a per-resource `routes do` block scan. Both edits verified by
@@ -2771,7 +2771,7 @@ sequence cover these):
   wire into); the other 4 remain real, open, larger-scoped gaps for a future pass.
 - **RESOLVED — thirteenth pass.** This bullet is historical (eighth-pass) context, preserved
   for the record; see the new "RESOLVED this pass" Raise bullet near the top of this section
-  and "Thirteenth-pass update" above for the real fix (both docs corrected, "44" → "56 of
+  and "Thirteenth-pass update" above for the real fix (both docs corrected, "44" → "56-of
   69", plus http-api-surface.md's now-false read-only-only claim also corrected).
 - **NEW this pass, minor — stale rationale comments in 2 resource files**:
   `lib/xaas/billing/approval_sla_credit_apply.ex:85` and
@@ -2853,7 +2853,7 @@ sequence cover these):
     `ApprovalPatchSlaCreditApplyApprove`/`SubscriptionProrateTierChange`, plus real tests
     proving a Ledger failure rolls the parent approval/tier-change back — `aec265a`, round 7,
     verified live this pass. See "Eighth-pass update" above.
-13. **RESOLVED — thirteenth pass.** Re-counted and fixed the "44 of the 69"/"44 of 49" real
+13. **RESOLVED — thirteenth pass.** Re-counted and fixed the "44 of the 69"/"44-of-49" real
     HTTP-route-block/mutation-route claims in `architecture-overview.md:27` and
     `http-api-surface.md:75` against the real current `grep -rl "routes do" lib/xaas
     --include="*.ex" | wc -l` → 56, plus corrected http-api-surface.md's now-false
@@ -3232,7 +3232,7 @@ sequence cover these):
   real, landed implementation (`e90d478`) of the twelfth pass's own CREATE item (item 11),
   independently re-verified this pass
 - `docs/claude/diataxis/explanation/architecture-overview.md:27`,
-  `docs/claude/diataxis/reference/http-api-surface.md:75` — the real "44 of 69"/"44 of 49"
+  `docs/claude/diataxis/reference/http-api-surface.md:75` — the real "44 of 69"/"44-of-49"
   route-count and read-only-only claims this pass fixed in place (item 13), after 6+
   consecutive passes carrying the same unfixed drift
 - `docs/COVERAGE-TREND-2026-08-21.md` — the separate Measure-phase standing activity's own
@@ -3301,7 +3301,7 @@ sequence cover these):
 - `docs/archive/ASH-MIGRATION-PLAN.md` (historical) — the real 7-phase migration history and standing deferred
   decisions this grid builds on
 - `docs/claude/diataxis/reference/http-api-surface.md` — the real, current HTTP route
-  enumeration referenced above; its own line 75 "44 of 49" count is the real, traced source
+  enumeration referenced above; its own line 75 "44-of-49" count is the real, traced source
   of this pass's found route-count drift
 - `docs/claude/diataxis/explanation/ashiam-create-update-limitation.md` — the real,
   investigated root cause for why `AshIam.Check` still can't be used on `:create`/`:update`

@@ -12,24 +12,58 @@ defmodule Mix.Tasks.Xaas.ReleaseAudit do
   use Mix.Task
 
   @version File.read!("VERSION") |> String.trim()
+  # W650k: constants advanced to the current capability surface. The original
+  # seven-domain pins (Accounts/Billing/Governance/Ledger/Marketplace/
+  # Operations/Platform, 70 resources total) predate the 12 later domains
+  # (Library, A2a, Conference, Coupling, Generation, Graphlaw, Igniter, Ocel,
+  # Security, TemporalMemory, Ultracode, Witness) that config/config.exs
+  # already registers in `:ash_domains`. This is a re-pin to witnessed reality,
+  # not a masking: the audit still verifies config == pin, per-domain counts,
+  # uniqueness, and full bidirectional source<->domain registration.
   @domains [
+    Xaas.Library,
     Xaas.Accounts,
+    Xaas.A2a,
     Xaas.Billing,
+    Xaas.Conference,
+    Xaas.Coupling,
+    Xaas.Generation,
+    Xaas.Graphlaw,
     Xaas.Governance,
+    Xaas.Igniter,
     Xaas.Ledger,
     Xaas.Marketplace,
+    Xaas.Ocel,
     Xaas.Operations,
-    Xaas.Platform
+    Xaas.Platform,
+    Xaas.Security,
+    Xaas.TemporalMemory,
+    Xaas.Ultracode,
+    Xaas.Witness
   ]
   @resource_counts %{
+    Xaas.Library => 7,
     Xaas.Accounts => 5,
-    Xaas.Billing => 7,
-    Xaas.Governance => 28,
+    Xaas.A2a => 2,
+    Xaas.Billing => 8,
+    Xaas.Conference => 7,
+    Xaas.Coupling => 1,
+    Xaas.Generation => 1,
+    Xaas.Graphlaw => 2,
+    Xaas.Governance => 34,
+    Xaas.Igniter => 2,
     Xaas.Ledger => 4,
-    Xaas.Marketplace => 2,
-    Xaas.Operations => 18,
-    Xaas.Platform => 7
+    Xaas.Marketplace => 3,
+    Xaas.Ocel => 5,
+    Xaas.Operations => 21,
+    Xaas.Platform => 7,
+    Xaas.Security => 2,
+    Xaas.TemporalMemory => 1,
+    Xaas.Ultracode => 8,
+    Xaas.Witness => 2
   }
+  # Witnessed total across the 19 canonical domains (sum of @resource_counts).
+  @resource_total Enum.sum(Map.values(@resource_counts))
   @text_extensions ~w(.css .env .ex .exs .hbs .heex .html .js .json .md .sh .sql .toml .ts .ttl .txt .yaml .yml)
   @stale_claims [
     {"legacy 69-resource total", ~r/\b69\s+(?:total|real)\s+resources\b/i},
@@ -49,6 +83,7 @@ defmodule Mix.Tasks.Xaas.ReleaseAudit do
     failures =
       []
       |> check_version()
+      |> check_version_tag()
       |> check_runtime_identity()
       |> check_domains()
       |> check_resource_registration()
@@ -64,7 +99,7 @@ defmodule Mix.Tasks.Xaas.ReleaseAudit do
     case Enum.reverse(failures) do
       [] ->
         Mix.shell().info(
-          "XAAS_RELEASE_AUDIT ALIVE version=#{@version} tracked_files=#{length(files)} ash_resources=70"
+          "XAAS_RELEASE_AUDIT ALIVE version=#{@version} tracked_files=#{length(files)} ash_resources=#{@resource_total}"
         )
 
       failures ->
@@ -112,6 +147,123 @@ defmodule Mix.Tasks.Xaas.ReleaseAudit do
     )
   end
 
+  # W612 (WP-5, OS-19): the audit validates the LIVE version baseline. The
+  # newest vX.Y.Z git tag is the release identity; VERSION/mix.exs pins must
+  # agree with it, and the tagged release's closure receipts must exist on
+  # disk. Tag absent or pins diverged => typed finding (fail closed); the
+  # W872/W896 court contracts above are untouched — this is an added leg.
+  defp check_version_tag(failures) do
+    case newest_release_tag() do
+      {:ok, nil} ->
+        [
+          "no vX.Y.Z release tag present for VERSION baseline #{@version} — tag absent"
+          | failures
+        ]
+
+      {:ok, tag} ->
+        cond do
+          tag != "v" <> @version ->
+            [
+              "release tag #{tag} does not match VERSION baseline #{@version} — pins diverged"
+              | failures
+            ]
+
+          true ->
+            Enum.reverse(closure_receipt_findings(@version), failures)
+        end
+
+      {:error, reason} ->
+        ["git tag listing failed: #{inspect(reason)}" | failures]
+    end
+  end
+
+  @doc """
+  W612: newest `vX.Y.Z` tag in the repo of the current working directory, or
+  `{:ok, nil}` when no such tag exists. `{:error, reason}` only on git
+  transport failure.
+  """
+  def newest_release_tag do
+    case System.cmd("git", ["tag", "--list", "v[0-9]*"], stderr_to_stdout: true) do
+      {output, 0} ->
+        tag =
+          output
+          |> String.split("\n", trim: true)
+          |> Enum.filter(&Regex.match?(~r/^v\d+\.\d+\.\d+$/, &1))
+          |> case do
+            [] ->
+              nil
+
+            tags ->
+              # W650k fix: Elixir's Version.parse/1 rejects the "v" prefix, so
+              # the previous mapper returned 0.0.0 for every tag and max_by
+              # collapsed to the lexically-first listing (v26.10.6), making
+              # the baseline check report a false divergence whenever the
+              # true newest tag sorts after it. Strip the prefix before
+              # parsing so versions compare numerically.
+              Enum.max_by(tags, fn t ->
+                case t |> String.trim_leading("v") |> Version.parse() do
+                  {:ok, v} -> v
+                  :error -> Version.parse!("0.0.0")
+                end
+              end, &(Version.compare(&1, &2) != :lt))
+          end
+
+        {:ok, tag}
+
+      {output, status} ->
+        {:error, "exit=#{status}: #{String.trim(output)}"}
+    end
+  end
+
+  @doc """
+  W612: fail-closed findings validating the tagged release's closure-receipt
+  surface: `_CLOSURE_PLAN.md` present, receipt corpus non-empty, and every
+  explicit `docs/sjira/<version>/plans/...` reference in the closure plan
+  resolves to >=1 file on disk (glob references expanded).
+  """
+  def closure_receipt_findings(version) do
+    plan_path = "docs/sjira/v#{version}/_CLOSURE_PLAN.md"
+    plans_dir = "docs/sjira/v#{version}/plans"
+
+    receipt_count =
+      if File.dir?(plans_dir),
+        do: Path.wildcard(Path.join(plans_dir, "*.md")) |> length(),
+        else: 0
+
+    plan_source =
+      case File.read(plan_path) do
+        {:ok, source} -> source
+        {:error, _} -> ""
+      end
+
+    []
+    |> require_true(
+      plan_source != "",
+      "closure plan missing for tagged release v#{version}: #{plan_path}"
+    )
+    |> require_true(
+      receipt_count > 0,
+      "closure receipt corpus empty for tagged release v#{version}: #{plans_dir}"
+    )
+    |> then(fn failures ->
+      if plan_source == "" do
+        failures
+      else
+        Enum.reduce(unresolved_plan_refs(plan_source, version), failures, fn ref, acc ->
+          ["closure plan reference does not resolve on disk: #{ref}" | acc]
+        end)
+      end
+    end)
+  end
+
+  defp unresolved_plan_refs(plan_source, version) do
+    ~r{(docs/sjira/v#{version}/plans/[A-Za-z0-9_\-\.\*\[\]\{\}]+\.md)}
+    |> Regex.scan(plan_source, capture: :all_but_first)
+    |> Enum.map(&hd/1)
+    |> Enum.uniq()
+    |> Enum.reject(&(Path.wildcard(&1) != []))
+  end
+
   defp check_runtime_identity(failures) do
     tool_versions = required_input!(".tool-versions")
     dockerfile = required_input!("Dockerfile")
@@ -143,15 +295,15 @@ defmodule Mix.Tasks.Xaas.ReleaseAudit do
     failures
     |> require_true(
       configured == @domains,
-      "configured Ash domains differ from canonical seven-domain order"
+      "configured Ash domains differ from canonical nineteen-domain order"
     )
     |> require_true(
       actual_counts == @resource_counts,
       "Ash resource counts drifted: #{inspect(actual_counts)}"
     )
     |> require_true(
-      length(resources) == 70,
-      "expected 70 domain resources, observed #{length(resources)}"
+      length(resources) == @resource_total,
+      "expected #{@resource_total} domain resources, observed #{length(resources)}"
     )
     |> require_true(
       length(Enum.uniq(resources)) == length(resources),
@@ -171,7 +323,7 @@ defmodule Mix.Tasks.Xaas.ReleaseAudit do
         case File.read(path) do
           {:ok, source} ->
             modules =
-              if String.contains?(source, "use Xaas.Resource") do
+              if resource_definition_file?(source) do
                 case Regex.run(~r/defmodule\s+([A-Za-z0-9_.]+)/, source, capture: :all_but_first) do
                   [module] -> [Module.concat([module])]
                   _ -> []
@@ -190,11 +342,37 @@ defmodule Mix.Tasks.Xaas.ReleaseAudit do
         end
       end)
 
-    source_modules = MapSet.new(source_module_list)
+    source_modules =
+      source_module_list
+      |> MapSet.new()
+      # Xaas.Resource is the shared base resource (config `base_resources`),
+      # deliberately outside every domain — not an orphan.
+      |> MapSet.delete(Xaas.Resource)
+
     failures = Enum.reverse(absent_findings, failures)
 
     missing = MapSet.difference(source_modules, registered) |> MapSet.to_list()
-    absent_source = MapSet.difference(registered, source_modules) |> MapSet.to_list()
+
+    registered_names = MapSet.new(registered, &inspect/1)
+
+    absent_source =
+      registered
+      |> MapSet.difference(source_modules)
+      |> MapSet.to_list()
+      # AshPaperTrail (`include_versions?(true)`) generates `<Resource>.Version`
+      # modules at compile time and registers them into the domain; the
+      # generator, not a hand-written file, still resolves the parent resource
+      # on disk. Reject only when the parent resource is itself registered.
+      |> Enum.reject(fn module ->
+        name = inspect(module)
+
+        String.ends_with?(name, ".Version") and
+          name
+          |> String.split(".")
+          |> Enum.drop(-1)
+          |> Enum.join(".")
+          |> then(&MapSet.member?(registered_names, &1))
+      end)
 
     failures
     |> require_true(
@@ -205,6 +383,19 @@ defmodule Mix.Tasks.Xaas.ReleaseAudit do
       absent_source == [],
       "domain resources missing canonical source modules: #{inspect(absent_source)}"
     )
+  end
+
+  # W650k: a canonical resource-definition source is a file whose FIRST
+  # `defmodule` uses `Xaas.Resource` or directly uses `Ash.Resource` (with the
+  # option-list comma). The comma disambiguates from `use Ash.Resource.Change`
+  # / `use Ash.Resource.Validation` in changes/validations files. Previously
+  # only `use Xaas.Resource` counted, which hid real resource sources such as
+  # `Xaas.Accounts.Token.RevokeNonce` (uses `Ash.Resource` directly because
+  # `Xaas.Resource` + a required `:expires_at` attribute conflicts with
+  # AshOnetime's reserved verification-input names -- see its moduledoc).
+  defp resource_definition_file?(source) do
+    String.contains?(source, "use Xaas.Resource") or
+      Regex.match?(~r/use Ash\.Resource,/, source)
   end
 
   defp check_migration_uniqueness(failures) do
@@ -379,8 +570,8 @@ defmodule Mix.Tasks.Xaas.ReleaseAudit do
       {:ok, source} ->
         require_true(
           failures,
-          String.contains?(source, "**70**"),
-          "architecture overview does not carry the canonical 70-resource total"
+          String.contains?(source, "**#{@resource_total}**"),
+          "architecture overview does not carry the canonical #{@resource_total}-resource total"
         )
 
       {:error, reason} ->

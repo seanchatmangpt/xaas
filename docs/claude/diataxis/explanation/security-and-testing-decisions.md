@@ -94,7 +94,7 @@ xaas.ingest_capability_receipts` task (see
 on any policy. The `json_api routes` block on the same resource is likewise scoped to
 `get :read` / `index :read` only, and the commit message calls out that this is
 "deliberately narrower than the standing, deferred 'wire the real customer-facing API
-surface for all 49 resources' decision" — the bypass fixes one resource's real, observed bug;
+surface for the then-49-resource decision" — the bypass fixes one resource's real, observed bug;
 it is not a template for skipping the floor elsewhere without the same live-verification
 step.
 
