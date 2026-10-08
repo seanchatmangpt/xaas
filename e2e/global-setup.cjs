@@ -101,7 +101,10 @@ function generateMarketplaceCatalog() {
 function seedWitnessReceipts() {
   const result = tryStep(
     "witness seed (mix run e2e/seed-witness.exs)",
-    'PATH="$HOME/.asdf/shims:$PATH" MIX_ENV=test mix run ' + WITNESS_SEED_PATH
+    // W984fw: MIX_ENV=dev — seeds must land in the SAME database the
+    // pinned-dev webServer serves (xaas_dev), never xaas_test. A MIX_ENV=test
+    // seed flips the Repo to sandbox :auto and COMMITTED rows into xaas_test.
+    'PATH="$HOME/.asdf/shims:$PATH" MIX_ENV=dev mix run ' + WITNESS_SEED_PATH
   );
   const ok = result.ok && result.output.includes("W55_SEED_OK");
   if (ok) {
@@ -124,7 +127,9 @@ function seedWitnessReceipts() {
 function seedLibraryBooks() {
   const result = tryStep(
     "library seed (mix run e2e/seed-library.exs)",
-    'PATH="$HOME/.asdf/shims:$PATH" MIX_ENV=test mix run ' + LIBRARY_SEED_PATH
+    // W984fw: MIX_ENV=dev — same rationale as the witness seed above: the
+    // fixtures must live in xaas_dev, matching the pinned-dev webServer.
+    'PATH="$HOME/.asdf/shims:$PATH" MIX_ENV=dev mix run ' + LIBRARY_SEED_PATH
   );
   const ok = result.ok && result.output.includes("W823_SEED_OK");
   if (ok) {

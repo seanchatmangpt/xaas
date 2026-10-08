@@ -63,7 +63,13 @@ const PW_BASE_URL = `http://localhost:${PW_PORT}`;
 //   PW_PORT=4010 npx playwright test ... &
 const BOOT = [
   'node ./e2e/global-setup.cjs --catalog',
-  'PHX_SERVER=true PATH="$HOME/.asdf/shims:$PATH" mix run -e \'Application.put_env(:xaas, :marketplace_catalog_source, System.get_env("PW_MARKETPLACE_CATALOG"))\' --no-halt > /tmp/xaas-e2e-server.log 2>&1 & SRV=$!',
+  // W984fw: MIX_ENV is PINNED to dev here. An inherited MIX_ENV=test boots
+  // the server against xaas_test with NO sandbox checkout, so any LiveView
+  // write (e.g. next-read-ml pin click -> reader_live toggle_pin ->
+  // Xaas.Actuation.run authority "liveview_librarian"/"toggle_pin")
+  // COMMITTED foreign rows into xaas_test (W650h23 root cause). Dev DB is
+  // fully seeded; the sandbox stays out of the picture.
+  'PHX_SERVER=true MIX_ENV=dev PATH="$HOME/.asdf/shims:$PATH" mix run -e \'Application.put_env(:xaas, :marketplace_catalog_source, System.get_env("PW_MARKETPLACE_CATALOG"))\' --no-halt > /tmp/xaas-e2e-server.log 2>&1 & SRV=$!',
   `PROBE_URL=http://localhost:${PW_PORT}\${INTERNAL_API_TOKEN:+/internal-api/health}; OK=""; for i in $(seq 1 180); do CODE=$(curl -s -o /dev/null -w "%{http_code}" -m 5 \${INTERNAL_API_TOKEN:+-H "Authorization: Bearer $INTERNAL_API_TOKEN"} "$PROBE_URL"); if [ "$CODE" = "200" ]; then OK=1; break; fi; sleep 1; done; [ -n "$OK" ] || { echo "e2e readiness probe never returned 200 (last=$CODE)" >&2; kill $SRV 2>/dev/null; exit 1; }`,
   'wait $SRV',
 ].join(" && ");
