@@ -19,13 +19,16 @@ defmodule Xaas.Billing.GovLongTailCourtW984eaTest do
     through the LIVE `InternalApiToken :issue` action (metadata-return +
     hash-before-persistence contract).
   - The remaining 23 governance `Approval*Approve` change modules +
-    `DataDestructionCertificateIssueApprove` + the 2 billing orphans
-    (`ApprovalInvoiceReconciliationApproveApprove`,
-    `ApprovalQuotaOverrideApprove`) are UNWIRED thin identity changes
-    (repo-wide wiring grep matches only their own defining files).
-    Courted directly: `init/2` passthrough + `change/3` identity on a
-    REAL `Ash.Changeset` built by each consumer resource's real
-    `:approve` action (`Ash.Changeset.for_update/3`).
+    `DataDestructionCertificateIssueApprove` are UNWIRED thin identity
+    changes (repo-wide wiring grep matches only their own defining
+    files). Courted directly: `init/2` passthrough + `change/3`
+    identity on a REAL `Ash.Changeset` built by each consumer
+    resource's real `:approve` action (`Ash.Changeset.for_update/3`).
+  - The 2 billing orphans (`ApprovalInvoiceReconciliationApproveApprove`,
+    `ApprovalQuotaOverrideApprove`) were RETIRED 2026-10-08 by lane
+    W984ks (receipt `docs/sjira/v26.10.6/plans/w984ks-retirement.md`,
+    per W984er register class-(c) dead residue) and are dropped from
+    this court's enumeration.
 
   Mutation rationale per row: these change modules are identity
   passthroughs by design; the court kills (a) any mutation making
@@ -73,9 +76,6 @@ defmodule Xaas.Billing.GovLongTailCourtW984eaTest do
     InternalApiToken
   }
 
-  alias Xaas.Billing.ApprovalInvoiceReconciliationApprove
-  alias Xaas.Billing.ApprovalQuotaOverride
-
   # {consumer resource, change module}. Every resource here exposes a
   # real `update :approve` action accepting [:approved_by] (same action
   # family W984dr2b's court verified for the sibling validations).
@@ -119,12 +119,6 @@ defmodule Xaas.Billing.GovLongTailCourtW984eaTest do
      Xaas.Governance.Changes.DataDestructionCertificateIssueApprove}
   ]
 
-  @billing_rows [
-    {ApprovalInvoiceReconciliationApprove,
-     Xaas.Billing.Changes.ApprovalInvoiceReconciliationApproveApprove},
-    {ApprovalQuotaOverride, Xaas.Billing.Changes.ApprovalQuotaOverrideApprove}
-  ]
-
   defp identity_court!(resource, change_module) do
     changeset =
       Ash.Changeset.for_update(struct(resource), :approve, %{approved_by: "w984ea-court"})
@@ -146,15 +140,6 @@ defmodule Xaas.Billing.GovLongTailCourtW984eaTest do
     assert length(@gov_rows) == 24
     assert @gov_rows |> Enum.map(&elem(&1, 0)) |> Enum.uniq() |> length() == 24
     assert @gov_rows |> Enum.map(&elem(&1, 1)) |> Enum.uniq() |> length() == 24
-  end
-
-  test "billing thin Approve changes are init-passthrough + changeset identity" do
-    for {resource, change_module} <- @billing_rows do
-      assert identity_court!(resource, change_module) == :ok,
-             "#{inspect(change_module)} is not an identity passthrough"
-    end
-
-    assert length(@billing_rows) == 2
   end
 
   test "GenerateInternalApiToken via live :issue returns raw token metadata once and stores only the hash" do
