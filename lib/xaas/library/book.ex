@@ -58,7 +58,7 @@ defmodule Xaas.Library.Book do
     # populated) -- AshAdmin's default table_columns is every attribute,
     # which would render this as an unreadable wall of numbers in the
     # datatable. Hide it from the table view; it remains a normal,
-    # readable attribute everywhere else (API, GraphQL, show/edit forms).
+    # readable attribute everywhere else (JSON:API, show/edit forms).
     # It is no longer client-writable (see the `vectorize` block above --
     # it is derived via the :after_action strategy).
     table_columns([

@@ -25,9 +25,9 @@ defmodule Xaas.Semantics.OversightGovernance do
   classifications over the witnessed receipt corpus (malfunction suppression
   per W679) — while the authority transmission channel remains typed OPEN
   (`transmit/1` returns `:PREPARED_NOT_TRANSMITTED`, never a silent send).
-  The `worker_notification/0` surface below still carries this as typed
-  `{:OPEN_GAP, ...}` (W525b). (Doc refreshed by W833; previously claimed
-  "no incident-reporting seam exists", stale since IncidentReport landed.)
+  The `worker_notification/0` surface still carries the transmission channel
+  itself as typed `{:OPEN_GAP, ...}` (W525b) — the builder and the FRIA entry
+  are EVIDENCED (W984eb, 2026-10-07), the authority endpoint is not.
 
   ## Art. 27 — FRIA (deployer-class, structured data)
 
@@ -337,15 +337,21 @@ defmodule Xaas.Semantics.OversightGovernance do
            right: :access_to_effective_remedy_authority_channel,
            article: "Art. 26.5 / 3.49 family (serious-incident reporting to authorities)",
            protection:
-             "No incident-reporting seam exists: serious incidents cannot today be reported to market-surveillance authorities from this fleet",
+             "Art 73 serious-incident reporting: typed classification derivation over the witnessed receipt corpus (Xaas.Semantics.IncidentReport), with an honestly-typed transmission channel (transmit/1 returns :PREPARED_NOT_TRANSMITTED — never a silent send)",
            evidence: [
              %{
-               path: "docs/sjira/v26.10.6/plans/w525b-title-i.md",
+               path: "lib/xaas/semantics/incident_report.ex",
+               symbol: "Xaas.Semantics.IncidentReport",
+               basis:
+                 "Art 73(1) classification derivation (:INFRINGES_UNION_LAW / :HARM_TO_RIGHTS / :MALFUNCTION) from typed refusal atoms; transmit/1 typed OPEN (:PREPARED_NOT_TRANSMITTED) per corpus 73.4-73.5"
+             },
+             %{
+               path: "test/xaas/semantics/incident_report_test.exs",
                symbol: nil,
-               basis: "OPEN_GAP (6): 3.49 + 3.49.a-d (serious incident — no incident surface)"
+               basis: "Chicago court over the real builder: classification, identity and delivery channel"
              }
            ],
-           status: :OPEN_GAP
+           status: :EVIDENCED
          }
        ]
      }}

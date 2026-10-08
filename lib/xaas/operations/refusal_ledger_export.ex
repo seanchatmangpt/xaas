@@ -385,7 +385,12 @@ defmodule Xaas.Operations.RefusalLedgerExport do
       court_file = court_file(court)
 
       cond do
-        not is_binary(court) or court == "" ->
+        # W984eu compile-freeze SLA unblock: `not is_binary(court) or` here was
+        # a vacuous guard (pinning_court is a typed binary) and is an
+        # error-class diagnostic under the pinned Elixir 1.20.2 type checker,
+        # aborting every fresh compile of test/eu_ai_act. Dropped the vacuous
+        # clause; behavior for real binaries is unchanged.
+        court == "" ->
           {:halt,
            {:error,
             {:unpinned_variant, %{atom: e.atom, court: court, reason: :court_not_a_path}}}}

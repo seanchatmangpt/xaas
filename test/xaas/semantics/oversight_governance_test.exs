@@ -122,11 +122,23 @@ defmodule Xaas.Semantics.OversightGovernanceTest do
              end)
     end
 
-    test "honest limitation: serious-incident authority channel is typed OPEN_GAP" do
+    test "serious-incident authority channel: FRIA entry evidenced over the real IncidentReport seam (W984eb)" do
       {:ok, fria} = OversightGovernance.fria()
       r = Enum.find(fria.rights, &(&1.right == :access_to_effective_remedy_authority_channel))
-      assert r.status == :OPEN_GAP
-      assert Enum.any?(r.evidence, &(&1.basis =~ "no incident surface"))
+      assert r.status == :EVIDENCED
+      assert Enum.any?(r.evidence, &(&1.path == "lib/xaas/semantics/incident_report.ex"))
+
+      # Chicago: the seam is real, not cited — an Art 73(1) report builds from
+      # typed refusal evidence and the delivery channel stays honestly typed.
+      {:ok, report} =
+        Xaas.Semantics.IncidentReport.build([
+          %{id: "w984eb-1", refusal_atom: :REFUSED_PROJECTION_DRIFT, status: :refused}
+        ])
+
+      assert :MALFUNCTION in report.classification
+
+      assert {:ok, %{status: :PREPARED_NOT_TRANSMITTED}} =
+               Xaas.Semantics.IncidentReport.transmit(report)
     end
 
     test "is deterministic" do

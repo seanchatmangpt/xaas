@@ -17,7 +17,8 @@ defmodule Xaas.Operations.AuditLogEntry do
   Rows here are only ever created internally by a real Ash change (see
   `Xaas.Governance.Changes.WriteAuditLogEntry`), never via a public
   mutation route -- there is deliberately no `:create` action exposed
-  over `json_api`/`graphql`, and the `:create` action itself has no
+  over `json_api` (no GraphQL surface remains in this codebase), and the
+  `:create` action itself has no
   policy bypass, so even a direct internal Ash.create call without
   `authorize?: false` would be denied by the catch-all `forbid_if
   always()` below. Only `:read` gets a bypass (internal audit
