@@ -258,9 +258,10 @@ defmodule Xaas.DevSeeds do
   #   * `Mix.env() == :test` AND the caller passes the explicit
   #     `e2e: true` opt-in (lane W984bs) -- the sanctioned committed-write
   #     path for the Playwright e2e boot seed (`e2e/seed-library.exs`,
-  #     W823): that script deliberately flips the sandbox to :auto and
-  #     commits the fixture chain to the test database the e2e webServer
-  #     serves from, which is the whole point of the W823 seed. The opt-in
+  #     W823). Verified 2026-10-08 (W984fw): that script now runs under
+  #     MIX_ENV=dev alongside the pinned-dev Playwright webServer, so the
+  #     normal e2e path targets xaas_dev and this :test branch is a
+  #     dormant fallback only. The opt-in
   #     must be spelled in the call itself, never ambient, so an
   #     accidental bare `mix run` stays refused.
   # Any other env (:prod et al.) is refused unconditionally.
@@ -447,9 +448,16 @@ defmodule Xaas.DevSeeds do
   end
 
   defp get_or_create_library_checkout(%{id: user_id}, %{book: %Book{id: book_id}} = attrs) do
+    # W984lr: read-first, not read_one! — legacy xaas_dev state contains
+    # duplicate (user_id, book_id) checkout rows from pre-W984fw unsandboxed
+    # runs, and read_one! raises on ambiguity, so this get-or-create was not
+    # idempotent against a dirty dev database (observed: 6 rows, seed run
+    # EXIT=1 Ash.Error.Invalid). Deterministic: oldest matching row wins.
     case Checkout
          |> Ash.Query.filter(user_id: user_id, book_id: book_id)
-         |> Ash.read_one!(authorize?: false) do
+         |> Ash.Query.limit(1)
+         |> Ash.read!(authorize?: false)
+         |> List.first() do
       nil ->
         Checkout
         |> Ash.Changeset.for_create(
@@ -484,7 +492,14 @@ defmodule Xaas.DevSeeds do
   end
 
   defp get_or_create_library_curation(%Book{id: book_id}) do
-    case Curation |> Ash.Query.filter(book_id: book_id) |> Ash.read_one!(authorize?: false) do
+    # W984lr: read-first, not read_one! — same legacy-duplicate hazard as
+    # get_or_create_library_checkout/2 above (playwright spec clicks toggle
+    # pin, so multiple Curation rows per book_id exist in dirty xaas_dev).
+    case Curation
+         |> Ash.Query.filter(book_id: book_id)
+         |> Ash.Query.limit(1)
+         |> Ash.read!(authorize?: false)
+         |> List.first() do
       nil ->
         Curation
         |> Ash.Changeset.for_create(
