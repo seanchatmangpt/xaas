@@ -476,6 +476,63 @@ Non-atom typed errors: `{:record_outcome_mismatch, term()}` (Counterfactual,
 AutomationBiasCountermeasure), `:OPEN_GAP` (OversightGovernance),
 `:invalid_runtime_equivalence_input` (RuntimeEquivalence).
 
+## Transport provenance headers (OS-16, IN FLIGHT — w605)
+
+EU AI Act Art. 50(2) machine-generated disclosure at the transport layer.
+`XaasWeb.Plugs.ProvOriginHeader` (`lib/xaas_web/plugs/prov_origin_header.ex`)
+sets one machine-detectable `x-prov-o` response header whose values are
+constant, config-driven application identity (`Application.get_env(:xaas,
+:prov_origin, [])` keys `:agent_iri` / `:operator_iri`), never fabricated
+per-request. Wired to the `/a2a` and `/api` scopes only — LiveView/`:browser`
+is deliberately unwired (a human-facing page would carry a false
+"machine-generated" assertion). Standing UNKNOWN: court + mutation runs
+pending at record time. Receipt:
+`docs/sjira/v26.10.7/plans/w605-prov-o-plug.md`.
+
+## PEP seam: agentgateway filter spec + prompt-injection harness (WP-3, IN FLIGHT)
+
+Fail-closed policy-enforcement-point seam between the agentgateway and the
+eyerun_wasi gate (EU AI Act Art. 14/15 enforcement discipline):
+
+- Filter spec (w613, PARTIAL_ALIVE, spec-only — no local agentgateway
+  checkout, Rust skeleton deferred):
+  `docs/sjira/v26.10.7/agentgateway/pep-eyerun-filter-spec.md`. UDS NDJSON
+  transport to a `serve`-mode eyerun_wasi daemon, 15 ms watchdog
+  (12+2+1 ms decomposition), mandatory authority lease
+  (`REFUSED_LEASE_ABSENT`; fail-open structurally inexpressible), and five
+  falsifier fault-injection cases (§5) owned by W614.
+- Fuzz harness (w614, PARTIAL_ALIVE): `tests/goose_mutation_harness.py`
+  + `tests/w614_stub_agent.py` over a real localhost HTTP socket; 10-case
+  corpus, gate log `docs/sjira/v26.10.7/plans/w614-gate-log.json` shows
+  10/10 `all_ok: true` (interception rate 1.0 on non-conforming
+  candidates, `upstream_bytes: 0` on every refusal). Goose itself is
+  GOOSE-ABSENT; the agent leg is pluggable via `AGENT_CMD`. Daemon-dependent
+  §5 cases (timeout/crash/malformed) NOT RUN — daemon-absent.
+
+Both are IN FLIGHT items, not landed capability.
+
+## Corpus deepening courts (Landed 2026-10-07)
+
+Dedicated corpus deepening suites in `test/eu_ai_act/` binding the
+`lib/xaas/semantics/` surfaces (and their witness/actuation/telemetry
+collaborators) to specific Regulation (EU) 2024/1689 lines. Each suite binds
+the statute to the repo's REAL typed behavior (Chicago: real executions, no
+mocks). Receipts: `docs/sjira/v26.10.6/plans/w984{fc,ev,ew,ey,fa,fb,ec}-probe.md`.
+
+| suite | articles / lines | real repo seam (code-verified) | receipt |
+|---|---|---|---|
+| `art9x_risk_management_deepening_test.exs` (7 courts) | 9.1, 9.2.a–d, 9.5, 9.8 | `Xaas.Semantics.AiroRiskMapping.risk_graph/0` byte-deterministic AIRo graph over the live refusal ledger; every ledger variant as `airo:RiskSource`/`airo:Hazard` node with `ex:xaas-system airo:hasRisk` edges | `w984fc-probe.md` |
+| `art10_2e_art26_4_dataset_purpose_deepening_test.exs` | 10.2.e, 26.4 | `Xaas.Semantics.DatasetAdmission.admit/2` gate order (empty → completeness → sliced-W1 bias proxy), intended-purpose binding | `w984ec-probe.md` |
+| `art11_1_art12x_audit_chain_deepening_test.exs` (4 courts) | 11.1, 12.1, 12.2.a–c | `Xaas.Witness.AuditChain` deterministic hash-chain (independent head recompute `SHA256(JCS(R_last) <> H_{t-1})`, exact mid-chain tamper attribution, intact-prefix survival); `Xaas.Telemetry.OcelNdjson.validate_ndjson_file/1` driving the real `Xaas.Ultracode.Ocel.Validator` court over a real ndjson file | `w984ev-probe.md` |
+| `art13x_counterfactual_deepening_test.exs` (8 courts, 4 lines) | 13.3.b.iv, 13.3.f (+ 13.x) | `Xaas.Semantics.Counterfactual` + `Xaas.Semantics.AdmissionAttribution.shapley/2` cross-surface agreement; Shapley spreading -1 over ALL failing checks; `RobustMargin` composition | `w984ew-probe.md` |
+| `art14x_oversight_deepening_test.exs` (3 courts, 6 lines) | 14.1, 14.2, 14.3/14.3.a–b | `Xaas.Actuation.QuiescentStop` real Ash kernel over sandboxed Postgres (named human authority → real stop DO on `Xaas.Marketplace.Provider`, subject `:suspended`, typed receipt); `RobustMargin.admit/4` binding at the exact measured margin==penalty boundary; `OversightGovernance` surfaces | `w984ey-probe.md` |
+| `art15x_robustness_deepening_test.exs` (8 courts) | 15.1, 15.4, 15.5/15.5.s2 | `Xaas.Semantics.RobustMargin` (empirical Lipschitz, conditional certificate); `Xaas.Semantics.GraphlawWasm.judge_imports/2` hard WASI allowlist (signature, not name, judging); `AuditChain` shared-subject identity | `w984fa-probe.md` |
+| `art26x_postmarket_deepening_test.exs` (3 courts) | 26.12 (×73) | whole-corpus tamper evidence + independent replay + recorded-head pin (last-link limitation is the binding); `Xaas.Semantics.EuAiActAdmission.admit/1` refused payload witnessed into a real AuditChain; `Xaas.Semantics.IncidentReport.build/2` classifying exactly `[:INFRINGES_UNION_LAW]` from chain-member digest | `w984fb-probe.md` |
+
+All receipts recorded real pass runs of each suite (plus a full
+`mix test test/eu_ai_act --include eu_ai_act --exclude eu_ai_act_open_gap`
+census at 1388 passed / 1 excluded, exit 0, as of the W984ev/W984fb runs).
+
 ## See Also
 
 - [`reference/actuation-and-semantics.md`](actuation-and-semantics.md) —
