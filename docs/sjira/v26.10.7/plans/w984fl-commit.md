@@ -27,11 +27,12 @@
    addendum + w984fh-recensus.md; script-only exit 0).
 4. (previous bullet) `a355e317` test(eu_ai_act): W984eu Title III prose
    refresh + receipt.
-5. mix.lock 3-entry unlock + w984et-probe.md (W984fe had not landed it;
-   log showed mix.lock untouched since 4c7b012d).
-
-Wait — the deps-unlock commit: listed here for replay; exact SHA printed at
-commit time, see `git log --grep W984et`.
+CORRECTION (pre-push re-read, no-overclaiming): mix.lock and
+w984et-probe.md were NOT landed by this lane. Concurrent lanes landed them
+mid-batch: mix.lock unlock in 49992412 (chore(deps): W984et), w984et-probe.md
+in 43265cb1 (W984fe). My staged copies had no diff against the new HEAD, so
+no W984fl deps commit exists — correctly so. Batch gate, compile, and mock
+gate results above are unchanged and were run before this correction.
 
 ## Standing
 
