@@ -56,6 +56,13 @@ content equals d7fe61cd.
   pathspec-scoped recommit. bae6bdc1 is the only commit that exists on the
   branch; nothing was pushed between attempts, so no remote history changed.
 - Push: fast-forward, no force.
+- Addendum (same lane, same day): a shared-`git index` race then folded this
+  receipt's SHA-correction edit into the sibling lane W650k2's commit
+  (428ae270) via `git commit --amend -- <path>` landing on a moved HEAD;
+  `bae6bdc1` retains receipt v1 ("see git log" line) — both forms are
+  content-accurate. bae6bdc1 reached `origin` inside 428ae270's ancestry
+  (W650k2's push of the amended HEAD). No force, no rewrite of pushed
+  history.
 
 ## Standing
 
