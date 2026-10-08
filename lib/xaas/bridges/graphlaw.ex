@@ -20,6 +20,11 @@ defmodule Xaas.Bridges.Graphlaw do
   @chi "https://w3id.org/chicago#"
   @rdf_type "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
 
+  # Watchdog ceiling for the pinned wasm transport on law-op workloads. The
+  # tiny purchase facts admit well under this; the W640 differential court
+  # uses 60s for whole-corpus SHACL, which is not the product shape.
+  @wasm_timeout_ms 5_000
+
   @rules """
   @prefix chi: <#{@chi}> .
   { ?p chi:overLimit "false" } => { ?p chi:clearance "auto-ok" } .
@@ -107,9 +112,34 @@ defmodule Xaas.Bridges.Graphlaw do
       :ok ->
         law_opts = Keyword.delete(opts, :subject)
 
-        case AshGraphLaw.law(data, steps, law_opts) do
+        {outcome, engine_sha} =
+          case Keyword.fetch(opts, :server) do
+            # Legacy contract: an explicit :server opts out of the xaas-side
+            # pinned wasm transport and dispatches through the dep's host/pool
+            # layer (dead-server courts depend on :host_not_started passthrough).
+            {:ok, _server} ->
+              {AshGraphLaw.law(data, steps, law_opts), AshGraphLaw.engine_sha256(law_opts)}
+
+            # Product path: the pinned `priv/graphlaw.wasm` artifact held by
+            # `Xaas.Semantics.GraphlawPool` executes the law op through the
+            # packed-u64 gl_call transport. A wasm transport failure falls back
+            # to the legacy dispatch so behavior only upgrades.
+            :error ->
+              case wasm_law(data, steps, law_opts) do
+                {:ok, _} = ok ->
+                  {ok, pool_digest()}
+
+                {:error, %AshGraphLaw.Refusal{}} = error ->
+                  {error, pool_digest()}
+
+                :wasm_unavailable ->
+                  {AshGraphLaw.law(data, steps, law_opts), AshGraphLaw.engine_sha256(law_opts)}
+              end
+          end
+
+        case outcome do
           {:ok, %AshGraphLaw.Admitted{} = admitted} ->
-            {:ok, admitted_envelope(subject, admitted)}
+            {:ok, admitted_envelope(subject, admitted, engine_sha)}
 
           {:error, %AshGraphLaw.Refusal{code: code} = refusal} ->
             envelope = Xaas.Bridges.envelope(subject, "graphlaw purchase policy", :refused)
@@ -124,6 +154,44 @@ defmodule Xaas.Bridges.Graphlaw do
 
       {:refused, info} ->
         {:refused, limit_refusal_envelope(subject, info)}
+    end
+  end
+
+  # The digest of the pinned artifact the verdict came from. Cheap: the pool
+  # is already booted by the invoke that produced the verdict.
+  defp pool_digest do
+    case Xaas.Semantics.GraphlawPool.info() do
+      {:ok, %{artifact_digest: sha}} -> sha
+      _ -> nil
+    end
+  end
+
+  # Runs the law op through the pinned GraphlawWasm transport
+  # (Xaas.Semantics.GraphlawPool). Returns `:wasm_unavailable` when the
+  # transport itself cannot admit/run the artifact (typed Xaas.Actuation.Refusal),
+  # letting the caller fall back to the legacy host/pool layer; engine-level
+  # `{"ok": false}` outcomes are projected to `AshGraphLaw.Refusal` exactly as
+  # `AshGraphLaw.call/2` does.
+  defp wasm_law(data, steps, law_opts) do
+    request = %{"op" => "law", "data" => data, "steps" => steps}
+    wasm_opts = [timeout: Keyword.get(law_opts, :timeout, @wasm_timeout_ms)]
+
+    case Xaas.Semantics.GraphlawPool.invoke(request, wasm_opts) do
+      {:ok, %{"ok" => true} = response} ->
+        {:ok, AshGraphLaw.Admitted.from_map(response)}
+
+      {:ok, %{"ok" => false, "error" => error} = response} when is_map(error) ->
+        {:error,
+         AshGraphLaw.Refusal.from_engine(error, Map.get(response, "details") || %{})}
+
+      {:ok, other} ->
+        {:error,
+         AshGraphLaw.Refusal.new(:malformed_response, "GraphLaw response lacks a boolean ok", %{
+           response: other
+         })}
+
+      {:error, %Xaas.Actuation.Refusal{}} ->
+        :wasm_unavailable
     end
   end
 
@@ -175,7 +243,7 @@ defmodule Xaas.Bridges.Graphlaw do
     |> Map.put(:message, info.message)
   end
 
-  defp admitted_envelope(subject, %AshGraphLaw.Admitted{} = admitted) do
+  defp admitted_envelope(subject, %AshGraphLaw.Admitted{} = admitted, engine_sha256) do
     receipts = admitted.receipts || []
     first = List.first(receipts)
 
@@ -188,7 +256,7 @@ defmodule Xaas.Bridges.Graphlaw do
     |> Map.put(:provenance, %{
       receipts: length(receipts),
       authorities: Enum.map(receipts, & &1.authority),
-      engine_sha256: AshGraphLaw.engine_sha256(),
+      engine_sha256: engine_sha256,
       steps: Enum.map(receipts, & &1.step)
     })
   end
