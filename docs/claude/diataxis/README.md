@@ -60,6 +60,8 @@ Reference pages not previously indexed:
 - [`reference/sa2a-computation-boundary.md`](reference/sa2a-computation-boundary.md) — SA2A computation boundary: runtime-neutral artifacts and candidate claims that cannot authorize actuation.
 - [`reference/generated-castle-bridge-errc.md`](reference/generated-castle-bridge-errc.md) — generated castle-bridge ERRC page (ggen sync projection; do not hand-edit).
 - [`reference/generated-surfaces.md`](reference/generated-surfaces.md) — hand-authored census of generated surfaces: provenance, drift checks, DRIFT-CHECKED / PROVENANCE-ONLY / UNPINNED classes (W849; relocated from the generated ERRC page, W919).
+- [`reference/w849-census-relocate-plan.md`](reference/w849-census-relocate-plan.md) — PLAN ONLY (not executed): relocation plan for the W849 census section out of the ggen-generated ERRC page.
+- [`reference/w919-census-relocate-plan.md`](reference/w919-census-relocate-plan.md) — PLAN ONLY (not executed): canonical copy of the W919 census-relocation plan at the dispatch-named path.
 
 ## Case Studies
 
