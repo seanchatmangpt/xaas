@@ -109,3 +109,45 @@ Build roots `_build-laneW984dj2` (left for coordinator per lane law —
 warm, reusable) and `_build-laneW984dj2b` (fresh-root confirmation, left
 for coordinator cleanup discretion). No files outside `test/xaas/
 actuation/` + this receipt were touched.
+
+## Follow-up adjudication (appended by lane W650x, 2026-10-07)
+
+C23 pruner discipline applied to findings F1/F2. No code changes; this
+append and `w650x-spg-findings.md` are the only artifacts.
+
+### Caller question (re-grounded)
+
+Re-grep 2026-10-07 over `lib/` and `test/` (`grep -rn SpgGate`): the
+module and its test file remain the only references — **zero call sites
+in `lib/`**, unchanged from the court above. Standing stays as written:
+**PARTIAL_ALIVE as a capability, UNKNOWN as an integrated path**. This
+matches the forward-capability class (like the wasm host before W638):
+the gate is an awaiting-integration kernel, not dead code for the
+pruner — the integration court named above is its lawful next depth.
+
+### F1 — DESIGN-ACCEPTED
+
+Case-sensitivity of the state vocabulary is the admission contract, not
+a defect. The refusal is already typed (`{:error, :spg_not_admitted}` —
+finding F3's exact boundary), so a non-canonical state spelling is
+refused with a typed atom, not a crash; fail-closed and non-lossy for
+the caller. `admit/1`'s catch-all plus the exact-vocabulary check define
+a strict identity boundary; normalizing (e.g. accepting lowercase or
+upcasing) would *widen* the admission surface of a DO gate, which is the
+one direction this module must not drift. If any future caller needs to
+present lowercase/raw state vocabulary, the normalization is that
+caller's decision at its own boundary, with its own disclosure.
+
+### F2 — typed-refusal refinement RECOMMENDED (deferred to integration lane)
+
+The `fingerprint_token/1` KeyError on string-keyed input is fail-closed
+by crash — the crash does refuse the input, but untyped, and it
+collapses a caller bug into an exception rather than a
+`{:error, atom()}` like every other refusal in the module. A typed
+refusal (e.g. `{:error, :spg_fingerprint_atom_keyed}` or a guard head
+mirroring `admit/1`'s catch-all) is the refinement. Per C23 discipline
+it is **not** this lane's or W650x's work: with zero callers there is no
+production seam to protect, and the refinement belongs in the
+integration lane's work order, where a real caller shape fixes the
+correct refusal contract. Recommendation recorded for that lane; no
+code change now.

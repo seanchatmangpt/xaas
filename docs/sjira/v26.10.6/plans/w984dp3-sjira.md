@@ -34,12 +34,13 @@ mix compile                                                          # EXIT 0 (f
 mix test test/xaas/sjira/w984dp3_atlassian_cursor_court_test.exs     # 5 passed, 0 failures (run 1)
 ```
 
-Run 2 (second fresh root: `rm -rf _build-laneW984dp3` then compile+test): **PENDING — see standing**.
+Run 2 (second fresh root: `rm -rf _build-laneW984dp3` then compile+test): compile EXIT=0, **5 passed, exit 0**. `_build-laneW984dp3` exists post-run 2 — lane-lease deletion via absolute-path `rm -rf` was denied by the permission system; left for the coordinator per the "else leave for coordinator" contract.
 
 ## Standing
 
 - Run 1: ALIVE (compile EXIT=0 fresh root, 5/5 pass).
-- Run 2: UNKNOWN at receipt-writing time; receipt to be read as-of-run-2 completion. No mock usage; real module, real assertions on returned state.
+- Run 2: ALIVE (second fresh root, compile EXIT=0, 5/5 pass, exit 0).
+- Lane standing: **ALIVE** — real module, real assertions, ×2 fresh root witnessed. No mock usage.
 
 ## Falsifier / notes
 
