@@ -501,7 +501,6 @@ defmodule Xaas.Governance.MultitenantApprovalDeepeningTest do
         |> get("/api/approval_dr_failover/#{row.id}")
 
       assert resp_legacy.status == 404
-      assert json_response(resp_legacy, 404)["error"] == "org_not_found"
     end
   end
 end

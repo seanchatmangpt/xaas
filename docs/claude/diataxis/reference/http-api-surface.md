@@ -748,6 +748,28 @@ on 2026-10-07; court receipts cited per item.
   `success=false` envelope for the identical body. Court pins the real
   current behavior. Receipt: `w984ho-probe.md`.
 
+## Verified 2026-10-08 (lane W984nc, lib repair citations)
+
+Code-verified against the working tree at `feat/playwright-surface` on
+2026-10-08; repair receipts on disk, lib repairs landed in `d3189b40`
+(W984lo batch #13).
+
+- **`POST /internal-api/execution/mcp` notification silence (W984kk)** —
+  the stateless MCP JSON-RPC endpoint now answers a JSON-RPC 2.0
+  notification (no `id`) with bare `204` silence per the spec — never a
+  `200` body. Implemented as a `case` in the `with` do-branch of
+  `mcp_typed/2` (`execution_fabric_controller.ex:353-356`): `:notification
+  -> send_resp(conn, 204, "")`, other `{:ok, response}` → `json(conn,
+  response)`. The shape matters: a `with`-else clause can never catch
+  `{:ok, :notification}` because it matches the success pattern. The
+  crash-to-JSON `rescue` wrapper (typed `-32603` envelope) sits above it
+  unchanged. Receipt: `w984kk-repair.md`.
+- **`rpc/validate` asymmetry (w984ho) — unchanged** — the disclosed
+  non-list-`fields` 500 (`FunctionClauseError` in ash_typescript 0.18.2's
+  `Atomizer.atomize_requested_fields/3`) is still real current behavior;
+  no repair receipt for it exists on disk, so the entry above stands as a
+  disclosed upstream-shaped defect (UNKNOWN, not repaired).
+
 ## See Also
 
 - `lib/xaas_web/router.ex`, `lib/xaas_web/api_router.ex`,

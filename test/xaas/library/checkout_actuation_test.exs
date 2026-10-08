@@ -16,7 +16,15 @@ defmodule Xaas.Library.CheckoutActuationTest do
   setup do
     :ok = Ecto.Adapters.SQL.Sandbox.checkout(Xaas.Repo)
     Ecto.Adapters.SQL.Sandbox.mode(Xaas.Repo, {:shared, self()})
-    :ok
+
+    # W902: xaas_test legitimately carries committed rows (the sanctioned
+    # DevSeeds.run(e2e: true) boot path, lane W984bs) that sandbox rollbacks
+    # cannot remove. Table-wide count assertions against an assumed-empty
+    # table are therefore wrong; assert on deltas over a baseline instead
+    # (same discipline as dev_seeds_idempotency_test.exs).
+    count_before = Ash.count!(Checkout, authorize?: false)
+
+    %{checkout_count_before: count_before}
   end
 
   defp create_user! do
@@ -38,7 +46,7 @@ defmodule Xaas.Library.CheckoutActuationTest do
   defp idempotency_key(book_id, user_id, school_id),
     do: "checkout:#{book_id}:#{user_id}:#{school_id}"
 
-  test "duplicate Checkout.borrow with the same idempotency key does not double-decrement available_copies" do
+  test "duplicate Checkout.borrow with the same idempotency key does not double-decrement available_copies", %{checkout_count_before: count_before} do
     user = create_user!()
     book = create_book!(2)
     school_id = "willow-creek"
@@ -76,10 +84,10 @@ defmodule Xaas.Library.CheckoutActuationTest do
     book_after_second = Ash.get!(Book, book.id, authorize?: false)
     assert book_after_second.available_copies == 1
 
-    assert Ash.count!(Checkout, authorize?: false) == 1
+    assert Ash.count!(Checkout, authorize?: false) == count_before + 1
   end
 
-  test "same book+user+school but a different idempotency key is a distinct borrow (real double-decrement, not a bug)" do
+  test "same book+user+school but a different idempotency key is a distinct borrow (real double-decrement, not a bug)", %{checkout_count_before: count_before} do
     user = create_user!()
     book = create_book!(2)
     school_id = "willow-creek"
@@ -101,6 +109,6 @@ defmodule Xaas.Library.CheckoutActuationTest do
              )
 
     assert Ash.get!(Book, book.id, authorize?: false).available_copies == 0
-    assert Ash.count!(Checkout, authorize?: false) == 2
+    assert Ash.count!(Checkout, authorize?: false) == count_before + 2
   end
 end

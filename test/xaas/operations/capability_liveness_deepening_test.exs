@@ -217,19 +217,37 @@ defmodule Xaas.Operations.CapabilityLivenessDeepeningTest do
     assert refreshed.previous_status == "ALIVE"
 
     # Caller-side forgery attempt: the attribute is not in :ingest's accept
-    # list, so an input value is silently dropped (no path sets it).
+    # list, so an input value is refused typed, not honored.
+    assert {:error, %Ash.Error.Invalid{} = forged_error} =
+             CapabilityLivenessReceipt
+             |> Ash.Changeset.for_create(
+               :ingest,
+               base_attrs(
+                 capability: receipt.capability,
+                 subject: receipt.subject,
+                 status: "ALIVE",
+                 previous_status: "FABRICATED"
+               )
+             )
+             |> Ash.create(authorize?: false)
+
+    assert forged_error.errors
+           |> Enum.any?(&match?(%{input: :previous_status}, &1)),
+           "the forged previous_status input must be named in the typed refusal"
+
+    # The only writer is the ingest path itself: re-ingest after the BLOCKED
+    # row captures "BLOCKED" as the new previous_status, never the caller's
+    # fabricated value.
     forged =
       ingest!(
         base_attrs(
           capability: receipt.capability,
           subject: receipt.subject,
-          status: "ALIVE",
-          previous_status: "FABRICATED"
+          status: "ALIVE"
         )
       )
 
-    # refreshed.previous_status was "ALIVE" (captured from the BLOCKED row)
-    assert forged.previous_status == "ALIVE"
+    assert forged.previous_status == "BLOCKED"
 
     # ALIVE->ALIVE is not a regression even though previous_status is set.
     assert CapabilityLivenessRegressions.detect()

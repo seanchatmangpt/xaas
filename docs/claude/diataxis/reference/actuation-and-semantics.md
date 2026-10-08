@@ -583,6 +583,16 @@ killing mutation, receipt. Receipts live under `docs/sjira/v26.10.6/plans/`.
 - Receipts: w984k; landed in `32487e08` (w984u). Closes the
   double-ledger-credit channel on `approval_patch_sla_credit_apply`.
 
+> **Verified 2026-10-08** (lane W984nc, repair receipt
+> `docs/sjira/v26.10.6/plans/w984jz-repair.md`, landed `d3189b40`): the
+> maker-checker floor on `Xaas.Billing.ApprovalInvoiceReconciliationApprove`
+> now starts at `:create`, not only `:approve`. `:create`'s accept list is
+> `accept([:requested_by, :org_id])` (`approval_invoice_reconciliation_approve.ex`
+> ~:102) — `:approved_by` was removed, closing the CREATE_APPROVED_BY_BYPASS
+> channel (W984jk) where a requester minted an already-approved row the W984k
+> `is_nil(approved_by)` guard could never re-enter. Approval is only minted
+> via `:approve` behind `ApprovalInvoiceReconciliationApproveRequiresApprover`.
+
 ### DevSeeds env gate
 
 - Module: `Xaas.DevSeeds.refute_non_dev_target!/0` (`lib/xaas/dev_seeds.ex`)

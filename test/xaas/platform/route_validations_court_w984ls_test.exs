@@ -322,4 +322,135 @@ defmodule Xaas.Platform.RouteValidationsCourtW984lsTest do
     assert backup.project_name == "payments-api"
     assert backup.status == :pending
   end
+
+  # ------------------------------------------------------------------
+  # Class 5 (W984nj, executing W984mj's court-strengthening work order):
+  # forced-blank cases. Ash's :string type normalizes blank/whitespace
+  # action inputs to nil before validations run (W984mj Finding 1: the
+  # "" arms and the trim branch are dead via for_create/for_update
+  # inputs). W984mj's prescribed fix, Ash.Changeset.force_change_attribute/3,
+  # is itself insufficient: it re-casts through Ash.Type.cast_input with
+  # the attribute's default :string constraints (trim?: true,
+  # allow_empty?: false), so a forced "" STILL collapses to nil. The
+  # cases below therefore inject the raw blank directly into
+  # changeset.attributes (past the cast layer) and then run the REAL
+  # action pipeline (Ash.update/Ash.create), so the validations and their
+  # blank arms execute over real Postgres. Without these cases, mutants
+  # that drop the blank arm (W984mj M5) or the trim (M6) survive.
+  # ------------------------------------------------------------------
+
+  defp force_blank(changeset, field, value) do
+    changeset
+    |> Ash.Changeset.force_change_attribute(field, value)
+    |> then(fn cs ->
+      %{cs | attributes: Map.put(cs.attributes, field, value)}
+    end)
+  end
+
+  for {resource, label, required_msg} <- [
+        {RouteFeatureFlags, "flag", "is required to approve a feature flag"},
+        {RouteProjects, "project", "is required to approve a project"}
+      ] do
+    test "#{label}: forced-blank (\"\") approved_by still refuses :approve (#{inspect(resource)})" do
+      resource = unquote(resource)
+      required_msg = unquote(required_msg)
+      label = unquote(label)
+
+      row = create_approvable_row!(resource, label)
+
+      # Mutation (blank "" arm dropped, nil arm kept): a forced-blank
+      # approver would be admitted -- the arm is only reachable via a
+      # cast-bypassing change, since Ash normalizes blank action inputs
+      # (and even forced changes, via cast_input) to nil.
+      changeset = force_blank(row |> Ash.Changeset.for_update(:approve, %{}), :approved_by, "")
+
+      assert Ash.Changeset.get_attribute(changeset, :approved_by) == "",
+             "precondition: the forced blank must survive input normalization"
+
+      assert {:error, %Ash.Error.Invalid{errors: errors}} =
+               Ash.update(changeset, authorize?: false)
+
+      assert Enum.any?(errors, fn e ->
+               to_string(e.message) =~ required_msg
+             end),
+             "expected forced-blank approver refusal, got: #{inspect(errors)}"
+    end
+  end
+
+  test "custom domain update: forced-blank certificate_secret_name (\"\") on active is still refused" do
+    org = uniq("w984nj-org")
+
+    {:ok, domain} =
+      RouteOrgsCustomDomain
+      |> Ash.Changeset.for_create(:create, %{org_id: org, hostname: "nj.customer-example.com"})
+      |> Ash.create(authorize?: false)
+
+    # Mutation M5 (blank arm dropped, `is_nil(x) or x == ""` -> `is_nil(x)`):
+    # an active domain with a forced-blank secret would be admitted.
+    changeset =
+      force_blank(
+        domain |> Ash.Changeset.for_update(:update, %{status: "active"}),
+        :certificate_secret_name,
+        ""
+      )
+
+    assert Ash.Changeset.get_attribute(changeset, :certificate_secret_name) == "",
+           "precondition: the forced blank must survive input normalization"
+
+    assert {:error, %Ash.Error.Invalid{errors: errors}} = Ash.update(changeset, authorize?: false)
+
+    assert Enum.any?(errors, fn e ->
+             to_string(e.message) =~ "is required when marking a custom domain active"
+           end),
+           "expected forced-blank secret refusal, got: #{inspect(errors)}"
+  end
+
+  test "backup create: forced-whitespace project_name (\"   \") still refuses (trim branch)" do
+    now = DateTime.utc_now() |> DateTime.truncate(:second)
+
+    base = %{
+      org_id: uniq("w984nj-org"),
+      namespace: "ns-w984nj",
+      job_name: "job-w984nj",
+      taken_at: now,
+      size_bytes: 2048,
+      retain_until: (now |> DateTime.add(7 * 24 * 3600, :second) |> DateTime.truncate(:second))
+    }
+
+    # Mutation M6 (String.trim dropped, `String.trim(name) == ""` ->
+    # `name == ""`): a whitespace-only name would be admitted.
+    #
+    # The trim arm is UNREACHABLE through the live :create action, at two
+    # layers: (a) Ash's :string cast drops whitespace-only action inputs
+    # to nil (W984mj Finding 1), and (b) the create pipeline re-casts
+    # injected attribute values at execution time, so even a raw
+    # attributes-map injection (which DOES survive on :update paths --
+    # see the M5 case above) collapses back to nil before validations
+    # run on creates. W984mj's receipt prescribes applying the validation
+    # directly on the forced changeset for exactly this case. Wiring
+    # non-vacuity (the validation is really on :create) is asserted in
+    # the class-4 test above, so this direct application is not vacuous.
+    changeset = force_blank(RouteProjectsBackups |> Ash.Changeset.for_create(:create, base), :project_name, "   ")
+
+    assert Ash.Changeset.get_attribute(changeset, :project_name) == "   ",
+           "precondition: the forced whitespace must sit on the changeset"
+
+    assert {:error, field: :project_name, message: "is required"} =
+             Xaas.Platform.Validations.RouteProjectsBackupsValidProjectName.validate(
+               changeset,
+               [],
+               %{}
+             )
+
+    # The same forced changeset carries the trim-refusal to the pipeline
+    # boundary: under M6 the pipeline-level refusal for this changeset
+    # comes only from the nil fallback, so pin the real pipeline refusal
+    # too (real action, real Postgres).
+    assert {:error, %Ash.Error.Invalid{errors: pipeline_errors}} =
+             Ash.create(changeset, authorize?: false)
+
+    assert Enum.any?(pipeline_errors, fn e ->
+             to_string(e.message) =~ "is required"
+           end)
+  end
 end

@@ -4,12 +4,14 @@ defmodule Xaas.Deepening.Art271fMaterialisationSafeguardBindingTest do
   (Art. 27(1)(f): measures foreseen in case of risk materialisation —
   evidence row W537/W648b "materialisation measures = the typed
   materialisation inventory: fria/0's per-right safeguards + the
-  honestly-typed OPEN_GAP authority channel recorded in the FRIA
-  itself"; cited paths: oversight_governance.ex, incident_report.ex,
-  w537 receipt).
+  EVIDENCED authority-channel entry recorded in the FRIA itself
+  (flipped from typed OPEN_GAP by W984eb, 2026-10-07, once
+  Xaas.Semantics.IncidentReport landed)"; cited paths:
+  oversight_governance.ex, incident_report.ex, w537 receipt).
 
   Existing coverage is structural only: fria/0 returns typed structure
-  with existing paths, deterministic, open-gap present
+  with existing paths, deterministic, per-right typed statuses (post-W984eb
+  all five rights are :EVIDENCED)
   (`test/xaas/semantics/oversight_governance_test.exs`); W704 deepened
   27.3 by composing fria/0 with a real halt record. Uncovered property
   class: BINDING LIVENESS — the FRIA's materialisation inventory, when
@@ -33,13 +35,13 @@ defmodule Xaas.Deepening.Art271fMaterialisationSafeguardBindingTest do
        timestamped id), court 3's causality leg fails while
        determinism-of-fria courts still pass.
 
-  Disclosed finding (not a lane defect, not fixed — outside this lane's
-  contract): fria/0's authority-channel entry prose still reads "No
-  incident-reporting seam exists", written pre-W538. The TRANSMISSION
-  gap the entry points at is still real (AuthorityChannel authority
-  transmit is typed OPEN, PREPARED_NOT_TRANSMITTED), so the entry's
-  status is honest at the gap level; the prose is stale relative to the
-  landed builder seam. Flagged for the corpus/FRIA owner.
+  Resolved disclosed finding (closed by W984eb, 2026-10-07): fria/0's
+  authority-channel entry previously read "No incident-reporting seam
+  exists" (pre-W538 prose) with a typed OPEN_GAP status. The entry is
+  now :EVIDENCED over the landed Xaas.Semantics.IncidentReport seam;
+  the TRANSMISSION-level honesty the old entry pointed at is preserved
+  by transmit/1 returning :PREPARED_NOT_TRANSMITTED — never a silent
+  send. No residual FRIA-entry prose debt.
 
   Chicago discipline: real gate executions over real data, real Ash
   policy denial over real sandboxed Postgres, real QuiescentStop over a
@@ -251,9 +253,19 @@ defmodule Xaas.Deepening.Art271fMaterialisationSafeguardBindingTest do
     assert r1.id in report_a.originating_receipt_digests
     assert r2.id in report_a.originating_receipt_digests
 
-    # The FRIA's open-gap authority entry is present and typed honest.
+    # The FRIA's authority entry is EVIDENCED over the real seam (W984eb):
+    # cited builder + delivery channel, both real (flipped from typed
+    # OPEN_GAP once IncidentReport landed; the channel itself stays typed
+    # honest via transmit/1's :PREPARED_NOT_TRANSMITTED).
     {:ok, fria} = OversightGovernance.fria()
-    gap_entries = Enum.filter(fria.rights, &(&1.status == :OPEN_GAP))
-    assert Enum.any?(gap_entries, fn e -> String.contains?(e.article, "26.5") end)
+
+    authority_entry =
+      Enum.find(fria.rights, &(&1.right == :access_to_effective_remedy_authority_channel))
+
+    assert authority_entry.status == :EVIDENCED
+
+    assert Enum.any?(authority_entry.evidence, fn e ->
+             e.path == "lib/xaas/semantics/incident_report.ex"
+           end)
   end
 end

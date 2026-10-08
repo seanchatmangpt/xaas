@@ -15,13 +15,15 @@ defmodule XaasWeb.A2A.ReturnHoldCascadeAvatarsTest do
      simply incremented.
   2. Return with exactly one active hold -- the hold transitions to
      `:fulfilled` (net available_copies unchanged, since return+refulfill
-     cancel out) and NOT left in a state where the book itself shows an
-     open, uncommitted checkout for the hold holder -- per the design
-     landed in this cycle, fulfilling a hold marks the *hold* fulfilled and
-     decrements inventory the same way a checkout does, but does not
-     create a second `Xaas.Library.Checkout` row for the hold holder. This
-     avatar asserts that exact, real behavior: no new `Checkout` row is
-     created for the waiting reader.
+     cancel out) and the fulfillment mints a real, open Checkout row for
+     the hold holder -- per the W970b design (closing W796-G3, commit
+     b2758300): fulfilling a hold marks the *hold* fulfilled, decrements
+     inventory the same way a checkout does, AND creates the physical
+     hand-off `Xaas.Library.Checkout` row for the hold holder in the same
+     after_action transaction, so the hand-off is a real, traceable row
+     rather than an implicit side effect. This avatar asserts that exact,
+     real behavior: exactly one new `Checkout` row exists for the waiting
+     reader, `:borrowed`/open, created by the cascade itself.
   3. Return with multiple active holds (placed in known order) -- only the
      OLDEST active hold transitions to `:fulfilled`; every other active
      hold on the same book stays `:active` untouched.
@@ -142,7 +144,7 @@ defmodule XaasWeb.A2A.ReturnHoldCascadeAvatarsTest do
   end
 
   describe "avatar 2: return with exactly one active hold" do
-    test "the sole active hold is fulfilled by the cascade, and no separate Checkout row is auto-created for the hold holder" do
+    test "the sole active hold is fulfilled by the cascade, which mints exactly one open Checkout row for the hold holder (W970b hand-off design)" do
       borrower = create_user!()
       waiting_reader = create_user!()
       book = create_book!(1)
@@ -163,20 +165,24 @@ defmodule XaasWeb.A2A.ReturnHoldCascadeAvatarsTest do
       assert hold_after.status == :fulfilled
       assert %DateTime{} = hold_after.fulfilled_at
 
-      # Per the design landed in this cycle: fulfilling a hold decrements
-      # book inventory directly (Book.borrow_copy) -- it does NOT create a
-      # new Xaas.Library.Checkout row for the hold holder. Confirm the
-      # real Checkout table count is unchanged by the cascade, and no
-      # Checkout row exists linking this book to the waiting reader.
+      # Per the W970b design (closing W796-G3, commit b2758300): fulfilling
+      # a hold decrements book inventory (Book.borrow_copy) AND mints the
+      # real physical hand-off Checkout row for the hold holder, in the
+      # same after_action transaction. Confirm exactly one new Checkout row
+      # was created by the cascade, and it is an open (:borrowed) row
+      # linking this book to the waiting reader.
       after_checkout_count = Ash.count!(Checkout, authorize?: false)
-      assert after_checkout_count == before_checkout_count
+      assert after_checkout_count == before_checkout_count + 1
 
       reader_checkout =
         Checkout
         |> Ash.Query.filter(book_id == ^book.id and user_id == ^waiting_reader.id)
         |> Ash.read_one!(authorize?: false)
 
-      assert reader_checkout == nil
+      assert reader_checkout != nil
+      assert reader_checkout.status == :borrowed
+      assert reader_checkout.user_id == waiting_reader.id
+      assert reader_checkout.book_id == book.id
 
       # Net effect of return (+1) immediately re-consumed by the hold's own
       # fulfillment (-1): available_copies settles back at 0.

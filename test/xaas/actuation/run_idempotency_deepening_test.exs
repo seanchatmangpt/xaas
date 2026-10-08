@@ -22,6 +22,11 @@ defmodule Xaas.Actuation.RunIdempotencyDeepeningTest do
     Xaas.Generator.create_provider!(%{name: "Reactor Provider", org_id: "org-reactor"})
   end
 
+  # Every idempotency key this suite mints carries this prefix; scoped
+  # reads below use it so committed rows from concurrent seed/e2e
+  # activity in the shared xaas_test DB cannot fail the assertions.
+  @w747_prefix "w747-"
+
   defp run_actuation(provider, status, key) do
     Xaas.Actuation.run(
       Provider,
@@ -132,8 +137,12 @@ defmodule Xaas.Actuation.RunIdempotencyDeepeningTest do
                authority: %{kind: "test_authority", source: "w747"}
              )
 
-    # Nothing was durably admitted.
-    assert Ash.read!(ActuationIntent, authorize?: false) == []
+    # Nothing was durably admitted for this key. Scope the read to this
+    # test's own idempotency keys: the shared xaas_test database can carry
+    # committed rows from concurrent seed/e2e activity, which an unscoped
+    # read sees under READ COMMITTED (W650h23 repair).
+    assert Ash.read!(ActuationIntent, authorize?: false)
+           |> Enum.any?(&String.starts_with?(&1.idempotency_key || "", @w747_prefix)) == false
   end
 
   test "(d2) delegated actuation without authority evidence is refused, nothing durably admitted" do
@@ -157,9 +166,16 @@ defmodule Xaas.Actuation.RunIdempotencyDeepeningTest do
     assert [%Reactor.Error.Invalid.RunStepError{error: :delegated_actuation_requires_authority_evidence}] =
              err.errors
 
-    # The transaction rolled back: no intent/receipt survives the refusal.
-    assert Ash.read!(ActuationIntent, authorize?: false) == []
-    assert Ash.read!(ActuationReceipt, authorize?: false) == []
+    # The transaction rolled back: no intent/receipt for this key survives
+    # the refusal (scoped read — see W650h23 repair note in (d1)).
+    assert Ash.read!(ActuationIntent, authorize?: false)
+           |> Enum.any?(&(&1.idempotency_key == key)) == false
+
+    assert Ash.read!(ActuationReceipt, authorize?: false)
+           |> Enum.any?(fn receipt ->
+             receipt.intent_id &&
+               Ash.get!(ActuationIntent, receipt.intent_id, authorize?: false).idempotency_key == key
+           end) == false
   end
 
   test "(d3) malformed intent (non-atom action / non-map input) rejected at the guard boundary" do
@@ -189,7 +205,8 @@ defmodule Xaas.Actuation.RunIdempotencyDeepeningTest do
       )
     end
 
-    assert Ash.read!(ActuationIntent, authorize?: false) == []
+    assert Ash.read!(ActuationIntent, authorize?: false)
+           |> Enum.any?(&String.starts_with?(&1.idempotency_key || "", @w747_prefix)) == false
   end
 
   test "(d4) idempotency key reuse while intent still :executing is not replayable" do

@@ -1,4 +1,4 @@
-# Evidence–Claims Index (lane W405; refreshed W711, W855, W984fp, W984lg, W984lz)
+# Evidence–Claims Index (lane W405; refreshed W711, W855, W984fp, W984lg, W984lz, W984mg, W984ng, W984nr)
 
 Campaign v26.10.6 CRO-loop, honest-numbers directive. Subject: branch
 `feat/playwright-surface`. W405 audit at head `d1db2b03…` 2026-10-06;
@@ -7,7 +7,10 @@ head `a0723bf6` 2026-10-07; W984fp refresh (rows 59–76) at head
 `43265cb1` 2026-10-07; W984lg refresh (rows 77–92) at head `52ce8236`
 2026-10-08; W984lz refresh (rows 93–95) at head `1ba31a97` 2026-10-08;
 W984mg refresh (rows 96–102) at head `567ab1f5` 2026-10-08 (origin ==
-HEAD verified by rev-parse). Repo `/Users/sac/xaas`.
+HEAD verified by rev-parse); W984ng refresh (rows 103–109) at head
+`20a24db0` 2026-10-08 (origin == HEAD verified by rev-parse); W984nr refresh (rows
+110–115) at head `7593a062` 2026-10-08 (origin == HEAD verified by
+rev-parse). Repo `/Users/sac/xaas`.
 
 Method: every pitch number checked against the on-disk artifact named in the
 table. "Real" = number as stated in the receipt file, not the pitch copy.
@@ -229,7 +232,8 @@ Receipt-absent lanes skipped, not invented: **W840-check** (no
 from its claim outright — one cross-row divergence (row 32's 116 vs W756's
 117 resources) recorded as DRIFT above.
 
-Total rows: 12 → 32 → 58 → 76 → 92 → 102 (W984mg, 2026-10-08).
+Total rows: 12 → 32 → 58 → 76 → 92 → 102 → 109 (W984ng) → 115 (W984nr,
+2026-10-08).
 
 ## Claims table — W984lg refresh (rows added 2026-10-08, batches #9–#11)
 
@@ -381,3 +385,110 @@ skips; kn-overlap pathspec dedup). All 7 wave SHAs grep-verified against
 them (`w984lo-commit.md`) and 1/7 (#102) is self-carried by its own
 receipt commit. Cumulative index: **102 rows** (rows 1–95 unchanged from
 W984lz; 96–102 appended).
+
+## Claims table — W984ng refresh (rows added 2026-10-08, batch #14)
+
+One row per wave commit, 22fe15c4 → 20a24db0 (7 commits), in landing
+order. Refresh at head `20a24db0` 2026-10-08 (origin == HEAD verified
+by rev-parse at write time). Each commit's receipt read in full
+(`docs/sjira/v26.10.7/plans/w984mo-commit.md`); gate numbers re-read
+from the receipt, not the commit subject. All 7 SHAs git-verified in
+the landing range `567ab1f5..20a24db0`.
+
+| # | Claim | Evidence artifact | What the receipt actually witnesses | Grade |
+|---|---|---|---|---|
+| 103 | W984ln marketplace catalog readiness repair + kt court (batch #14 lib) | `docs/sjira/v26.10.7/plans/w984mo-commit.md` | `22fe15c4`: 2 files — `lib/xaas/marketplace/catalog.ex` repair + new court `catalog_court_w984kt_test.exs` (154 lines). Batch court gate (ku/lj/ls + kt) → **28 passed, exit 0**; compile EXIT=0; mock `[]`. ALIVE | witnessed |
+| 104 | W984lr e2e seed Sandbox guard + read-first get-or-create (batch #14 lib) | `docs/sjira/v26.10.7/plans/w984mo-commit.md` | `31322ec3`: `e2e/seed-library.exs` + `lib/xaas/dev_seeds.ex` (+50/−16); covered by the repair batch gate (**53 passed, exit 0**: next_read_live_deepening, ranker, nextread_deepening, next_read_test, dev_seeds_idempotency, pack_catalog_depth). ALIVE | witnessed |
+| 105 | W984fw Playwright config/global-setup fixes (batch #14 e2e) | `docs/sjira/v26.10.7/plans/w984mo-commit.md` | `e982d1d0`: `e2e/global-setup.cjs` + `playwright.config.cjs` (+14/−3); commit subject carries the W984lp verification note. No Playwright re-run in this receipt's gate list — config-only diff, gates are compile/court/repair/mock. PARTIAL_ALIVE (config landed; e2e run not re-witnessed by this receipt) | witnessed (diff) / not re-run (e2e) |
+| 106 | ku/lj/ls courts from finished lanes (batch #14 courts) | `docs/sjira/v26.10.7/plans/w984mo-commit.md` | `231088d2`: 3 court files (application_supervision_w984lj 158, curation_resource_w984ku 159, route_validations_w984ls 325 lines). Same court gate 28 passed / 0. Disclosed: courts jw/jt/js/ka/kg/kq/kr/ki/kj/ju/jv already landed by batch #13 (`be2591bd`) — skipped as duplicates, not double-landed. ALIVE | witnessed |
+| 107 | W984lh/W984ly flake-class repairs + W984ma comment refresh (batch #14 test) | `docs/sjira/v26.10.7/plans/w984mo-commit.md` | `0c03909b`: 6 test files +144/−39; same repair gate **53 passed, exit 0**. ALIVE | witnessed |
+| 108 | Untracked lane receipts + registers (batch #14 docs) | `docs/sjira/v26.10.7/plans/w984mo-commit.md` | `2067a686`: 91 files +6,772 — w984 probe/repair receipts, registers (_INTEGRATION_RUNBOOK, _COMMIT_MANIFEST, _CLOSURE_RECEIPT), evidence-index rows 77–95 content. Disclosed: concurrently-completed lanes (mb/md/me/lv/mi/mn/mx, mm/nb probes) landed docs only; their court/test files untracked, NOT gated here. Self-referential note: this commit landed index rows for earlier batches, not #14. LANDED (docs) | grep |
+| 109 | W984mo landing-batch commit receipt | `docs/sjira/v26.10.7/plans/w984mo-commit.md` | `20a24db0` (HEAD at refresh) carries the receipt itself; no other on-disk artifact cites it as a tested subject yet. Self-referential-limits class | grep |
+| 110 | W984md gate-fix: regen-drift CI leg + `--engine oxigraph` pin (batch #15 ci) | `docs/sjira/v26.10.7/plans/w984nd-commit.md` | `4d96b097`: 2 files — `ci_cd.yaml` regen-drift step + `regen_check.ex` oxigraph pin (+23/−2). Receipt gates: `mix xaas.generated.regen_check` exit 0; 11/11 court tests. Diff verified as exactly the pin + CI step; on-disk grep confirms 4 oxigraph occurrences in `regen_check.ex`. ALIVE | witnessed (diff + owner receipt) |
+| 111 | W984md engine-pin court (3) + W984le pack-queries court (8) (batch #15 courts) | `docs/sjira/v26.10.7/plans/w984nd-commit.md` | `2e77ce47`: 2 court files (pack_gate_engine_court_w984md 73, pack_queries_court_w984le 247 lines). Lane batch gate A → **101 passed, exit 0**; mock gate `[]`. ALIVE | witnessed |
+| 112 | Comment-sweep residue + W984eu compile-freeze + W984eb FRIA flip (batch #15 lib) | `docs/sjira/v26.10.7/plans/w984nd-commit.md` | `7904b088`: 5 files +37/−13. Owner receipts: w984ex-probe.md (comment-only), w984eu-probe.md (1388 passed exit 0), w984eb-probe.md (1355 passed exit 0). On-disk grep confirms EVIDENCED flip in `oversight_governance.ex`. ALIVE | witnessed (diff + owner receipts) |
+| 113 | W984lm bare-atom pin repairs (4 pins, tests-only) (batch #15 test) | `docs/sjira/v26.10.7/plans/w984nd-commit.md` | `df22abb6`: exactly 4 pins across `execution_fabric_controller_test.exs` / `execution_fabric_deepening_test.exs`; receipt `w984lm-repair.md`; on-disk grep confirms bare-atom pins (`no_ready_work`, `lease_token_required`). Covered by batch gate A → 101 passed, exit 0. ALIVE | witnessed |
+| 114 | 14 court files from finished lanes + probe receipts + docs (batch #15 courts/docs) | `docs/sjira/v26.10.7/plans/w984nd-commit.md` | `17ef4b54`: 16 files — courts la 4 / dz 13 / jr 5 / dv 10 / ei 9 / ih 4 / if 4 / dr3 / ds2×2 / w650y3 5 / w650h21 5 / mm 16; gates B **45**/0, C **46**/0, D **4**/0; probe receipts `w984mm-probe.md`, `w984nb-probe.md`; docs diataxis README + `e2e/README.md`. Disclosed EXCLUDED: w984dg catalog court RED 4/22 per coordinator (`w650h16-commit.md`). ALIVE | witnessed |
+| 115 | W984nd landing-batch commit receipt | `docs/sjira/v26.10.7/plans/w984nd-commit.md` | `7593a062` (HEAD at refresh) carries the receipt itself; no other on-disk artifact cites it as a tested subject yet. Self-referential-limits class | grep |
+
+### DRIFT summary (W984nr)
+
+- No prior row contradicted. Rows 1–109 re-skimmed at `7593a062`; the
+  batch #15 commits land exactly the families batch #14's receipt
+  disclosed as not-landed (ci_cd.yaml + regen_check.ex per W984md;
+  comment-sweep residue; lm's 4 execution_fabric pins; mm/nb probe
+  docs) — consistent with, not contradicting, the #108 disclosure.
+- W984lf's Blocker-1 observation is **unchanged**: re-run at
+  `7593a062`, `git merge-base --is-ancestor 56325fa5 origin/main` →
+  exit 1 (seal still not reachable from origin/main). Recorded as
+  observed tree state, not adjudicated by this lane.
+- Receipt-absent-by-construction now additionally covers #115
+  (`7593a062`), alongside #80/#85/#88/#92/#95/#102/#109 — receipt-carrier
+  commits cited only by later probes/receipts. Now 9 of the last 59
+  wave commits; C21 (out-of-subject receipts) remains an open
+  coordinator item.
+- Batch #15's own disclosures recorded per receipt: w984dg catalog
+  court deliberately EXCLUDED (RED 4/22, no owner green run);
+  in-flight lanes mj/mr/mt/na files and mf-family `priv/ash_surface/*`
+  NOT landed; cleanup-plan.json / emergency-reclaim-receipt.json /
+  priv/semantic/generated/ left for coordinator triage.
+
+### Counts (W984nr refresh)
+
+Rows 110–115: 6 commits → 6 rows (one per commit; 5 share the
+`w984nd-commit.md` receipt, #115 is that receipt's own carrier):
+witnessed 5 (#110, 111, 112, 113, 114 — batch gates A 101/0, B 45/0,
+C 46/0, D 4/0 re-read from the receipt on the exact subjects, plus
+on-disk spot-checks: oxigraph pin ×4, bare-atom pins, EVIDENCED flip,
+all 4 named files present) · grep 1 (#115 receipt-carrier). No receipt
+diverged from its commit's claim; disclosures recorded as-is (w984dg
+EXCLUDED per coordinator; not-landed in-flight/mf families; coordinator-
+triage files). All 6 wave SHAs verified in the landing range
+`20a24db0..7593a062` (re-verified by git log at write time); 5/6 have
+the on-disk `w984nd-commit.md` receipt citing them and 1/6 (#115) is
+self-carried. Cumulative index: **115 rows** (rows 1–109 unchanged from
+W984ng; 110–115 appended).
+
+- No prior row contradicted. Rows 1–102 re-skimmed at `20a24db0`; none
+  of the batch #14 changes restate or invalidate an earlier claim. Row
+  108 (the index-touching commit) landed rows 77–95 content — batch #14
+  rows are this refresh's addition, so no row documents its own commit
+  before #109.
+- W984lf's Blocker-1 observation is **unchanged**: re-run at
+  `20a24db0`, `git merge-base --is-ancestor 56325fa5 origin/main` →
+  exit 1 (seal still not reachable from origin/main). Recorded as
+  observed tree state, not adjudicated by this lane.
+- Receipt-absent-by-construction now additionally covers #109
+  (`20a24db0`), alongside #80/#85/#88/#92/#95/#102 — receipt-carrier
+  commits cited only by later probes/receipts. Now 8 of the last 53
+  wave commits; C21 (out-of-subject receipts) remains an open
+  coordinator item.
+- Batch #14's own disclosures recorded per receipt: unattributed/
+  in-flight owners deliberately NOT landed (ci_cd.yaml + regen_check.ex
+  per W984md — note w984md-gate-fix.md surfaced mid-batch, next-batch
+  candidate; book.ex/audit_log_entry/refusal_ledger_export/
+  oversight_governance comment-sweep residue, W984ay/ek/et family; the
+  9 M test files incl. execution_fabric (lm's 4 pins live there);
+  priv/ash_surface/* + score_book.ex per W984mf lane family); e2e
+  README + cleanup-plan.json + emergency-reclaim-receipt.json +
+  priv/semantic/generated/ left for coordinator triage.
+- W984lz's W984lp/W984lq "rows owed when landed" note is partially
+  resolved: `w984lp-e2e-falsifier.md` and `w984lq-recensus.md` are now
+  on disk (landed in `2067a686`), but this index carries no W984lp/lq
+  lane rows — their claims (e2e falsifier PASS; 8th re-census) were not
+  independently rowed by this refresh; owed rows remain open.
+
+### Counts (W984ng refresh)
+
+Rows 103–109: 7 commits → 7 rows (one per commit; 6 share the
+`w984mo-commit.md` receipt, #109 is that receipt's own carrier):
+witnessed 4 (#103, 104, 106, 107 — court gate 28/0 and repair gate
+53/0 re-read from the receipt on the exact subjects) · grep 3 (#105
+diff-verified config-only, e2e not re-run; #108 docs-only; #109
+receipt-carrier). No receipt diverged from its commit's claim;
+disclosures recorded as-is (batch-#13 duplicate-court skip;
+not-landed unattributed families; docs-only concurrent-lane probes).
+All 7 wave SHAs verified in the landing range `567ab1f5..20a24db0`;
+6/7 have the on-disk `w984mo-commit.md` receipt citing them and 1/7
+(#109) is self-carried. Cumulative index: **109 rows** (rows 1–102
+unchanged from W984mg; 103–109 appended).

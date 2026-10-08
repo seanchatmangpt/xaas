@@ -65,13 +65,17 @@ defmodule Xaas.Governance.FreezeWindowActiveGateTest do
     unique = System.unique_integer([:positive])
 
     ApprovalDeploymentQuarantine
-    |> Ash.Changeset.for_create(:create, %{
-      org_id: org_slug,
-      requested_by: "w969b-requester",
-      deployment_name: "deploy-#{unique}",
-      environment: :prod,
-      reason: :security_finding
-    })
+    |> Ash.Changeset.for_create(
+      :create,
+      %{
+        org_id: org_slug,
+        requested_by: "w969b-requester",
+        deployment_name: "deploy-#{unique}",
+        environment: :prod,
+        reason: :security_finding
+      },
+      tenant: org_slug
+    )
     |> Ash.create!(authorize?: false)
   end
 
@@ -79,13 +83,17 @@ defmodule Xaas.Governance.FreezeWindowActiveGateTest do
     unique = System.unique_integer([:positive])
 
     ApprovalEnvironmentPromote
-    |> Ash.Changeset.for_create(:create, %{
-      org_id: org_slug,
-      requested_by: "w969b-requester",
-      project_name: "proj-#{unique}",
-      from_environment: :staging,
-      to_environment: :prod
-    })
+    |> Ash.Changeset.for_create(
+      :create,
+      %{
+        org_id: org_slug,
+        requested_by: "w969b-requester",
+        project_name: "proj-#{unique}",
+        from_environment: :staging,
+        to_environment: :prod
+      },
+      tenant: org_slug
+    )
     |> Ash.create!(authorize?: false)
   end
 
@@ -178,7 +186,7 @@ defmodule Xaas.Governance.FreezeWindowActiveGateTest do
     test "4: approved override lifts the freeze on an overrideable window (control)" do
       org = real_org!("w969b-freeze4")
       window = freeze_window!(org, true)
-      _approved_override!(org, window)
+      approved_override!(org, window)
       row = pending_quarantine!(org.slug)
 
       assert {:ok, %ApprovalDeploymentQuarantine{approved_by: "w969b-approver"}} =

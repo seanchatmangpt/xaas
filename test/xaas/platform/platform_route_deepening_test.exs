@@ -459,7 +459,8 @@ defmodule Xaas.Platform.PlatformRouteDeepeningTest do
              )
              |> Ash.destroy()
 
-    assert nil == Ash.get(RouteProjectsBackups, row.id, authorize?: false)
+    assert {:error, %Ash.Error.Invalid{errors: [%Ash.Error.Query.NotFound{}]}} =
+             Ash.get(RouteProjectsBackups, row.id, authorize?: false)
   end
 
   # ------------------------------------------------------------------
