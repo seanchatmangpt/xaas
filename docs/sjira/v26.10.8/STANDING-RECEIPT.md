@@ -106,6 +106,10 @@ python3 scripts/gen_doc_surface.py doc /Users/sac/xaas \
 # module_coverage.modules: 1013, uncovered: 64
 ```
 
+## Re-certification scope
+
+Re-certification triggers on a non-empty `git diff --stat 0afd81ed..HEAD -- lib/ priv/` (code/claim-surface change); docs-only commits are grandfathered.
+
 ## Falsifier
 
 - A PASS at the policy scope would falsify this receipt: re-run the gate
