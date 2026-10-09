@@ -11,7 +11,7 @@ HTTP over the real `XaasWeb.EuAiActExportController` + real
 no mocks):
 
 - **(a) happy-path shape**: real 200 body top-level keys pinned to exactly
-  `schema/generated_at/subject/source_map/articles/refusal_corpus/typed_gaps`;
+  TSV columns generated_at, subject, source_map, articles, refusal_corpus, typed_gaps;
   every section's representative pinned against the real `build/1` output
   (articles keyset equality + `art5` entry; `subject.head_sha` == real
   `git rev-parse HEAD`; `source_map.path`; refusal_corpus PRESENT/ABSENT shape

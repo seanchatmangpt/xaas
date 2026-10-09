@@ -7,7 +7,7 @@ Date: 2026-10-06. Subject: `/Users/sac/beam4pm`, branch `main`, HEAD `813eb92477
 | field | value |
 |---|---|
 | subject | beam4pm @ `813eb92477ecee3ec734ea93269a32a700692057` |
-| dirty tree | 2,495 files (`git status --porcelain \| wc -l`; r9 observed 2,462 at the same SHA — +33, consistent with ongoing runtime-artifact churn in tracked `receipts/engine_ops` and new untracked evidence) |
+| dirty tree | 2,495 files (`git status --porcelain \| wc -l`; r9 observed 2,462 at the same SHA — +33, consistent with ongoing runtime-artifact churn in tracked receipts/engine_ops in the beam4pm repo and new untracked evidence) |
 | prior gate | w52/w74 OTP-29 adjudication + 1506/1509 at an older head; trees moved |
 
 ## Commands + real output

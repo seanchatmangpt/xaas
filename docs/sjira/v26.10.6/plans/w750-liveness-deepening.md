@@ -47,7 +47,7 @@ real HTTP route but no e2e/stress beyond existing suites
 ## Gaps / follow-ups (typed)
 
 - G1: add a change validation on `:ingest` refusing `status=="ALIVE" and not
-  executed` (typed `ALIVE_WITHOUT_EXECUTION`), or an explicit downgrade rule
+  executed` (typed ALIVE_WITHOUT_EXECUTION), or an explicit downgrade rule
   (ALIVE+unexecuted → stored as-is but flagged). Current behavior pinned by
   test so a future gate lands as a visible diff.
 - G2: `detect/1` is blind to upsert-overwritten regressions (history destroyed

@@ -185,7 +185,8 @@ GitHub marked all 12 merged and the remote head branches were removed (23 heads 
 
 1. Base `main` advanced while the stream ran: `d8b2106` (another session) and the merge
    `8e72cfc` of this stream's first commit `6440eb0` landed between 12:41 and 12:44 PDT.
-2. Local branches `backup/execution-fabric-v1`, `probe/ash-ai-dependency-retest`,
+2. Local branches backup/execution-fabric-v1, probe/ash-ai-dependency-retest
+   (branch since deleted, preserved as git tag archive/probe-ash-ai-dependency-retest-fa744ec),
    `ultracode/w7-protocol`, `ultracode/w9-camp3`, `ultracode/w9-errc`,
    `feat/ultracode-cron-wave`, `fix/exunit-conditional-skip-autofde-tests`,
    `ultracode/w5-planner` and `errc/semantic-jira-bridge` were deleted by another actor. Each

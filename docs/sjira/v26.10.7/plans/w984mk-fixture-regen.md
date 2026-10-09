@@ -5,9 +5,9 @@ Root-cause receipt consumed: `w984mf-ash-surface-playwright.md`
 
 ## Subject
 
-- Fixture: `test/js/fixtures/digest_cross_language_fixtures.json` in ash_surface
+- Fixture: test/js/fixtures/digest_cross_language_fixtures.json in ash_surface
 - Generator: `AshSurface.DigestParityFixtures` (`test/support/digest_parity_fixtures.ex`), written by `AshSurface.DigestParityFixtures.write!/0`
-- Second file (discovered during verification): `conformance/js/known_divergences.mjs`
+- Second file (discovered during verification): conformance/js/known_divergences.mjs (ash_surface repo)
 
 ## Before (stale state, real outputs)
 
@@ -20,7 +20,7 @@ Root-cause receipt consumed: `w984mf-ash-surface-playwright.md`
   implementations agree on the new value; fixture bytes were stale)
 - `npm test` (full JS suite, before any fix): **371 tests / 367 pass / 4 fail** — all 4 in
   `test/js/conformance_replay.test.mjs`, traced to one stale jsActual pin:
-  `sc/lexical-integral-float` in `conformance/js/known_divergences.mjs` pinned
+  `sc/lexical-integral-float` in conformance/js/known_divergences.mjs pinned
   `d9ba3544…` (captured at the v26.10.1 bump) while the current JS replay produces
   `ba9b36c3…`. The divergence itself persists; only the captured pin was stale. The
   other 3 failures cascade (FAIL is not a bucket in the by-level census; the scratch-copy
@@ -38,7 +38,7 @@ Root-cause receipt consumed: `w984mf-ash-surface-playwright.md`
    computed `532b4a1a…` against the stale fixture — same value the Elixir pipeline emits.
 3. Re-captured the stale jsActual pin for `sc/lexical-integral-float`
    (`d9ba3544…` → `ba9b36c3…`, captured from the real JS replay output, not typed) and
-   updated its reason string (v26.10.1 → v26.10.7) in `conformance/js/known_divergences.mjs`.
+   updated its reason string (v26.10.1 → v26.10.7) in conformance/js/known_divergences.mjs.
 
 ## After (verification ladder, real outputs)
 
@@ -53,7 +53,7 @@ Root-cause receipt consumed: `w984mf-ash-surface-playwright.md`
 - ALIVE on subject: current tree of `/Users/sac/ash_surface` @ `feat/playwright-surface`,
   uncommitted (per dispatch: NO commit). Lane-touched files:
   - `test/js/fixtures/digest_cross_language_fixtures.json` — regenerated fixture (1-line digest change)
-  - `conformance/js/known_divergences.mjs` (one jsActual re-captured + reason string)
+  - conformance/js/known_divergences.mjs (ash_surface repo, one jsActual re-captured + reason string)
 
 ## Falsifiers (all run, all pass)
 

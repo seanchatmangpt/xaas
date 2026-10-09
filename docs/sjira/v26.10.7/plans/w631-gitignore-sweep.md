@@ -5,7 +5,7 @@ Scope: .gitignore only, pathspec-limited commit, current branch, never force.
 
 ## Method
 
-1. `git check-ignore -q` probe paths (`_build/prod`, `target/debug`, `node_modules/x`,
+1. `git check-ignore -q` probe paths (`_build/prod`, target/debug probe path, `node_modules/x`,
    `.DS_Store`, `_build-lane1`, `target-lane1`) per repo — authoritative, not grep.
 2. Append commented block: `# lane-lease build roots (fan-out campaign)` + missing patterns
    (`_build/`, `target/`, `node_modules/`, `.DS_Store`, `_build-lane*/`, `target-lane*/`).

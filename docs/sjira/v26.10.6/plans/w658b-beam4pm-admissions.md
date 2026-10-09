@@ -33,7 +33,7 @@ Manifest counts: admitted 114 (106 counted as debt); qualification debt = 99 = c
    - `test/beam4pm_airo_description_test.exs` (lane W634's AIRo risk-description court)
 4. **Regeneration**: `rm ggen.lock` (pack hash changed by the ceiling edit — the sync's own
    FM-PACK-008 remediation) then `ggen sync run` (ggen 26.9.28, 89.7s) →
-   `schema/beam4pm_hand_authored_source.tsv` regenerated: contains all 3 new paths + refreshed digest
+   schema/beam4pm_hand_authored_source.tsv (beam4pm repo) regenerated: contains all 3 new paths + refreshed digest
    (4 grep hits), qualification debt rows = 102.
 
 ## Verification (real output)

@@ -343,7 +343,7 @@ shadow it), serving `XaasWeb.A2A.NextReadAshAgent` — an `AshA2A.Protocol.Agent
 over the SAME real skill surface as the legacy hex agent (`NextReadUserAgent` dispatch;
 generated card skills from `NextReadUserAgentSkills`). Surface: agent card at
 `GET /a2a/v1/.well-known/agent-card.json`, JSON-RPC at `POST /a2a/v1`, SSE at
-`POST /a2a/v1` `message/stream`. `base_url` honors `A2A_BASE_URL` (default
+`POST /a2a/v1` message/stream (A2A v1 wire method served by the ash_a2a dependency). `base_url` honors `A2A_BASE_URL` (default
 `http://localhost:4000/a2a/v1`).
 
 Auth is gate-ordering: the scope's `:require_internal_api_token` stays the single auth

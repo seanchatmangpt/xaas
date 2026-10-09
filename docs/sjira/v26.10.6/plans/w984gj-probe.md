@@ -22,8 +22,8 @@ receipt is `docs/sjira/v26.10.6/plans/w984ev-probe.md`.
 
 1. **`forward_cancellation/1` real-resource branch** — real Bandit receiver
    (lane-local `:w984gj_receiver`, real TCP) receives the cancellation
-   envelope; asserts `Book.create.cancelled` activity, `outcome/cancelled`
-   vmap, idempotency key, `Book` omap, ISO timestamp, and that the wire
+   envelope; asserts `Book.create.cancelled` activity, the cancelled-outcome
+   vmap (`outcome` key), idempotency key, `Book` omap, ISO timestamp, and that the wire
    envelope passes the real `Ex4pm.OCEL.validate_envelope/1`. Mutation
    rationale: reverting the `.cancelled` suffix / outcome mapping, or
    breaking `OcelEnvelope.build/3`, fails this test.

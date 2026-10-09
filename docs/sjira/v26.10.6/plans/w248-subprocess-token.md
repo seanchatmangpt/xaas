@@ -101,7 +101,7 @@ correct `conn/3` form: `Plug.Test.conn("POST", "/", Jason.encode!(...))`. No 4-a
 call exists anywhere in the file, so no edit was required.
 
 Streaming-proceeds verification (the case W248 said would fire): the plug-level
-test dispatches the real `message/stream` through `AshA2A.Transport.Plug.call/2`
+test dispatches the real message/stream (A2A v1 wire method served by the ash_a2a dependency) through `AshA2A.Transport.Plug.call/2`
 and passed its full assertion set — status 200, content-type
 `text/event-stream`, body contains `data:`, `TASK_STATE_COMPLETED`, `HDDL`; the
 message/send composition check also passed.

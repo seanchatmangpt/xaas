@@ -1,7 +1,7 @@
 # W511 — Art. 72 token-replay conformance (Definition 7.2) — receipt
 
 Lane W511, EU-AI-Act wave, 2026-10-06. Subject: /Users/sac/beam4pm (canonical checkout,
-nothing committed; private build root `tmp/w511_build`).
+nothing committed; private build root tmp/w511_build (transient, since removed)).
 
 ## Definition 7.2 mapping
 
@@ -53,7 +53,7 @@ cd /Users/sac/beam4pm && PATH=$HOME/.asdf/shims:$PATH MIX_BUILD_ROOT=tmp/w511_bu
 ```
 
 Real tail (2026-10-06, asdf elixir 1.20.4-otp-29, private build root
-`tmp/w511_build`):
+tmp/w511_build):
 
 ```
 Finished in 0.02 seconds (0.02s async, 0.00s sync)

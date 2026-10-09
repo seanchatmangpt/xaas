@@ -7,8 +7,8 @@ Last Updated: 2026-09-01
 The v26.9.1 workstream, inferred from active branch names and their commit history,
 is converging several parallel efforts onto `main`:
 
-- **AshAi / Ash ecosystem integration** (`probe/ash-ai-dependency-retest`,
-  `feat/ash-project-measure-extension`, `ash-migration`) — wiring AshAi read tools,
+- **AshAi / Ash ecosystem integration** (probe/ash-ai-dependency-retest - branch since deleted, preserved as git tag
+  archive/probe-ash-ai-dependency-retest-fa744ec -, `feat/ash-project-measure-extension`, `ash-migration`) — wiring AshAi read tools,
   OCEL telemetry compatibility with beam4pm, and Ash framework version migration.
 - **Ontology/semantics closure** (`feat/ontology-reactor-closure`) — SPARQL bridge,
   R2RML/Ontop mapping tests, read-only DfCM boundary enforcement.
@@ -32,7 +32,7 @@ Active remote branches and their latest real commit:
 
 | Branch | SHA | Date (UTC-7) | Message |
 |---|---|---|---|
-| `probe/ash-ai-dependency-retest` | `fa744ec` | 08-31 16:32:12 | feat: AshAi read tools on |
+| probe/ash-ai-dependency-retest | `fa744ec` | 08-31 16:32:12 | feat: AshAi read tools on |
 | | | | `Xaas.Operations` (read_incidents, read_audit_log) + real coverage |
 | `ggen/pin-manufacturing-instrument-v26.8.27` | `a1a5c6a` | 08-27 22:56:53 | chore(ggen): |
 | | | | pin local manufacturing instrument |
@@ -53,7 +53,7 @@ All dates are 2026, `-0700` offset. The wrapped-continuation rows above are a ta
 formatting compromise to satisfy the 100-char line limit; each pair of rows describes
 one branch's single latest commit.
 
-**Verified against the hint in this task**: only `probe/ash-ai-dependency-retest` has
+**Verified against the hint in this task**: only probe/ash-ai-dependency-retest has
 commits in the last 24h relative to 2026-08-31 (its `fa744ec`, `91b0f9b`, `c10d460`
 commits fall on 2026-08-30/08-31). No other branch has commits in that window — the
 hint pointing at this branch is confirmed by real `git log`, not assumed.
@@ -63,7 +63,7 @@ read as `<commits only on main> <commits only on branch>`):
 
 | Branch | Only on main | Only on branch | Mergeability signal |
 |---|---|---|---|
-| `probe/ash-ai-dependency-retest` | 0 | 11 | Clean fast-forward candidate |
+| probe/ash-ai-dependency-retest | 0 | 11 | Clean fast-forward candidate |
 | `agent/connect-castle-paas-20260826` | 0 | 13 | Clean fast-forward candidate |
 | `automation/claude-daily-drain` | 0 | 2 | Clean fast-forward candidate |
 | `ggen/pin-manufacturing-instrument-v26.8.27` | 0 | 1 | Clean fast-forward candidate |
@@ -72,7 +72,7 @@ read as `<commits only on main> <commits only on branch>`):
 | `feat/ontology-reactor-closure` | 29 | 39 | Diverged, real merge/rebase needed |
 | `ash-migration` | 0 | 156 | Already an ancestor of main (fully merged/stale) |
 
-`probe/ash-ai-dependency-retest` vs `main` diffstat: 34 files changed,
+probe/ash-ai-dependency-retest vs `main` diffstat: 34 files changed,
 1804 insertions(+), 56 deletions(-), concentrated in `test/xaas/**` (OCEL telemetry,
 Ontop/R2RML semantics, ledger concurrency/tamper tests, AshAi tools test) plus
 `templates-hooks/**` and `mix.lock`.
@@ -82,7 +82,7 @@ Ontop/R2RML semantics, ledger concurrency/tamper tests, AshAi tools test) plus
 Competing/complementary workstreams identified, not yet merged into a single line:
 
 1. **AshAi tool exposure now vs. after ash-migration completes.**
-   `probe/ash-ai-dependency-retest` builds AshAi read tools directly against current
+   probe/ash-ai-dependency-retest builds AshAi read tools directly against current
    `main`, while `ash-migration`'s own log ("Phases 0-7 execution + disclosed
    remaining work") signals it is an in-progress framework upgrade already an
    ancestor of `main` (0 unique commits) — i.e. it appears superseded/merged, not a
@@ -97,7 +97,7 @@ Competing/complementary workstreams identified, not yet merged into a single lin
    and can merge in either order.
 3. **Ontology/semantics closure as prerequisite or parallel to AshAi tools.**
    `feat/ontology-reactor-closure`'s SPARQL/DfCM boundary work is diverged 29/39 from
-   main — it predates several of `probe/ash-ai-dependency-retest`'s own semantics
+   main — it predates several of probe/ash-ai-dependency-retest's own semantics
    tests (`ontop_mapping_test.exs`, `registry_r2rml_mapping_test.exs`,
    `sparql_bridge_test.exs` all already appear in the probe branch's diffstat vs
    main). Option A: treat `feat/ontology-reactor-closure` as superseded by the probe
@@ -113,7 +113,7 @@ Competing/complementary workstreams identified, not yet merged into a single lin
 
 ## 4. Develop — Concrete Next Steps per Branch
 
-- **`probe/ash-ai-dependency-retest`** (priority: highest — real 24h activity,
+- **probe/ash-ai-dependency-retest** (priority: highest — real 24h activity,
   clean fast-forward): run `mix test` on the branch in isolation; confirm the new
   `test/xaas/operations_ash_ai_tools_test.exs`,
   `test/xaas/telemetry/ocel_beam4pm_compatibility_test.exs`, and
@@ -136,7 +136,7 @@ Competing/complementary workstreams identified, not yet merged into a single lin
   merge.
 - **`feat/ontology-reactor-closure`** (29 behind / 39 ahead): before rebasing,
   diff its SPARQL/DfCM tests against the equivalent tests already present on
-  `probe/ash-ai-dependency-retest` to determine real overlap (see Explore item 3);
+  probe/ash-ai-dependency-retest to determine real overlap (see Explore item 3);
   only carry forward logic not already covered, to avoid duplicate/conflicting
   test files.
 - **`ash-migration`** (0 ahead of main): confirm via `git branch --contains
@@ -152,7 +152,7 @@ Competing/complementary workstreams identified, not yet merged into a single lin
 2. `ggen/pin-manufacturing-instrument-v26.8.27` (single commit, isolated)
 3. `agent/connect-castle-paas-20260826` (ggen lineage fix, independent of #2)
 4. `automation/claude-daily-drain` (independent CI job)
-5. `probe/ash-ai-dependency-retest` (highest-value, most recently active; largest
+5. probe/ash-ai-dependency-retest (highest-value, most recently active; largest
    real test surface added)
 6. `feat/ontology-reactor-closure` (after overlap diff against step 5's semantics
    tests; may shrink to a small cherry-pick or be dropped entirely)
@@ -179,7 +179,7 @@ ancestor of `main`; no action needed beyond the branch-hygiene follow-up noted a
 ### Rollout / monitoring after v26.9.1 lands
 
 - Re-run `mix ggen_igniter.sync --for-each` (already proven on
-  `probe/ash-ai-dependency-retest`) against the merged `main` to confirm N-way
+  probe/ash-ai-dependency-retest) against the merged `main` to confirm N-way
   fan-out parity still holds post-merge.
 - Monitor the `automation/claude-daily-drain` CI job's first scheduled run for
   failures once merged.
@@ -191,7 +191,7 @@ ancestor of `main`; no action needed beyond the branch-hygiene follow-up noted a
 
 ## See Also
 
-- `probe/ash-ai-dependency-retest` — richest recent commit history, primary source
+- probe/ash-ai-dependency-retest — richest recent commit history, primary source
   for this plan's Measure section
 - `feat/ontology-reactor-closure` — semantics work whose overlap with the probe
   branch must be resolved before merge (Explore item 3)

@@ -257,7 +257,7 @@ taken from each file's own header. Companion: `_LANES.md`, `_FRONTIER.md`, `_WIR
 | `w364-beam4pm-freshness.md` | W364 | execution w364 | beam4pm freshness gate at current head 813eb92 (WP-F, read-only) |
 | `w366-ash-a2a-head-gate.md` | W366 | execution w366 | ash_a2a HEAD gate (re-pin adjudication evidence) |
 | `w367-capability-coverage.md` | W367 | execution w367 | capability coverage machinery + fail-closed ingest witness |
-| `w368-sse-residual-probe.md` | W368 | execution w368 | SSE residual probe: does `message/stream` push incremental SSE over the wire (read-only diagnosis) |
+| `w368-sse-residual-probe.md` | W368 | execution w368 | SSE residual probe: does message/stream (A2A v1 wire method served by the ash_a2a dependency) push incremental SSE over the wire (read-only diagnosis) |
 | `w369-r-projection-flunk.md` | W369 | execution w369 | r_projection silent skip → presence flunk (closure row 27, P1-5) |
 | `w371-post-quarantine-gate.md` | W371 | execution w371 | post-quarantine gate (OS-13 stray installer files) on ash_surface canonical checkout |
 | `w372-autofde-wph-legs.md` | W372 | execution w372 | WP-H verification legs freshness re-witness after dev.exs re-points (§1 row 20) |

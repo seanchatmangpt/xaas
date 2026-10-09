@@ -62,7 +62,7 @@ Failed: 3 tests
 2. `BeamPM.AuthorshipGateTest` "real gate PASSes…" — the authorship gate
    REFUSES on 4 findings, of which 3 are pre-existing tree state NOT produced
    by this lane: `test/beam4pm_evidence_chain_test.exs` SHA drift vs
-   `schema/beam4pm_hand_authored_source.tsv` (file untouched by W601), and
+   schema/beam4pm_hand_authored_source.tsv (beam4pm repo, file untouched by W601), and
    unadmitted `lib/beam4pm_art72_conformance.ex` +
    `test/beam4pm_art72_conformance_test.exs` (untouched by W601).
 3. `BeamPM.AuthorshipGateTest` "manufactured manifest carries the marker…" —

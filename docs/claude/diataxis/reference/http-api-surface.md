@@ -665,7 +665,7 @@ submitted → executing → sealed → replayed — with typed illegal transitio
   agent, authority-free SA2A-shaped trace), the AshA2A v1 surface at `/a2a/v1`
   (`XaasWeb.A2A.V1TransportPlug` wrapping `AshA2A.Protocol.Plug`, +
   `XaasWeb.A2A.NextReadAshAgent`: card at
-  `GET /a2a/v1/.well-known/agent-card.json`, JSON-RPC and SSE `message/stream` at
+  `GET /a2a/v1/.well-known/agent-card.json`, JSON-RPC and SSE message/stream (A2A v1 wire method served by the ash_a2a dependency) at
   `POST /a2a/v1`; gate-ordering auth — the scope's internal-api token gate is the single
   auth floor, the plug's own `Plug.Auth` unconfigured), and `POST /a2a/` (the Next Read
   multi-persona agent). All token-gated.

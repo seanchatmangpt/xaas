@@ -1,4 +1,4 @@
-# W368 — SSE residual probe: does `message/stream` push incremental SSE over the wire?
+# W368 — SSE residual probe: does message/stream (A2A v1 wire method served by the ash_a2a dependency) push incremental SSE over the wire?
 
 Lane W368, repo /Users/sac/xaas @ feat/playwright-surface, read-only diagnosis lane.
 Date 2026-10-06. Contract path only; no lib/test edits.

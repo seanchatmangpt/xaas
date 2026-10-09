@@ -20,7 +20,7 @@ Lane: W634 · Repo: /Users/sac/beam4pm (canonical checkout, no commit) · Build 
     censused 3 ABSENT-KEY-RELIANT sites (`lib/beam4pm_discovery.ex:310`,
     `lib/beam4pm_pro_simulation.ex:53,76`).
   - **Risk-EvidenceChainShaDrift** (Medium/Medium) — real observed instance: SHA drift of
-    `test/beam4pm_evidence_chain_test.exs` vs `schema/beam4pm_hand_authored_source.tsv`
+    `test/beam4pm_evidence_chain_test.exs` vs schema/beam4pm_hand_authored_source.tsv (beam4pm repo)
     (w601 full-suite receipt).
 - RiskSources (3): `OTP29MapUpdateDeviation` (cites w525d + site census), `ConformanceSplit`
   (cites the Art72Conformance @moduledoc deviation note), `GeneratedArtifactDrift` (cites w601).

@@ -13,7 +13,7 @@
 
 | # | Test | Verdict |
 |---|------|---------|
-| 1 | `run/0 twice grows row counts by exactly zero (full dedupe per the idempotency contract)` | PASS — replay returns identical row ids across all 7 slots; slot counts identical between run 1 and run 2 (delta 0); every natural-key slot exactly populated (1 org/sub/ledger/pending, 10 books, 1 dev reader, 2 checkouts, 1 curation) |
+| 1 | run/0 twice grows row counts by exactly zero (full dedupe per the idempotency contract) | PASS — replay returns identical row ids across all 7 slots; slot counts identical between run 1 and run 2 (delta 0); every natural-key slot exactly populated (1 org/sub/ledger/pending, 10 books, 1 dev reader, 2 checkouts, 1 curation) |
 | 2 | `replayed rows satisfy the real unique constraints` | PASS — 1 org slug, 1 subscription per org_id, 10 books all-unique isbns+titles, exactly 1 dev-reader email row, 1 checkout per (user,book), 1 curation per book |
 | 3 | `sandbox rollback of the allowed path leaves zero residue of this run's rows` | PASS — every id run/0 returned is either a pre-existing committed row (reused by idempotent lookup) or absent after `Sandbox.checkin`; before/after id sets equal; fresh replay post-rollback clean |
 | 4 | `guard refusal message shape is stable: REFUSED(dev_seeds, env=...)` | PASS — raw spawned unsandboxed caller raises `%Mix.Error{}` matching `~r/REFUSED\(dev_seeds/`, `env=test`, remediation text names `mix run priv/repo/seeds.exs` and `e2e: true`; no table drift after refusal |

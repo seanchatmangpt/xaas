@@ -35,7 +35,7 @@ grep for behavior names):
 | `school.ex` | **School** | **uncovered state-bearing — courted here** (only prior grep hits were "High School" title strings; the resource, its `:get_default` filtered read, and `unique_slug` identity had zero direct exercise) |
 | `config.ex` branches | **Config** | **uncovered state-bearing branches — courted here**: `default_school_id/0` full precedence chain (DB row > literal fallback; app-env override), `pubsub_topic/1` unknown-key fallback, `weights/1` both override-merge shapes |
 
-`layer/curator` courts: curator covered by `curation_test.exs`; no separate
+curator-layer courts: curator covered by `curation_test.exs`; no separate
 layer modules exist under `lib/xaas/library/`.
 
 ## Court file

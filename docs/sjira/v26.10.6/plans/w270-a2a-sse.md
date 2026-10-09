@@ -7,9 +7,9 @@ Dep: /Users/sac/ash_a2a pinned 86214551 (v26.10.4). Verified against the pinned 
 
 ## What the dep provides (read + empirically verified, not guessed)
 
-The pinned dep serves `message/stream` server-side; no protocol fork needed:
+The pinned dep serves message/stream (A2A v1 wire method served by the ash_a2a dependency) server-side; no protocol fork needed:
 
-- `AshA2A.Protocol.Plug` dispatches `message/stream` itself, gated on
+- `AshA2A.Protocol.Plug` dispatches message/stream itself, gated on
   `agent_card_opts: [capabilities: %{streaming: true}]` (`streaming_declared?/1`,
   plug.ex:312). With the gate open it calls `AshA2A.Protocol.Plug.SSE.stream_message/5`.
   But for a REPLY-BACKED agent (`{:reply, parts}`) that path answers
@@ -23,7 +23,7 @@ The pinned dep serves `message/stream` server-side; no protocol fork needed:
   StatusUpdate with the task's REAL state — while keeping `message/send` synchronous
   `TASK_STATE_COMPLETED` (both proven in ExUnit over the real agent GenServer).
 - A `{:stream, enum}` reply is the only streaming shape on the `Protocol.Agent` behaviour;
-  there is NO `handle_message_stream/2` callback, and `message/send` vs `message/stream`
+  there is NO `handle_message_stream/2` callback, and `message/send` vs message/stream
   are indistinguishable inside `handle_message/2` (same `GenServer.call`).
 
 ## What xaas changed (W270 in-fence edits)

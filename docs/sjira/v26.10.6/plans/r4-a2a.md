@@ -17,7 +17,7 @@ Lane R4 · 2026-10-06 · READ-ONLY survey. Subject: `/Users/sac/ash_a2a` @ `0718
 ## 2. Standing (real evidence, witnessed)
 
 - **ALIVE (protocol core)**: `lib/ash_a2a/protocol/` wire codec + `AshA2A.Protocol.Plug`
-  (JSON-RPC 2.0 over POST, SSE `message/stream`, agent card at
+  (JSON-RPC 2.0 over POST, SSE message/stream (A2A v1 wire method served by the ash_a2a dependency), agent card at
   `GET /.well-known/agent-card.json`), gRPC binding `AshA2A.Transport.GRPC.Server`
   (`lf.a2a.v1.A2AService`, 9 unary + 2 server-streaming RPCs) —
   contract documented in `docs/reference/a2a-endpoint-contract.md`.
@@ -93,7 +93,7 @@ Lane R4 · 2026-10-06 · READ-ONLY survey. Subject: `/Users/sac/ash_a2a` @ `0718
    - `POST /a2e/v1` malformed JSON → JSON-RPC -32700.
    - `POST /a2a/v1` with bad token → 401 (auth floor holds through the mount).
    - `GET /a2a/v1/.well-known/agent-card.json` wrong method (POST) → 405 Allow: GET.
-   - SSE `message/stream` smoke: open stream, ≥1 frame, close.
+   - SSE message/stream smoke: open stream, ≥1 frame, close.
    - A2A base URL env: `A2A_BASE_URL` already honored in router.ex:203/208 — extend to the new mount.
 9. Wire spec into `playwright.config.cjs` projects if a project split exists;
    otherwise runs under the default project.

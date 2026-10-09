@@ -65,7 +65,7 @@ is byte-derived from it, one coupled change);
 `priv/static/ash_surface_runtime.mjs`;
 `priv/verifier/verify_closure_episode.py`; `scripts/bump_version.sh`,
 `scripts/conformance_regen.exs`; `conformance/MANIFEST.json`,
-`conformance/js/replay.mjs`, `conformance/js/known_divergences.mjs`
+conformance/js/replay.mjs, conformance/js/known_divergences.mjs (both ash_surface repo paths)
 (GOLDEN_DIVERGENCES), `conformance/vectors/ir_codec.json`,
 `conformance/vectors/surface_contract_digest.json`; `docs/DEP_GRAPH.md`,
 `docs/diataxis/reference/api.md`,

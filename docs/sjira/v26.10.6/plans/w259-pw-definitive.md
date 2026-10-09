@@ -82,7 +82,7 @@ Error: expect(received).toContain(expected) // indexOf
     answered `application/json`
 ```
 
-Classification: **REAL defect**. Reproduced identically in both runs. `message/stream`
+Classification: **REAL defect**. Reproduced identically in both runs. message/stream (A2A v1 wire method served by the ash_a2a dependency)
 answers `application/json; charset=utf-8` instead of `text/event-stream`; the endpoint is
 not speaking SSE. Deterministic.
 

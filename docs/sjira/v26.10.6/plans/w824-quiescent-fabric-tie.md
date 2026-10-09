@@ -81,7 +81,7 @@ PATH=$HOME/.asdf/shims:$PATH MIX_ENV=test MIX_BUILD_ROOT=_build-laneW824 \
 
 - **Wire-layer coupling absent (the honest finding)**: `QuiescentStop`'s
   typed envelope never surfaces on the MCP wire — a fabric halt returns the
-  kernel's raw envelope (`status/replay/intent_id/receipt_id`), not the
+  kernel's raw envelope (status/replay/intent_id/receipt_id keys), not the
   module's `{stopped_at, target: :quiescent, authority}` /
   `{:error, :REFUSED_STOP_*}` contract. The quiescent attractor is
   court-level coupled (shared kernel + shared ledger), not verb-level

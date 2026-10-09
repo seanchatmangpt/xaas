@@ -43,7 +43,7 @@ conflict-free.
 Both repos, after merge, dirs created and probed (`git check-ignore -v`):
 
 - `_build/prod` → matched (`/_build/`)
-- `target/debug` → matched (`target/`)
+- target/debug probe path → matched (`target/`)
 - `node_modules/x` → matched (`node_modules/`)
 - `.DS_Store` → matched (`.DS_Store`)
 - `_build-lane1` → matched (`_build-lane*/`)

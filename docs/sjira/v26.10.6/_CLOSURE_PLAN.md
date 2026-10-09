@@ -161,7 +161,7 @@ From vector4 + W36/W37-class integration findings (w51 tree manifest):
 **Stays excluded / permanent:**
 - `unless_exists` receipt templates (`.ash-gen-receipts/`, `.agp-receipts/`,
   `.terraform-validate-receipts/`) — first-run receipts, not parity surfaces (vector4).
-- beam4pm `receipts/engine_ops/` new files (ignored), ERC/soak runtime artifacts (r9 G7/G7b, C6 decision pending).
+- beam4pm receipts/engine_ops/ new files (ignored), ERC/soak runtime artifacts (r9 G7/G7b, C6 decision pending).
 - autofde-lab 2 vendor gitlink smudges — `git submodule update` is coordinator's, not a closure edit (r11 risk).
 - `GGEN-SH-AFTER-MIX-COMPILE.log`, `GGEN-SH-AFTER-PROOF.txt` at xaas root — lane artifacts, delete at integration (w51).
 - `erl_crash.dump` (x1b) — delete.
@@ -256,7 +256,7 @@ verification command, and a no-new-features line.
 | OS-2 | **zcode main version bump** — advance `~/zcode-cli` `package.json` past npm latest `3.14.4-32` (`3.14.4-33` or `3.14.5-1`) on main; the prepare-release guard is correct and must not be patched | w40 | clears 5-consecutive-failure release workflow |
 | OS-3 | **ggen tag E2** — cut tag `v26.10.6` after CI green on WP-D bump commit | r1 E2 | unblocks R2's pre-staged frozen-court ggen pin bump (`BLOCKED:release-artifacts`) |
 | OS-4 | **ship-scope E3** — ggen_igniter hex package ship scope for the promoted ash-manufacture-pack (whole pack vs ontology/gates/templates/verify only) | r3 E3/R-5 | WP-G final layout |
-| OS-5 | **beam4pm split** — approve/sequence the r9 C1→C7 commit groups (and the C6 `receipts/engine_ops` untrack decision) after WP-F qualification | r9 | resolves the 2,576-file dirty subject into receiptable commits *(W700: count re-derived 2026-10-07, `git status --porcelain` = 2,576; w694) |
+| OS-5 | **beam4pm split** — approve/sequence the r9 C1→C7 commit groups (and the C6 receipts/engine_ops (beam4pm) untrack decision) after WP-F qualification | r9 | resolves the 2,576-file dirty subject into receiptable commits *(W700: count re-derived 2026-10-07, `git status --porcelain` = 2,576; w694) |
 | OS-6 | **ggen-marketplace frozen ggen pin** `v26.8.11` @ `402cecdf` — remains `BLOCKED:pin-bump-user-gated`; only the user lifts it | r2 §4.4 | qualification-identity skew resolution |
 | OS-7 | **ash_surface G1b** — convert xaas path dep to versioned (hex/git) dep | x2 G1b, x4 | replay identity beyond a lease-shaped path dep |
 | OS-8 | **zcode plugin cache reinstall** — mutates host state `~/.zcode/cli/plugins/cache/…`; explicit operator consent required | r7 R6/step 5 | clears plugin 26.9.17 skew |
