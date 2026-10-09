@@ -1,0 +1,46 @@
+# .doc-surface.toml — doc-surface audit policy (lane R26, 2026-10-09)
+#
+# AUDITED-SURFACE POLICY DECISION (receipted)
+#
+# The historical/receipt plane of this repository is not API documentation:
+# order history, wave receipts, and campaign records are receipts about past
+# work, not docs about the live system. They are scoped OUT of the
+# doc-surface audit BY THIS DECISION, not by silence. The gate thresholds
+# (S_coverage >= 0.90, Phi_halluc <= 0.001, Q_density >= 0.65) are NOT
+# relaxed — this policy changes which doc surface is audited, nothing else.
+
+# Audited doc roots (developer-facing documentation of the live system):
+audited_doc_roots = [
+  "docs/reference",
+  "docs/claude/diataxis",
+  "docs/airo",
+  "docs/hddl",
+  "docs/rfc",
+  "docs/eu_ai_act",
+  "docs/ci",
+]
+
+# Scoped out BY DECISION (never counted in S_coverage or Phi_halluc
+# denominators):
+excluded_doc_roots = [
+  "docs/sjira",
+  "docs/jira",
+  "docs/archive",
+  "docs/cro",
+  "docs/ultracode",
+  "docs/vision",
+  "docs/case-studies",
+  "docs/streams",
+  "docs/release",
+  "docs/claude minus docs/claude/diataxis",
+]
+
+# Machine-honored sections (extractor reads these):
+#   [[generated]] — generated files excluded from the public code surface;
+#     references classify external_documented, never phantom.
+
+# PIPELINE BINDING: the audit runner extracts doc claims with
+#   gen_doc_surface.py doc REPO --code-json code.json \
+#     --docs-dir <each entry of audited_doc_roots, absolute, comma-joined>
+# A change to audited_doc_roots requires a new receipt showing the old
+# policy failing or the new surface passing.

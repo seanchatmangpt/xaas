@@ -132,4 +132,19 @@ Xaas.Ultracode.SemanticDrive, `drive` runs the loop; `verify_hops` and `anchor`
 replay the digest law over recorded `hops`; `no_llm_guard` fails closed. For
 Xaas.Zoe.EventSimulation, `simulate` dispatches on `contract_version`; `contract`
 describes the snapshot surface; `digest` seals the simulation.
+
+Remaining surface modules, same discipline. Xaas.CaseStudies.WdFa.CapabilitySelector:
+call `for_case` with the case id (and `experience_admitted?` when applicable); it returns
+capability identifiers from `presentation_state` — treat the return as a selection, not
+an execution. Xaas.SelfDigest.Promotion: `promote` with (work, shadow, evidence,
+reducer); it returns the materialized result plus a sealed receipt, or `refused` — never
+retry a `refused` promotion with the same evidence. Xaas.Runtime.FOND.Backoff:
+`delay` with the attempt number (base 25ms, cap 5000ms). Xaas.Runtime.ProviderFabric.Backoff:
+build the struct (`base_ms`, `cap_ms`) and call `delay` with the attempt. Provider mesh:
+`Xaas.Ultracode.ProviderMesh.Selector` `for_capability` filters by
+`Capability.supported?` then `PrioritySelector` `select` orders by `priority`/`id`;
+`RetryPolicy` `retry?` requires the failure class to be `transient` and the attempt
+below `max_attempts`; `Backoff` `delay` spaces attempts (base 100ms, cap 30_000ms).
+NotificationExtension.Resource.Persist runs at compile time via `transform`, persisting
+`notification_extension_compiled` — no runtime call path.
 <!-- AGENT-COMMENTARY-END -->
